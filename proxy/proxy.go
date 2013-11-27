@@ -3,6 +3,7 @@ package proxy
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -78,4 +79,44 @@ func NewRequest(r *http.Request) (*Request, error) {
 	}
 
 	return req, nil
+}
+
+// Proxy serves image requests.
+type Proxy struct {
+	Client *http.Client // client used to fetch remote URLs
+}
+
+// NewProxy constructs a new proxy.  The provided http Client will be used to
+// fetch remote URLs.  If nil is provided, http.DefaultClient will be used.
+func NewProxy(client *http.Client) *Proxy {
+	if client == nil {
+		client = http.DefaultClient
+	}
+	return &Proxy{Client: client}
+}
+
+// ServeHTTP handles image requests.
+func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	req, err := NewRequest(r)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("invalid request URL: %v", err.Error()), http.StatusBadRequest)
+		return
+	}
+	resp, err := p.Client.Get(req.URL.String())
+	if err != nil {
+		http.Error(w, fmt.Sprintf("error fetching remote image: %v", err.Error()), http.StatusInternalServerError)
+		return
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		http.Error(w, fmt.Sprintf("error fetching remote image: %v", resp.Status), resp.StatusCode)
+		return
+	}
+
+	defer resp.Body.Close()
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("error fetching remote image: %v", err.Error()), http.StatusInternalServerError)
+	}
+	w.Write(data)
 }
