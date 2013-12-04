@@ -3,11 +3,12 @@ package proxy
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
+
+	"github.com/willnorris/go-imageproxy/data"
 )
 
 // URLError reports a malformed URL error.
@@ -20,22 +21,15 @@ func (e URLError) Error() string {
 	return fmt.Sprintf("malformed URL %q: %s", e.URL, e.Message)
 }
 
-// Request is a request for an image.
-type Request struct {
-	URL    *url.URL // URL of the image to proxy
-	Width  int      // requested width, in pixels
-	Height int      // requested height, in pixels
-}
-
 // NewRequest parses an http.Request into an image request.
-func NewRequest(r *http.Request) (*Request, error) {
+func NewRequest(r *http.Request) (*data.Request, error) {
 	path := strings.SplitN(r.URL.Path, "/", 3)
 	if len(path) != 3 {
 		return nil, URLError{"too few path segments", r.URL}
 	}
 
 	var err error
-	req := new(Request)
+	req := new(data.Request)
 
 	req.URL, err = url.Parse(path[2])
 	if err != nil {
@@ -55,27 +49,9 @@ func NewRequest(r *http.Request) (*Request, error) {
 
 	// query string is always part of the remote URL
 	req.URL.RawQuery = r.URL.RawQuery
-
-	var h, w string
-	size := strings.SplitN(path[1], "x", 2)
-	w = size[0]
-	if len(size) > 1 {
-		h = size[1]
-	} else {
-		h = w
-	}
-
-	if w != "" {
-		req.Width, err = strconv.Atoi(w)
-		if err != nil {
-			return nil, URLError{"width must be an int", r.URL}
-		}
-	}
-	if h != "" {
-		req.Height, err = strconv.Atoi(h)
-		if err != nil {
-			return nil, URLError{"height must be an int", r.URL}
-		}
+	req.Transform, err = data.ParseTransform(path[1])
+	if err != nil {
+		return nil, URLError{err.Error(), r.URL}
 	}
 
 	return req, nil
@@ -114,9 +90,8 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	defer resp.Body.Close()
-	data, err := ioutil.ReadAll(resp.Body)
+	_, err = io.Copy(w, resp.Body)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("error fetching remote image: %v", err.Error()), http.StatusInternalServerError)
 	}
-	w.Write(data)
 }
