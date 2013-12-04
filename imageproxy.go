@@ -11,13 +11,13 @@ import (
 	"github.com/willnorris/go-imageproxy/proxy"
 )
 
-var port = flag.Int("port", 8080, "port to listen on")
+var addr = flag.String("addr", "localhost:8080", "TCP address to listen on")
 var whitelist = flag.String("whitelist", "", "comma separated list of allowed remote hosts")
 
 func main() {
 	flag.Parse()
 
-	fmt.Printf("go-imageproxy listening on port %d\n", *port)
+	fmt.Printf("go-imageproxy listening on %s\n", *addr)
 
 	p := proxy.NewProxy(nil)
 	p.Cache = cache.NewMemoryCache()
@@ -25,7 +25,7 @@ func main() {
 		p.Whitelist = strings.Split(*whitelist, ",")
 	}
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%d", *port),
+		Addr:    *addr,
 		Handler: p,
 	}
 	err := server.ListenAndServe()
