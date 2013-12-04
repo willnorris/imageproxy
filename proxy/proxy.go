@@ -66,6 +66,9 @@ func NewRequest(r *http.Request) (*data.Request, error) {
 type Proxy struct {
 	Client *http.Client // client used to fetch remote URLs
 	Cache  cache.Cache
+
+	// Whitelist specifies a list of remote hosts that images can be proxied from.  An empty list means all hosts are allowed.
+	Whitelist []string
 }
 
 // NewProxy constructs a new proxy.  The provided http Client will be used to
@@ -87,6 +90,11 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	u := req.URL.String()
 	glog.Infof("request for image: %v", u)
+
+	if !p.allowed(req.URL) {
+		http.Error(w, fmt.Sprintf("remote URL is not for an allowed host: %v", req.URL.Host), http.StatusForbidden)
+		return
+	}
 
 	image, ok := p.Cache.Get(u)
 	if !ok {
@@ -151,6 +159,21 @@ func (p *Proxy) fetchRemoteImage(u string, cached *data.Image) (*data.Image, err
 		Etag:    resp.Header.Get("Etag"),
 		Bytes:   b,
 	}, nil
+}
+
+// allowed returns whether the specified URL is on the whitelist of remote hosts.
+func (p *Proxy) allowed(u *url.URL) bool {
+	if len(p.Whitelist) == 0 {
+		return true
+	}
+
+	for _, host := range p.Whitelist {
+		if u.Host == host {
+			return true
+		}
+	}
+
+	return false
 }
 
 func parseExpires(resp *http.Response) time.Time {
