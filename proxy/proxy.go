@@ -2,12 +2,17 @@
 package proxy
 
 import (
+	"errors"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
+	"time"
 
+	"github.com/golang/glog"
+	"github.com/willnorris/go-imageproxy/cache"
 	"github.com/willnorris/go-imageproxy/data"
 )
 
@@ -60,6 +65,7 @@ func NewRequest(r *http.Request) (*data.Request, error) {
 // Proxy serves image requests.
 type Proxy struct {
 	Client *http.Client // client used to fetch remote URLs
+	Cache  cache.Cache
 }
 
 // NewProxy constructs a new proxy.  The provided http Client will be used to
@@ -68,7 +74,7 @@ func NewProxy(client *http.Client) *Proxy {
 	if client == nil {
 		client = http.DefaultClient
 	}
-	return &Proxy{Client: client}
+	return &Proxy{Client: client, Cache: cache.NopCache}
 }
 
 // ServeHTTP handles image requests.
@@ -78,20 +84,85 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("invalid request URL: %v", err.Error()), http.StatusBadRequest)
 		return
 	}
-	resp, err := p.Client.Get(req.URL.String())
+
+	u := req.URL.String()
+	glog.Infof("request for image: %v", u)
+
+	image, ok := p.Cache.Get(u)
+	if !ok {
+		glog.Infof("image not cached")
+		image, err = p.fetchRemoteImage(u, nil)
+		if err != nil {
+			glog.Errorf("errorf fetching remote image: %v", err)
+		}
+		p.Cache.Save(image)
+	} else if time.Now().After(image.Expires) {
+		glog.Infof("cached image expired")
+		image, err = p.fetchRemoteImage(u, image)
+		if err != nil {
+			glog.Errorf("errorf fetching remote image: %v", err)
+		}
+		p.Cache.Save(image)
+	} else {
+		glog.Infof("serving from cache")
+	}
+
+	w.Header().Add("Content-Length", strconv.Itoa(len(image.Bytes)))
+	w.Header().Add("Expires", image.Expires.Format(time.RFC1123))
+	w.Write(image.Bytes)
+}
+
+func (p *Proxy) fetchRemoteImage(u string, cached *data.Image) (*data.Image, error) {
+	glog.Infof("fetching remote image: %s", u)
+
+	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("error fetching remote image: %v", err.Error()), http.StatusInternalServerError)
-		return
+		return nil, err
+	}
+
+	if cached != nil && cached.Etag != "" {
+		req.Header.Add("If-None-Match", cached.Etag)
+	}
+
+	resp, err := p.Client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode == http.StatusNotModified {
+		glog.Infof("remote image not modified (304 response)")
+		cached.Expires = parseExpires(resp)
+		return cached, nil
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		http.Error(w, fmt.Sprintf("error fetching remote image: %v", resp.Status), resp.StatusCode)
-		return
+		return nil, errors.New(fmt.Sprintf("HTTP status not OK: %v", resp.Status))
 	}
 
 	defer resp.Body.Close()
-	_, err = io.Copy(w, resp.Body)
+	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("error fetching remote image: %v", err.Error()), http.StatusInternalServerError)
+		return nil, err
 	}
+
+	return &data.Image{
+		URL:     u,
+		Expires: parseExpires(resp),
+		Etag:    resp.Header.Get("Etag"),
+		Bytes:   b,
+	}, nil
+}
+
+func parseExpires(resp *http.Response) time.Time {
+	exp := resp.Header.Get("Expires")
+	if exp == "" {
+		return time.Now()
+	}
+
+	t, err := time.Parse(time.RFC1123, exp)
+	if err != nil {
+		return time.Now()
+	}
+
+	return t
 }

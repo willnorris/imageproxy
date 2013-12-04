@@ -7,13 +7,14 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Transform specifies transformations that can be performed on a
 // requested image.
 type Transform struct {
-	Width  int `json:"width"`  // requested width, in pixels
-	Height int `json:"height"` // requested height, in pixels
+	Width  int // requested width, in pixels
+	Height int // requested height, in pixels
 }
 
 func (o Transform) String() string {
@@ -52,4 +53,21 @@ func ParseTransform(str string) (*Transform, error) {
 type Request struct {
 	URL       *url.URL   // URL of the image to proxy
 	Transform *Transform // Image transformation to perform
+}
+
+// Image represents a remote image that is being proxied.  It tracks where
+// the image was originally retrieved from and how long the image can be cached.
+type Image struct {
+	// URL of original remote image.
+	URL string
+
+	// Expires is the cache expiration time for the original image, as
+	// returned by the remote server.
+	Expires time.Time
+
+	// Etag returned from server when fetching image.
+	Etag string
+
+	// Bytes contains the actual image.
+	Bytes []byte
 }
