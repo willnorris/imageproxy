@@ -14,6 +14,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/willnorris/go-imageproxy/cache"
 	"github.com/willnorris/go-imageproxy/data"
+	"github.com/willnorris/go-imageproxy/transform"
 )
 
 // URLError reports a malformed URL error.
@@ -114,6 +115,8 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	} else {
 		glog.Infof("serving from cache")
 	}
+
+	image, _ = transform.Transform(*image, req.Options)
 
 	w.Header().Add("Content-Length", strconv.Itoa(len(image.Bytes)))
 	w.Header().Add("Expires", image.Expires.Format(time.RFC1123))
