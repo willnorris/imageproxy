@@ -10,19 +10,19 @@ import (
 	"time"
 )
 
-// Transform specifies transformations that can be performed on a
+// Options specifies transformations that can be performed on a
 // requested image.
-type Transform struct {
+type Options struct {
 	Width  int // requested width, in pixels
 	Height int // requested height, in pixels
 }
 
-func (o Transform) String() string {
+func (o Options) String() string {
 	return fmt.Sprintf("%dx%d", o.Width, o.Height)
 }
 
-func ParseTransform(str string) (*Transform, error) {
-	t := new(Transform)
+func ParseOptions(str string) (*Options, error) {
+	t := new(Options)
 	var err error
 	var h, w string
 
@@ -51,8 +51,8 @@ func ParseTransform(str string) (*Transform, error) {
 }
 
 type Request struct {
-	URL       *url.URL   // URL of the image to proxy
-	Transform *Transform // Image transformation to perform
+	URL     *url.URL // URL of the image to proxy
+	Options *Options // Image transformation to perform
 }
 
 // Image represents a remote image that is being proxied.  It tracks where

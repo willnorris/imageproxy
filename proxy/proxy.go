@@ -54,7 +54,7 @@ func NewRequest(r *http.Request) (*data.Request, error) {
 
 	// query string is always part of the remote URL
 	req.URL.RawQuery = r.URL.RawQuery
-	req.Transform, err = data.ParseTransform(path[1])
+	req.Options, err = data.ParseOptions(path[1])
 	if err != nil {
 		return nil, URLError{err.Error(), r.URL}
 	}
