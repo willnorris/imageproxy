@@ -2,71 +2,79 @@ package proxy
 
 import (
 	"net/http"
+	"reflect"
 	"testing"
+
+	"github.com/willnorris/go-imageproxy/data"
 )
+
+var emptyOptions = new(data.Options)
 
 func TestNewRequest(t *testing.T) {
 	tests := []struct {
 		URL         string
 		RemoteURL   string
-		Width       int
-		Height      int
+		Options     *data.Options
 		ExpectError bool
 	}{
 		// invalid URLs
 		{
-			"http://localhost/", "", 0, 0, true,
+			"http://localhost/", "", nil, true,
 		},
 		{
-			"http://localhost/1/", "", 0, 0, true,
+			"http://localhost/1/", "", nil, true,
 		},
 		{
-			"http://localhost//example.com/foo", "", 0, 0, true,
+			"http://localhost//example.com/foo", "", nil, true,
 		},
 		{
-			"http://localhost//ftp://example.com/foo", "", 0, 0, true,
+			"http://localhost//ftp://example.com/foo", "", nil, true,
 		},
 		{
-			"http://localhost/s/http://example.com/", "", 0, 0, true,
+			"http://localhost/s/http://example.com/", "", nil, true,
 		},
 		{
-			"http://localhost/1xs/http://example.com/", "", 0, 0, true,
+			"http://localhost/1xs/http://example.com/", "", nil, true,
 		},
 
 		// valid URLs
 		{
+			"http://localhost/http://example.com/foo",
+			"http://example.com/foo", nil, false,
+		},
+		{
 			"http://localhost//http://example.com/foo",
-			"http://example.com/foo", 0, 0, false,
+			"http://example.com/foo", emptyOptions, false,
 		},
 		{
 			"http://localhost//https://example.com/foo",
-			"https://example.com/foo", 0, 0, false,
+			"https://example.com/foo", emptyOptions, false,
 		},
 		{
 			"http://localhost//http://example.com/foo?bar",
-			"http://example.com/foo?bar", 0, 0, false,
+			"http://example.com/foo?bar", emptyOptions, false,
 		},
 
 		// size variations
 		{
 			"http://localhost/x/http://example.com/",
-			"http://example.com/", 0, 0, false,
+			"http://example.com/", emptyOptions, false,
 		},
 		{
 			"http://localhost/0/http://example.com/",
-			"http://example.com/", 0, 0, false,
+			"http://example.com/", emptyOptions, false,
 		},
 		{
 			"http://localhost/1x/http://example.com/",
-			"http://example.com/", 1, 0, false,
+			"http://example.com/", &data.Options{1, 0}, false,
 		},
 		{
 			"http://localhost/x1/http://example.com/",
-			"http://example.com/", 0, 1, false,
+			"http://example.com/", &data.Options{0, 1}, false,
 		},
 		{
 			"http://localhost/1x2/http://example.com/",
-			"http://example.com/", 1, 2, false,
+			"http://example.com/", &data.Options{1, 2}, false,
 		},
 	}
 
@@ -91,11 +99,8 @@ func TestNewRequest(t *testing.T) {
 		if got := r.URL.String(); tt.RemoteURL != got {
 			t.Errorf("%d. Request URL = %v, want %v", i, got, tt.RemoteURL)
 		}
-		if tt.Height != r.Height {
-			t.Errorf("%d. Request Height = %v, want %v", i, r.Height, tt.Height)
-		}
-		if tt.Width != r.Width {
-			t.Errorf("%d. Request Width = %v, want %v", i, r.Width, tt.Width)
+		if !reflect.DeepEqual(tt.Options, r.Options) {
+			t.Errorf("%d. Request Options = %v, want %v", i, r.Options, tt.Options)
 		}
 	}
 }

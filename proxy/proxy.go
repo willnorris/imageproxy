@@ -29,19 +29,26 @@ func (e URLError) Error() string {
 
 // NewRequest parses an http.Request into an image request.
 func NewRequest(r *http.Request) (*data.Request, error) {
-	path := strings.SplitN(r.URL.Path, "/", 3)
-	if len(path) != 3 {
-		return nil, URLError{"too few path segments", r.URL}
-	}
-
 	var err error
 	req := new(data.Request)
 
-	req.URL, err = url.Parse(path[2])
-	if err != nil {
-		return nil, URLError{
-			fmt.Sprintf("unable to parse remote URL: %v", err),
-			r.URL,
+	path := r.URL.Path[1:] // strip leading slash
+	req.URL, err = url.Parse(path)
+	if err != nil || !req.URL.IsAbs() {
+		// first segment is likely options
+		parts := strings.SplitN(path, "/", 2)
+		if len(parts) != 2 {
+			return nil, URLError{"too few path segments", r.URL}
+		}
+
+		req.URL, err = url.Parse(parts[1])
+		if err != nil {
+			return nil, URLError{fmt.Sprintf("unable to parse remote URL: %v", err), r.URL}
+		}
+
+		req.Options, err = data.ParseOptions(parts[0])
+		if err != nil {
+			return nil, URLError{err.Error(), r.URL}
 		}
 	}
 
@@ -55,11 +62,6 @@ func NewRequest(r *http.Request) (*data.Request, error) {
 
 	// query string is always part of the remote URL
 	req.URL.RawQuery = r.URL.RawQuery
-	req.Options, err = data.ParseOptions(path[1])
-	if err != nil {
-		return nil, URLError{err.Error(), r.URL}
-	}
-
 	return req, nil
 }
 
