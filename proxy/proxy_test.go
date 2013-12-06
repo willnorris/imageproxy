@@ -30,11 +30,15 @@ func TestNewRequest(t *testing.T) {
 		{
 			"http://localhost//ftp://example.com/foo", "", nil, true,
 		},
+
+		// invalid options.  These won't return errors, but will not fully parse the options
 		{
-			"http://localhost/s/http://example.com/", "", nil, true,
+			"http://localhost/s/http://example.com/",
+			"http://example.com/", emptyOptions, false,
 		},
 		{
-			"http://localhost/1xs/http://example.com/", "", nil, true,
+			"http://localhost/1xs/http://example.com/",
+			"http://example.com/", &data.Options{Width: 1}, false,
 		},
 
 		// valid URLs
@@ -66,15 +70,23 @@ func TestNewRequest(t *testing.T) {
 		},
 		{
 			"http://localhost/1x/http://example.com/",
-			"http://example.com/", &data.Options{1, 0}, false,
+			"http://example.com/", &data.Options{1, 0, false}, false,
 		},
 		{
 			"http://localhost/x1/http://example.com/",
-			"http://example.com/", &data.Options{0, 1}, false,
+			"http://example.com/", &data.Options{0, 1, false}, false,
 		},
 		{
 			"http://localhost/1x2/http://example.com/",
-			"http://example.com/", &data.Options{1, 2}, false,
+			"http://example.com/", &data.Options{1, 2, false}, false,
+		},
+		{
+			"http://localhost/,fit/http://example.com/",
+			"http://example.com/", &data.Options{0, 0, true}, false,
+		},
+		{
+			"http://localhost/1x2,fit/http://example.com/",
+			"http://example.com/", &data.Options{1, 2, true}, false,
 		},
 	}
 

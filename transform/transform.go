@@ -18,6 +18,14 @@ var emptyOptions = new(data.Options)
 // Transform the provided image.
 func Transform(img data.Image, opt *data.Options) (*data.Image, error) {
 	if opt == nil || reflect.DeepEqual(opt, emptyOptions) {
+		// bail if no transformation was requested
+		return &img, nil
+	}
+
+	if opt.Width == 0 && opt.Height == 0 {
+		// TODO(willnorris): Currently, only resize related options are
+		// supported, so bail if no sizes are specified.  Remove this
+		// check if we ever support non-resizing transformations.
 		return &img, nil
 	}
 
@@ -28,8 +36,10 @@ func Transform(img data.Image, opt *data.Options) (*data.Image, error) {
 	}
 
 	// resize
-	if opt.Width != 0 || opt.Height != 0 {
+	if opt.Fit {
 		m = imaging.Fit(m, opt.Width, opt.Height, imaging.Lanczos)
+	} else {
+		m = imaging.Resize(m, opt.Width, opt.Height, imaging.Lanczos)
 	}
 
 	// encode image

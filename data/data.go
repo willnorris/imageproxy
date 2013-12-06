@@ -2,7 +2,6 @@
 package data
 
 import (
-	"errors"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -15,18 +14,24 @@ import (
 type Options struct {
 	Width  int // requested width, in pixels
 	Height int // requested height, in pixels
+
+	// If true, resize the image to fit in the specified dimensions.  Image
+	// will not be cropped, and aspect ratio will be maintained.
+	Fit bool
 }
 
 func (o Options) String() string {
 	return fmt.Sprintf("%dx%d", o.Width, o.Height)
 }
 
-func ParseOptions(str string) (*Options, error) {
-	t := new(Options)
-	var err error
+func ParseOptions(str string) *Options {
+	o := new(Options)
 	var h, w string
 
-	size := strings.SplitN(str, "x", 2)
+	parts := strings.Split(str, ",")
+
+	// parse size
+	size := strings.SplitN(parts[0], "x", 2)
 	w = size[0]
 	if len(size) > 1 {
 		h = size[1]
@@ -35,19 +40,19 @@ func ParseOptions(str string) (*Options, error) {
 	}
 
 	if w != "" {
-		t.Width, err = strconv.Atoi(w)
-		if err != nil {
-			return nil, errors.New("width must be an int")
-		}
+		o.Width, _ = strconv.Atoi(w)
 	}
 	if h != "" {
-		t.Height, err = strconv.Atoi(h)
-		if err != nil {
-			return nil, errors.New("height must be an int")
+		o.Height, _ = strconv.Atoi(h)
+	}
+
+	for _, part := range parts[1:] {
+		if part == "fit" {
+			o.Fit = true
 		}
 	}
 
-	return t, nil
+	return o
 }
 
 type Request struct {

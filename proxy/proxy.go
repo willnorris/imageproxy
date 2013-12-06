@@ -46,10 +46,7 @@ func NewRequest(r *http.Request) (*data.Request, error) {
 			return nil, URLError{fmt.Sprintf("unable to parse remote URL: %v", err), r.URL}
 		}
 
-		req.Options, err = data.ParseOptions(parts[0])
-		if err != nil {
-			return nil, URLError{err.Error(), r.URL}
-		}
+		req.Options = data.ParseOptions(parts[0])
 	}
 
 	if !req.URL.IsAbs() {
