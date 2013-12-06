@@ -39,7 +39,11 @@ func Transform(img data.Image, opt *data.Options) (*data.Image, error) {
 	if opt.Fit {
 		m = imaging.Fit(m, opt.Width, opt.Height, imaging.Lanczos)
 	} else {
-		m = imaging.Resize(m, opt.Width, opt.Height, imaging.Lanczos)
+		if opt.Width == 0 || opt.Height == 0 {
+			m = imaging.Resize(m, opt.Width, opt.Height, imaging.Lanczos)
+		} else {
+			m = imaging.Thumbnail(m, opt.Width, opt.Height, imaging.Lanczos)
+		}
 	}
 
 	// encode image
