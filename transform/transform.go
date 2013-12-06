@@ -35,14 +35,26 @@ func Transform(img data.Image, opt *data.Options) (*data.Image, error) {
 		return nil, err
 	}
 
+	var h, w int
+	if opt.Width > 0 && opt.Width < 1 {
+		w = int(float64(m.Bounds().Max.X-m.Bounds().Min.X) * opt.Width)
+	} else {
+		w = int(opt.Width)
+	}
+	if opt.Height > 0 && opt.Height < 1 {
+		h = int(float64(m.Bounds().Max.Y-m.Bounds().Min.Y) * opt.Height)
+	} else {
+		h = int(opt.Height)
+	}
+
 	// resize
 	if opt.Fit {
-		m = imaging.Fit(m, opt.Width, opt.Height, imaging.Lanczos)
+		m = imaging.Fit(m, w, h, imaging.Lanczos)
 	} else {
 		if opt.Width == 0 || opt.Height == 0 {
-			m = imaging.Resize(m, opt.Width, opt.Height, imaging.Lanczos)
+			m = imaging.Resize(m, w, h, imaging.Lanczos)
 		} else {
-			m = imaging.Thumbnail(m, opt.Width, opt.Height, imaging.Lanczos)
+			m = imaging.Thumbnail(m, w, h, imaging.Lanczos)
 		}
 	}
 

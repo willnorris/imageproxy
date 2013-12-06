@@ -88,6 +88,10 @@ func TestNewRequest(t *testing.T) {
 			"http://localhost/1x2,fit/http://example.com/",
 			"http://example.com/", &data.Options{1, 2, true}, false,
 		},
+		{
+			"http://localhost/0.1x0.2,fit/http://example.com/",
+			"http://example.com/", &data.Options{0.1, 0.2, true}, false,
+		},
 	}
 
 	for i, tt := range tests {

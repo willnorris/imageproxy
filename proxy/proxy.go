@@ -91,11 +91,11 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if p.MaxWidth > 0 && req.Options.Width > p.MaxWidth {
-		req.Options.Width = p.MaxWidth
+	if p.MaxWidth > 0 && int(req.Options.Width) > p.MaxWidth {
+		req.Options.Width = float64(p.MaxWidth)
 	}
-	if p.MaxHeight > 0 && req.Options.Height > p.MaxHeight {
-		req.Options.Height = p.MaxHeight
+	if p.MaxHeight > 0 && int(req.Options.Height) > p.MaxHeight {
+		req.Options.Height = float64(p.MaxHeight)
 	}
 
 	u := req.URL.String()

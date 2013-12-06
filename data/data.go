@@ -12,8 +12,8 @@ import (
 // Options specifies transformations that can be performed on a
 // requested image.
 type Options struct {
-	Width  int // requested width, in pixels
-	Height int // requested height, in pixels
+	Width  float64 // requested width, in pixels
+	Height float64 // requested height, in pixels
 
 	// If true, resize the image to fit in the specified dimensions.  Image
 	// will not be cropped, and aspect ratio will be maintained.
@@ -21,7 +21,7 @@ type Options struct {
 }
 
 func (o Options) String() string {
-	return fmt.Sprintf("%dx%d", o.Width, o.Height)
+	return fmt.Sprintf("%vx%v", o.Width, o.Height)
 }
 
 func ParseOptions(str string) *Options {
@@ -40,10 +40,10 @@ func ParseOptions(str string) *Options {
 	}
 
 	if w != "" {
-		o.Width, _ = strconv.Atoi(w)
+		o.Width, _ = strconv.ParseFloat(w, 64)
 	}
 	if h != "" {
-		o.Height, _ = strconv.Atoi(h)
+		o.Height, _ = strconv.ParseFloat(h, 64)
 	}
 
 	for _, part := range parts[1:] {
