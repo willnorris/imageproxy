@@ -7,14 +7,17 @@ import (
 	"image/gif"
 	"image/jpeg"
 	"image/png"
+	"reflect"
 
-	"github.com/nfnt/resize"
+	"github.com/disintegration/imaging"
 	"github.com/willnorris/go-imageproxy/data"
 )
 
+var emptyOptions = new(data.Options)
+
 // Transform the provided image.
 func Transform(img data.Image, opt *data.Options) (*data.Image, error) {
-	if opt == nil {
+	if opt == nil || reflect.DeepEqual(opt, emptyOptions) {
 		return &img, nil
 	}
 
@@ -26,7 +29,7 @@ func Transform(img data.Image, opt *data.Options) (*data.Image, error) {
 
 	// resize
 	if opt.Width != 0 || opt.Height != 0 {
-		m = resize.Resize(uint(opt.Width), uint(opt.Height), m, resize.Lanczos3)
+		m = imaging.Fit(m, opt.Width, opt.Height, imaging.Lanczos)
 	}
 
 	// encode image
