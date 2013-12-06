@@ -21,6 +21,8 @@ func main() {
 
 	p := proxy.NewProxy(nil)
 	p.Cache = cache.NewMemoryCache()
+	p.MaxWidth = 2000
+	p.MaxHeight = 2000
 	if *whitelist != "" {
 		p.Whitelist = strings.Split(*whitelist, ",")
 	}

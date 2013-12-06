@@ -69,6 +69,9 @@ type Proxy struct {
 
 	// Whitelist specifies a list of remote hosts that images can be proxied from.  An empty list means all hosts are allowed.
 	Whitelist []string
+
+	MaxWidth  int
+	MaxHeight int
 }
 
 // NewProxy constructs a new proxy.  The provided http Client will be used to
@@ -86,6 +89,13 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, fmt.Sprintf("invalid request URL: %v", err.Error()), http.StatusBadRequest)
 		return
+	}
+
+	if p.MaxWidth > 0 && req.Options.Width > p.MaxWidth {
+		req.Options.Width = p.MaxWidth
+	}
+	if p.MaxHeight > 0 && req.Options.Height > p.MaxHeight {
+		req.Options.Height = p.MaxHeight
 	}
 
 	u := req.URL.String()
