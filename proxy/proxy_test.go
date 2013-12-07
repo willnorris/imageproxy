@@ -84,27 +84,27 @@ func TestNewRequest(t *testing.T) {
 		},
 		{
 			"http://localhost/1x/http://example.com/",
-			"http://example.com/", &data.Options{1, 0, false}, false,
+			"http://example.com/", &data.Options{1, 0, false, 0, false, false}, false,
 		},
 		{
 			"http://localhost/x1/http://example.com/",
-			"http://example.com/", &data.Options{0, 1, false}, false,
+			"http://example.com/", &data.Options{0, 1, false, 0, false, false}, false,
 		},
 		{
 			"http://localhost/1x2/http://example.com/",
-			"http://example.com/", &data.Options{1, 2, false}, false,
+			"http://example.com/", &data.Options{1, 2, false, 0, false, false}, false,
+		},
+		{
+			"http://localhost/0.1x0.2/http://example.com/",
+			"http://example.com/", &data.Options{0.1, 0.2, false, 0, false, false}, false,
 		},
 		{
 			"http://localhost/,fit/http://example.com/",
-			"http://example.com/", &data.Options{0, 0, true}, false,
+			"http://example.com/", &data.Options{0, 0, true, 0, false, false}, false,
 		},
 		{
-			"http://localhost/1x2,fit/http://example.com/",
-			"http://example.com/", &data.Options{1, 2, true}, false,
-		},
-		{
-			"http://localhost/0.1x0.2,fit/http://example.com/",
-			"http://example.com/", &data.Options{0.1, 0.2, true}, false,
+			"http://localhost/1x2,fit,r=90,fv,fh/http://example.com/",
+			"http://example.com/", &data.Options{1, 2, true, 90, true, true}, false,
 		},
 	}
 

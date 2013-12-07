@@ -73,6 +73,14 @@ func Transform(img data.Image, opt *data.Options) (*data.Image, error) {
 		}
 	}
 
+	// flip
+	if opt.FlipVertical {
+		m = imaging.FlipV(m)
+	}
+	if opt.FlipHorizontal {
+		m = imaging.FlipH(m)
+	}
+
 	// rotate
 	switch opt.Rotate {
 	case 90:

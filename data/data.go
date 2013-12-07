@@ -35,6 +35,9 @@ type Options struct {
 
 	// Rotate image the specified degrees counter-clockwise.  Valid values are 90, 180, 270.
 	Rotate int
+
+	FlipVertical   bool
+	FlipHorizontal bool
 }
 
 func (o Options) String() string {
@@ -68,6 +71,15 @@ func ParseOptions(str string) *Options {
 			o.Fit = true
 			continue
 		}
+		if part == "fv" {
+			o.FlipVertical = true
+			continue
+		}
+		if part == "fh" {
+			o.FlipHorizontal = true
+			continue
+		}
+
 		if len(part) > 2 && strings.HasPrefix(part, "r=") {
 			o.Rotate, _ = strconv.Atoi(part[2:])
 			continue
