@@ -24,19 +24,40 @@ go-imageproxy URLs are of the form `http://localhost/{options}/{remote_url}`.
 
 ### Options ###
 
-Currently, the options path segment follows the same structure as
-[resize.ly][].  You can specify:
+Options are specified as a comma delimited list of parameters, the first of
+which always specifies image size.  The format is a superset of [resize.ly's
+options](https://resize.ly/#demo).
 
- - square crop - one number, which is used as both the height and width.
-   (example: `500`)
- - rectangular crop - two numbers, separated by an 'x', resizes to the exact
-   dimensions (width listed first).  (example: `250x125`)
- - auto height (preserves aspect ratio) - one number to the left of the 'x',
-   resizes to a specific width, adjusting the height to preserve the
-   aspect ration (example: `160x`)
- - auto width (preserves aspect ratio) - one number to the right of the 'x',
-   resizes to a specific height, adjusting the width to preserve the
-   aspect ration (example: `x200`)
+#### Size ####
+
+The size option takes the general form `{width}x{height}`, where width and
+height are numbers.  Integer values greater than 1 are interpreted as exact
+pixel values.  Floats between 0 and 1 are interpreted as percentages of the
+original image size.  If either value is omitted or set to 0, it will be
+automatically set to preserve the aspect ratio based on the other dimension.
+If a single number is provided (with no "x" separator), it will be used for
+both height and width.
+
+#### Crop Mode ####
+
+Depending on the options specified, an image may be cropped to fit the
+requested size.  In all cases, the original aspect ratio of the image will be
+preserved; go-imageproxy will never stretch the original image.
+
+When no explicit crop mode is specified, the following rules are followed:
+
+ - If both width and height values are specified, the image will be scaled to
+   fill the space, cropping if necessary to fit the exact dimension.
+
+ - If only one of the width or height values is specified, the image will be
+   resized to fit the specified dimension, scaling the other dimension as
+   needed to maintain the aspect ratio.
+
+If the `fit` option is specified together with a width and height value, the
+image will be resized to fit within a containing box of the specified size.  As
+always, the original aspect ratio will be preserved. Specifying the `fit`
+option with only one of either width or height does the same thing as if `fit`
+had not been specified.
 
 ### Remote URL ###
 
@@ -48,6 +69,22 @@ In order to [optimize caching][], it is recommended that URLs not contain query
 strings.
 
 [optimize caching]: http://www.stevesouders.com/blog/2008/08/23/revving-filenames-dont-use-querystring/
+
+### Examples ###
+
+The following live examples demonstrate setting different options on [this
+source image][small-things], which measures 1024x678 pixels.
+
+[small-things]: https://willnorris.com/content/uploads/2013/12/small-things.jpg
+
+Options | Meaning                                  | Image
+--------|------------------------------------------|------
+200x    | 200px wide, proportional height          | ![200x](https://s.wjn.me/200x/https://willnorris.com/content/uploads/2013/12/small-things.jpg)
+0.15x   | 15% original width, proportional height  | ![0.15x](https://s.wjn.me/0.15x/https://willnorris.com/content/uploads/2013/12/small-things.jpg)
+x100    | 100px tall, proportional width           | ![x100](https://s.wjn.me/x100/https://willnorris.com/content/uploads/2013/12/small-things.jpg)
+100x150 | 100 by 150 pixels, cropping as needed    | ![100x150](https://s.wjn.me/100x150/https://willnorris.com/content/uploads/2013/12/small-things.jpg)
+100     | 100px square, cropping as needed         | ![100](https://s.wjn.me/100/https://willnorris.com/content/uploads/2013/12/small-things.jpg)
+150,fit | fit to be no more than 150 by 150 pixels | ![150,fit](https://s.wjn.me/150,fit/https://willnorris.com/content/uploads/2013/12/small-things.jpg)
 
 
 ## License ##
