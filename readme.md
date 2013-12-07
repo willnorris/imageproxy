@@ -73,7 +73,7 @@ strings.
 ### Examples ###
 
 The following live examples demonstrate setting different options on [this
-source image][small-things], which measures 1024x678 pixels.
+source image][small-things], which measures 1024 by 678 pixels.
 
 [small-things]: https://willnorris.com/content/uploads/2013/12/small-things.jpg
 
@@ -89,5 +89,5 @@ x100    | 100px tall, proportional width           | ![x100](https://s.wjn.me/x1
 
 ## License ##
 
-This application is distributed under the BSD-style license found in the
+This application is distributed under the Apache 2.0 license found in the
 [LICENSE](./LICENSE) file.
