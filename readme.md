@@ -59,6 +59,12 @@ always, the original aspect ratio will be preserved. Specifying the `fit`
 option with only one of either width or height does the same thing as if `fit`
 had not been specified.
 
+#### Rotate ####
+
+The `r={degrees}` option will rotate the image the specified number of degrees,
+counter-clockwise.  Valid degrees values are `90`, `180`, and `270`.  Images
+are rotated **after** being resized.
+
 ### Remote URL ###
 
 The URL of the original image to load is specified as the remainder of the
@@ -85,6 +91,7 @@ x100    | 100px tall, proportional width           | ![x100](https://s.wjn.me/x1
 100x150 | 100 by 150 pixels, cropping as needed    | ![100x150](https://s.wjn.me/100x150/https://willnorris.com/content/uploads/2013/12/small-things.jpg)
 100     | 100px square, cropping as needed         | ![100](https://s.wjn.me/100/https://willnorris.com/content/uploads/2013/12/small-things.jpg)
 150,fit | fit to be no more than 150 by 150 pixels | ![150,fit](https://s.wjn.me/150,fit/https://willnorris.com/content/uploads/2013/12/small-things.jpg)
+100,r=90| 100px square, rotated 90 degrees         | ![100,r=90](https://s.wjn.me/100,r=90/https://willnorris.com/content/uploads/2013/12/small-things.jpg)
 
 
 ## License ##

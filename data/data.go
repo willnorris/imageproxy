@@ -32,6 +32,9 @@ type Options struct {
 	// If true, resize the image to fit in the specified dimensions.  Image
 	// will not be cropped, and aspect ratio will be maintained.
 	Fit bool
+
+	// Rotate image the specified degrees counter-clockwise.  Valid values are 90, 180, 270.
+	Rotate int
 }
 
 func (o Options) String() string {
@@ -63,6 +66,11 @@ func ParseOptions(str string) *Options {
 	for _, part := range parts[1:] {
 		if part == "fit" {
 			o.Fit = true
+			continue
+		}
+		if len(part) > 2 && strings.HasPrefix(part, "r=") {
+			o.Rotate, _ = strconv.Atoi(part[2:])
+			continue
 		}
 	}
 

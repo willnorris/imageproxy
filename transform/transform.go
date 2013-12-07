@@ -49,6 +49,7 @@ func Transform(img data.Image, opt *data.Options) (*data.Image, error) {
 		return nil, err
 	}
 
+	// convert percentage width and height values to absolute values
 	var h, w int
 	if opt.Width > 0 && opt.Width < 1 {
 		w = int(float64(m.Bounds().Max.X-m.Bounds().Min.X) * opt.Width)
@@ -70,6 +71,19 @@ func Transform(img data.Image, opt *data.Options) (*data.Image, error) {
 		} else {
 			m = imaging.Thumbnail(m, w, h, imaging.Lanczos)
 		}
+	}
+
+	// rotate
+	switch opt.Rotate {
+	case 90:
+		m = imaging.Rotate90(m)
+		break
+	case 180:
+		m = imaging.Rotate180(m)
+		break
+	case 270:
+		m = imaging.Rotate270(m)
+		break
 	}
 
 	// encode image
