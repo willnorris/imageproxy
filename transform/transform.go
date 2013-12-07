@@ -36,13 +36,6 @@ func Transform(img data.Image, opt *data.Options) (*data.Image, error) {
 		return &img, nil
 	}
 
-	if opt.Width == 0 && opt.Height == 0 {
-		// TODO(willnorris): Currently, only resize related options are
-		// supported, so bail if no sizes are specified.  Remove this
-		// check if we ever support non-resizing transformations.
-		return &img, nil
-	}
-
 	// decode image
 	m, format, err := image.Decode(bytes.NewReader(img.Bytes))
 	if err != nil {
@@ -63,13 +56,15 @@ func Transform(img data.Image, opt *data.Options) (*data.Image, error) {
 	}
 
 	// resize
-	if opt.Fit {
-		m = imaging.Fit(m, w, h, imaging.Lanczos)
-	} else {
-		if opt.Width == 0 || opt.Height == 0 {
-			m = imaging.Resize(m, w, h, imaging.Lanczos)
+	if opt.Width != 0 && opt.Height != 0 {
+		if opt.Fit {
+			m = imaging.Fit(m, w, h, imaging.Lanczos)
 		} else {
-			m = imaging.Thumbnail(m, w, h, imaging.Lanczos)
+			if opt.Width == 0 || opt.Height == 0 {
+				m = imaging.Resize(m, w, h, imaging.Lanczos)
+			} else {
+				m = imaging.Thumbnail(m, w, h, imaging.Lanczos)
+			}
 		}
 	}
 
