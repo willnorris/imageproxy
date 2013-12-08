@@ -80,8 +80,8 @@ func ParseOptions(str string) *Options {
 			continue
 		}
 
-		if len(part) > 2 && strings.HasPrefix(part, "r=") {
-			o.Rotate, _ = strconv.Atoi(part[2:])
+		if len(part) > 2 && strings.HasPrefix(part, "r") {
+			o.Rotate, _ = strconv.Atoi(part[1:])
 			continue
 		}
 	}

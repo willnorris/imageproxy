@@ -61,7 +61,7 @@ had not been specified.
 
 #### Rotate ####
 
-The `r={degrees}` option will rotate the image the specified number of degrees,
+The `r{degrees}` option will rotate the image the specified number of degrees,
 counter-clockwise.  Valid degrees values are `90`, `180`, and `270`.  Images
 are rotated **after** being resized.
 
@@ -96,7 +96,7 @@ x100    | 100px tall, proportional width           | ![x100](https://s.wjn.me/x1
 100x150 | 100 by 150 pixels, cropping as needed    | ![100x150](https://s.wjn.me/100x150/https://willnorris.com/content/uploads/2013/12/small-things.jpg)
 100     | 100px square, cropping as needed         | ![100](https://s.wjn.me/100/https://willnorris.com/content/uploads/2013/12/small-things.jpg)
 150,fit | scale to fit 150px square, no cropping   | ![150,fit](https://s.wjn.me/150,fit/https://willnorris.com/content/uploads/2013/12/small-things.jpg)
-100,r=90| 100px square, rotated 90 degrees         | ![100,r=90](https://s.wjn.me/100,r=90/https://willnorris.com/content/uploads/2013/12/small-things.jpg)
+100,r90 | 100px square, rotated 90 degrees         | ![100,r90](https://s.wjn.me/100,r90/https://willnorris.com/content/uploads/2013/12/small-things.jpg)
 100,fv,fh | 100px square, flipped horizontal and vertical | ![100,fv,fh](https://s.wjn.me/100,fv,fh/https://willnorris.com/content/uploads/2013/12/small-things.jpg)
 
 
