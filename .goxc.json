@@ -1,6 +1,17 @@
 {
-	"ConfigVersion": "0.9",
 	"ArtifactsDest": "build",
-	"PackageVersion": "0.1",
-	"PrereleaseInfo": "snapshot"
+	"PackageVersion": "0.1.0",
+	"TaskSettings": {
+		"pkg-build": {
+			"metadata": {
+				"description": "imageproxy is a caching image proxy server",
+				"maintainer": "Will Norris (https://willnorris.com/)"
+			},
+			"metadata-deb": {
+				"Depends": "golang",
+				"Homepage": "https://github.com/willnorris/imageproxy"
+			}
+		}
+	},
+	"ConfigVersion": "0.9"
 }
