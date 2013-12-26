@@ -29,7 +29,8 @@ import (
 // goxc values
 var (
 	// VERSION is the version string for imageproxy.
-	VERSION string
+	VERSION = "HEAD"
+
 	// BUILD_DATE is the timestamp of when imageproxy was built.
 	BUILD_DATE string
 )
@@ -47,8 +48,6 @@ func main() {
 		return
 	}
 
-	fmt.Printf("imageproxy (version %v) listening on %s\n", VERSION, *addr)
-
 	var c httpcache.Cache
 	if *cacheDir != "" {
 		c = diskcache.New(*cacheDir)
@@ -62,10 +61,13 @@ func main() {
 	if *whitelist != "" {
 		p.Whitelist = strings.Split(*whitelist, ",")
 	}
+
 	server := &http.Server{
 		Addr:    *addr,
 		Handler: p,
 	}
+
+	fmt.Printf("imageproxy (version %v) listening on %s\n", VERSION, server.Addr)
 	err := server.ListenAndServe()
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
