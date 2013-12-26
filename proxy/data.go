@@ -16,6 +16,7 @@
 package proxy
 
 import (
+	"bytes"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -41,7 +42,21 @@ type Options struct {
 }
 
 func (o Options) String() string {
-	return fmt.Sprintf("%vx%v", o.Width, o.Height)
+	buf := new(bytes.Buffer)
+	fmt.Fprintf(buf, "%vx%v", o.Width, o.Height)
+	if o.Fit {
+		buf.WriteString(",fit")
+	}
+	if o.Rotate != 0 {
+		fmt.Fprintf(buf, ",r%d", o.Rotate)
+	}
+	if o.FlipVertical {
+		buf.WriteString(",fv")
+	}
+	if o.FlipHorizontal {
+		buf.WriteString(",fh")
+	}
+	return buf.String()
 }
 
 func ParseOptions(str string) *Options {
