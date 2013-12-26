@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Package data provides common shared data structures for imageproxy.
-package data
+package proxy
 
 import (
 	"fmt"

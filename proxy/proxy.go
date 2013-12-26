@@ -27,8 +27,6 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/gregjones/httpcache"
-	"github.com/willnorris/imageproxy/data"
-	"github.com/willnorris/imageproxy/transform"
 )
 
 // URLError reports a malformed URL error.
@@ -42,9 +40,9 @@ func (e URLError) Error() string {
 }
 
 // NewRequest parses an http.Request into an image request.
-func NewRequest(r *http.Request) (*data.Request, error) {
+func NewRequest(r *http.Request) (*Request, error) {
 	var err error
-	req := new(data.Request)
+	req := new(Request)
 
 	path := r.URL.Path[1:] // strip leading slash
 	req.URL, err = url.Parse(path)
@@ -60,7 +58,7 @@ func NewRequest(r *http.Request) (*data.Request, error) {
 			return nil, URLError{fmt.Sprintf("unable to parse remote URL: %v", err), r.URL}
 		}
 
-		req.Options = data.ParseOptions(parts[0])
+		req.Options = ParseOptions(parts[0])
 	}
 
 	if !req.URL.IsAbs() {
@@ -142,7 +140,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, _ := transform.Transform(image.Bytes, req.Options)
+	b, _ := Transform(image.Bytes, req.Options)
 	image.Bytes = b
 
 	w.Header().Add("Content-Length", strconv.Itoa(len(image.Bytes)))
@@ -150,7 +148,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Write(image.Bytes)
 }
 
-func (p *Proxy) fetchRemoteImage(u string) (*data.Image, error) {
+func (p *Proxy) fetchRemoteImage(u string) (*Image, error) {
 	resp, err := p.Client.Get(u)
 	if err != nil {
 		return nil, err
@@ -166,7 +164,7 @@ func (p *Proxy) fetchRemoteImage(u string) (*data.Image, error) {
 		return nil, err
 	}
 
-	return &data.Image{
+	return &Image{
 		URL:     u,
 		Expires: parseExpires(resp),
 		Etag:    resp.Header.Get("Etag"),

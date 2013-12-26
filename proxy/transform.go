@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Package transform handles image transformation such as resizing.
-package transform
+package proxy
 
 import (
 	"bytes"
@@ -24,13 +24,12 @@ import (
 	"reflect"
 
 	"github.com/disintegration/imaging"
-	"github.com/willnorris/imageproxy/data"
 )
 
-var emptyOptions = new(data.Options)
+var emptyOptions = new(Options)
 
 // Transform the provided image.
-func Transform(img []byte, opt *data.Options) ([]byte, error) {
+func Transform(img []byte, opt *Options) ([]byte, error) {
 	if opt == nil || reflect.DeepEqual(opt, emptyOptions) {
 		// bail if no transformation was requested
 		return img, nil
