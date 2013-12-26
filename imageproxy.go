@@ -21,7 +21,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/willnorris/go-imageproxy/cache"
+	"github.com/gregjones/httpcache"
 	"github.com/willnorris/go-imageproxy/proxy"
 )
 
@@ -33,8 +33,8 @@ func main() {
 
 	fmt.Printf("go-imageproxy listening on %s\n", *addr)
 
-	p := proxy.NewProxy(nil)
-	p.Cache = cache.NewMemoryCache()
+	c := httpcache.NewMemoryCache()
+	p := proxy.NewProxy(nil, c)
 	p.MaxWidth = 2000
 	p.MaxHeight = 2000
 	if *whitelist != "" {

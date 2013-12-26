@@ -26,7 +26,7 @@ import (
 	"time"
 
 	"github.com/golang/glog"
-	"github.com/willnorris/go-imageproxy/cache"
+	"github.com/gregjones/httpcache"
 	"github.com/willnorris/go-imageproxy/data"
 	"github.com/willnorris/go-imageproxy/transform"
 )
@@ -79,7 +79,7 @@ func NewRequest(r *http.Request) (*data.Request, error) {
 // Proxy serves image requests.
 type Proxy struct {
 	Client *http.Client // client used to fetch remote URLs
-	Cache  cache.Cache
+	Cache  Cache
 
 	// Whitelist specifies a list of remote hosts that images can be proxied from.  An empty list means all hosts are allowed.
 	Whitelist []string
@@ -90,11 +90,24 @@ type Proxy struct {
 
 // NewProxy constructs a new proxy.  The provided http Client will be used to
 // fetch remote URLs.  If nil is provided, http.DefaultClient will be used.
-func NewProxy(client *http.Client) *Proxy {
+func NewProxy(client *http.Client, cache Cache) *Proxy {
 	if client == nil {
 		client = http.DefaultClient
 	}
-	return &Proxy{Client: client, Cache: cache.NopCache}
+	if cache == nil {
+		cache = NopCache
+	}
+
+	return &Proxy{
+		Client: &http.Client{
+			Transport: &httpcache.Transport{
+				Transport:           client.Transport,
+				Cache:               cache,
+				MarkCachedResponses: true,
+			},
+		},
+		Cache: cache,
+	}
 }
 
 // ServeHTTP handles image requests.
@@ -122,23 +135,11 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	image, ok := p.Cache.Get(u)
-	if !ok {
-		glog.Infof("image not cached")
-		image, err = p.fetchRemoteImage(u, nil)
-		if err != nil {
-			glog.Errorf("error fetching remote image: %v", err)
-		}
-		p.Cache.Save(image)
-	} else if time.Now().After(image.Expires) {
-		glog.Infof("cached image expired")
-		image, err = p.fetchRemoteImage(u, image)
-		if err != nil {
-			glog.Errorf("error fetching remote image: %v", err)
-		}
-		p.Cache.Save(image)
-	} else {
-		glog.Infof("serving from cache")
+	image, err := p.fetchRemoteImage(u)
+	if err != nil {
+		glog.Errorf("error fetching remote image: %v", err)
+		http.Error(w, fmt.Sprintf("Error fetching remote image: %v", err), http.StatusInternalServerError)
+		return
 	}
 
 	image, _ = transform.Transform(*image, req.Options)
@@ -148,27 +149,11 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Write(image.Bytes)
 }
 
-func (p *Proxy) fetchRemoteImage(u string, cached *data.Image) (*data.Image, error) {
+func (p *Proxy) fetchRemoteImage(u string) (*data.Image, error) {
 	glog.Infof("fetching remote image: %s", u)
-
-	req, err := http.NewRequest("GET", u, nil)
+	resp, err := p.Client.Get(u)
 	if err != nil {
 		return nil, err
-	}
-
-	if cached != nil && cached.Etag != "" {
-		req.Header.Add("If-None-Match", cached.Etag)
-	}
-
-	resp, err := p.Client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode == http.StatusNotModified {
-		glog.Infof("remote image not modified (304 response)")
-		cached.Expires = parseExpires(resp)
-		return cached, nil
 	}
 
 	if resp.StatusCode != http.StatusOK {
