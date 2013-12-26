@@ -26,14 +26,28 @@ import (
 	"github.com/willnorris/go-imageproxy/proxy"
 )
 
+// goxc values
+var (
+	// VERSION is the version string for go-imageproxy.
+	VERSION string
+	// BUILD_DATE is the timestamp of when go-imageproxy was built.
+	BUILD_DATE string
+)
+
 var addr = flag.String("addr", "localhost:8080", "TCP address to listen on")
 var whitelist = flag.String("whitelist", "", "comma separated list of allowed remote hosts")
 var cacheDir = flag.String("cacheDir", "", "directory to use for file cache")
+var version = flag.Bool("version", false, "print version information")
 
 func main() {
 	flag.Parse()
 
-	fmt.Printf("go-imageproxy listening on %s\n", *addr)
+	if *version {
+		fmt.Printf("%v\nBuild: %v\n", VERSION, BUILD_DATE)
+		return
+	}
+
+	fmt.Printf("go-imageproxy (version %v) listening on %s\n", VERSION, *addr)
 
 	var c httpcache.Cache
 	if *cacheDir != "" {

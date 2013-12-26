@@ -1,0 +1,6 @@
+{
+	"ConfigVersion": "0.9",
+	"ArtifactsDest": "build",
+	"PackageVersion": "0.1",
+	"PrereleaseInfo": "snapshot"
+}
