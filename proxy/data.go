@@ -42,6 +42,8 @@ type Options struct {
 	FlipHorizontal bool
 }
 
+var emptyOptions = new(Options)
+
 func (o Options) String() string {
 	buf := new(bytes.Buffer)
 	fmt.Fprintf(buf, "%vx%v", o.Width, o.Height)

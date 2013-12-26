@@ -26,8 +26,6 @@ import (
 	"github.com/disintegration/imaging"
 )
 
-var emptyOptions = new(Options)
-
 // Transform the provided image.
 func Transform(img []byte, opt *Options) ([]byte, error) {
 	if opt == nil || reflect.DeepEqual(opt, emptyOptions) {
