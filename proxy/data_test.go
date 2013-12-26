@@ -14,7 +14,10 @@
 
 package proxy
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+)
 
 func TestOptions_String(t *testing.T) {
 	tests := []struct {
@@ -31,6 +34,37 @@ func TestOptions_String(t *testing.T) {
 	for i, tt := range tests {
 		if got, want := tt.Options.String(), tt.String; got != want {
 			t.Errorf("%d. Options.String returned %v, want %v", i, got, want)
+		}
+	}
+}
+
+func TestParseOptions(t *testing.T) {
+	tests := []struct {
+		Input   string
+		Options *Options
+	}{
+		{"", emptyOptions},
+		{"x", emptyOptions},
+		{"0", emptyOptions},
+
+		// size variations
+		{"1x", &Options{Width: 1}},
+		{"x1", &Options{Height: 1}},
+		{"1x2", &Options{Width: 1, Height: 2}},
+		{"0.1x0.2", &Options{Width: 0.1, Height: 0.2}},
+
+		// additional flags
+		{",fit", &Options{Fit: true}},
+		{",r90", &Options{Rotate: 90}},
+		{",fv", &Options{FlipVertical: true}},
+		{",fh", &Options{FlipHorizontal: true}},
+
+		{"1x2,fit,r90,fv,fh", &Options{1, 2, true, 90, true, true}},
+	}
+
+	for i, tt := range tests {
+		if got, want := ParseOptions(tt.Input), tt.Options; !reflect.DeepEqual(got, want) {
+			t.Errorf("%d. ParseOptions returned %#v, want %#v", i, got, want)
 		}
 	}
 }

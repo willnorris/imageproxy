@@ -20,6 +20,10 @@ import (
 	"testing"
 )
 
+// Test that request URLs are properly parsed into Options and RemoteURL.  This
+// test verifies that invalid remote URLs throw errors, and that valid
+// combinations of Options and URL are accept.  This does not exhaustively test
+// the various Options that can be specified; see TestParseOptions for that.
 func TestNewRequest(t *testing.T) {
 	tests := []struct {
 		URL         string
@@ -65,42 +69,12 @@ func TestNewRequest(t *testing.T) {
 			"https://example.com/foo", emptyOptions, false,
 		},
 		{
+			"http://localhost/1x2/http://example.com/foo",
+			"http://example.com/foo", &Options{Width: 1, Height: 2}, false,
+		},
+		{
 			"http://localhost//http://example.com/foo?bar",
 			"http://example.com/foo?bar", emptyOptions, false,
-		},
-
-		// size variations
-		{
-			"http://localhost/x/http://example.com/",
-			"http://example.com/", emptyOptions, false,
-		},
-		{
-			"http://localhost/0/http://example.com/",
-			"http://example.com/", emptyOptions, false,
-		},
-		{
-			"http://localhost/1x/http://example.com/",
-			"http://example.com/", &Options{1, 0, false, 0, false, false}, false,
-		},
-		{
-			"http://localhost/x1/http://example.com/",
-			"http://example.com/", &Options{0, 1, false, 0, false, false}, false,
-		},
-		{
-			"http://localhost/1x2/http://example.com/",
-			"http://example.com/", &Options{1, 2, false, 0, false, false}, false,
-		},
-		{
-			"http://localhost/0.1x0.2/http://example.com/",
-			"http://example.com/", &Options{0.1, 0.2, false, 0, false, false}, false,
-		},
-		{
-			"http://localhost/,fit/http://example.com/",
-			"http://example.com/", &Options{0, 0, true, 0, false, false}, false,
-		},
-		{
-			"http://localhost/1x2,fit,r90,fv,fh/http://example.com/",
-			"http://example.com/", &Options{1, 2, true, 90, true, true}, false,
 		},
 	}
 
