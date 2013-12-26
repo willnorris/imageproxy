@@ -151,7 +151,6 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (p *Proxy) fetchRemoteImage(u string) (*data.Image, error) {
-	glog.Infof("fetching remote image: %s", u)
 	resp, err := p.Client.Get(u)
 	if err != nil {
 		return nil, err
