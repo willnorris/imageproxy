@@ -22,18 +22,26 @@ import (
 	"strings"
 
 	"github.com/gregjones/httpcache"
+	"github.com/gregjones/httpcache/diskcache"
 	"github.com/willnorris/go-imageproxy/proxy"
 )
 
 var addr = flag.String("addr", "localhost:8080", "TCP address to listen on")
 var whitelist = flag.String("whitelist", "", "comma separated list of allowed remote hosts")
+var cacheDir = flag.String("cacheDir", "", "directory to use for file cache")
 
 func main() {
 	flag.Parse()
 
 	fmt.Printf("go-imageproxy listening on %s\n", *addr)
 
-	c := httpcache.NewMemoryCache()
+	var c httpcache.Cache
+	if *cacheDir != "" {
+		c = diskcache.New(*cacheDir)
+	} else {
+		c = httpcache.NewMemoryCache()
+	}
+
 	p := proxy.NewProxy(nil, c)
 	p.MaxWidth = 2000
 	p.MaxHeight = 2000
