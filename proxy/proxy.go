@@ -142,7 +142,8 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	image, _ = transform.Transform(*image, req.Options)
+	b, _ := transform.Transform(image.Bytes, req.Options)
+	image.Bytes = b
 
 	w.Header().Add("Content-Length", strconv.Itoa(len(image.Bytes)))
 	w.Header().Add("Expires", image.Expires.Format(time.RFC1123))

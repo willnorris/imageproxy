@@ -30,14 +30,14 @@ import (
 var emptyOptions = new(data.Options)
 
 // Transform the provided image.
-func Transform(img data.Image, opt *data.Options) (*data.Image, error) {
+func Transform(img []byte, opt *data.Options) ([]byte, error) {
 	if opt == nil || reflect.DeepEqual(opt, emptyOptions) {
 		// bail if no transformation was requested
-		return &img, nil
+		return img, nil
 	}
 
 	// decode image
-	m, format, err := image.Decode(bytes.NewReader(img.Bytes))
+	m, format, err := image.Decode(bytes.NewReader(img))
 	if err != nil {
 		return nil, err
 	}
@@ -103,6 +103,5 @@ func Transform(img data.Image, opt *data.Options) (*data.Image, error) {
 		break
 	}
 
-	img.Bytes = buf.Bytes()
-	return &img, nil
+	return buf.Bytes(), nil
 }
