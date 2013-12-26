@@ -56,11 +56,11 @@ func Transform(img data.Image, opt *data.Options) (*data.Image, error) {
 	}
 
 	// resize
-	if opt.Width != 0 && opt.Height != 0 {
+	if w != 0 || h != 0 {
 		if opt.Fit {
 			m = imaging.Fit(m, w, h, imaging.Lanczos)
 		} else {
-			if opt.Width == 0 || opt.Height == 0 {
+			if w == 0 || h == 0 {
 				m = imaging.Resize(m, w, h, imaging.Lanczos)
 			} else {
 				m = imaging.Thumbnail(m, w, h, imaging.Lanczos)
