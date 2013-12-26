@@ -23,14 +23,14 @@ import (
 
 	"github.com/gregjones/httpcache"
 	"github.com/gregjones/httpcache/diskcache"
-	"github.com/willnorris/go-imageproxy/proxy"
+	"github.com/willnorris/imageproxy/proxy"
 )
 
 // goxc values
 var (
-	// VERSION is the version string for go-imageproxy.
+	// VERSION is the version string for imageproxy.
 	VERSION string
-	// BUILD_DATE is the timestamp of when go-imageproxy was built.
+	// BUILD_DATE is the timestamp of when imageproxy was built.
 	BUILD_DATE string
 )
 
@@ -47,7 +47,7 @@ func main() {
 		return
 	}
 
-	fmt.Printf("go-imageproxy (version %v) listening on %s\n", VERSION, *addr)
+	fmt.Printf("imageproxy (version %v) listening on %s\n", VERSION, *addr)
 
 	var c httpcache.Cache
 	if *cacheDir != "" {

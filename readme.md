@@ -1,6 +1,6 @@
-# go-imageproxy #
+# imageproxy #
 
-go-imageproxy is a caching image proxy server written in golang.  It supports
+imageproxy is a caching image proxy server written in golang.  It supports
 dynamic image resizing and URL whitelisting.
 
 This project was inspired by, and is designed to be an alternative to,
@@ -20,7 +20,7 @@ building my own for fun.
 
 ## URL Structure ##
 
-go-imageproxy URLs are of the form `http://localhost/{options}/{remote_url}`.
+imageproxy URLs are of the form `http://localhost/{options}/{remote_url}`.
 
 ### Options ###
 
@@ -42,7 +42,7 @@ both height and width.
 
 Depending on the options specified, an image may be cropped to fit the
 requested size.  In all cases, the original aspect ratio of the image will be
-preserved; go-imageproxy will never stretch the original image.
+preserved; imageproxy will never stretch the original image.
 
 When no explicit crop mode is specified, the following rules are followed:
 

@@ -27,8 +27,8 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/gregjones/httpcache"
-	"github.com/willnorris/go-imageproxy/data"
-	"github.com/willnorris/go-imageproxy/transform"
+	"github.com/willnorris/imageproxy/data"
+	"github.com/willnorris/imageproxy/transform"
 )
 
 // URLError reports a malformed URL error.

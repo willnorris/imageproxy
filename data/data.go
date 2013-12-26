@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package data provides common shared data structures for go-imageproxy.
+// Package data provides common shared data structures for imageproxy.
 package data
 
 import (

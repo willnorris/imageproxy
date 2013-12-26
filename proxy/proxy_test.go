@@ -19,7 +19,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/willnorris/go-imageproxy/data"
+	"github.com/willnorris/imageproxy/data"
 )
 
 var emptyOptions = new(data.Options)
