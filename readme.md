@@ -24,9 +24,10 @@ imageproxy URLs are of the form `http://localhost/{options}/{remote_url}`.
 
 ### Options ###
 
-Options are specified as a comma delimited list of parameters, the first of
-which always specifies image size.  The format is a superset of [resize.ly's
-options](https://resize.ly/#demo).
+Options are specified as a comma delimited list of parameters, which can be
+supplied in any order.  Duplicate parameters overwrite previous values.  
+
+The format is a superset of [resize.ly's options](https://resize.ly/#demo).
 
 #### Size ####
 

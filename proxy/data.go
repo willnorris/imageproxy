@@ -61,27 +61,9 @@ func (o Options) String() string {
 
 func ParseOptions(str string) *Options {
 	o := new(Options)
-	var h, w string
 
 	parts := strings.Split(str, ",")
-
-	// parse size
-	size := strings.SplitN(parts[0], "x", 2)
-	w = size[0]
-	if len(size) > 1 {
-		h = size[1]
-	} else {
-		h = w
-	}
-
-	if w != "" {
-		o.Width, _ = strconv.ParseFloat(w, 64)
-	}
-	if h != "" {
-		o.Height, _ = strconv.ParseFloat(h, 64)
-	}
-
-	for _, part := range parts[1:] {
+	for _, part := range parts {
 		if part == "fit" {
 			o.Fit = true
 			continue
@@ -95,8 +77,33 @@ func ParseOptions(str string) *Options {
 			continue
 		}
 
-		if len(part) > 2 && strings.HasPrefix(part, "r") {
+		if len(part) > 2 && part[:1] == "r" {
 			o.Rotate, _ = strconv.Atoi(part[1:])
+			continue
+		}
+
+		if strings.ContainsRune(part, 'x') {
+			var h, w string
+			size := strings.SplitN(part, "x", 2)
+			w = size[0]
+			if len(size) > 1 {
+				h = size[1]
+			} else {
+				h = w
+			}
+
+			if w != "" {
+				o.Width, _ = strconv.ParseFloat(w, 64)
+			}
+			if h != "" {
+				o.Height, _ = strconv.ParseFloat(h, 64)
+			}
+			continue
+		}
+
+		if size, err := strconv.ParseFloat(part, 64); err == nil {
+			o.Width = size
+			o.Height = size
 			continue
 		}
 	}

@@ -46,6 +46,7 @@ func TestParseOptions(t *testing.T) {
 		{"", emptyOptions},
 		{"x", emptyOptions},
 		{"0", emptyOptions},
+		{",,,,", emptyOptions},
 
 		// size variations
 		{"1x", &Options{Width: 1}},
@@ -54,12 +55,23 @@ func TestParseOptions(t *testing.T) {
 		{"0.1x0.2", &Options{Width: 0.1, Height: 0.2}},
 
 		// additional flags
-		{",fit", &Options{Fit: true}},
-		{",r90", &Options{Rotate: 90}},
-		{",fv", &Options{FlipVertical: true}},
-		{",fh", &Options{FlipHorizontal: true}},
+		{"fit", &Options{Fit: true}},
+		{"r90", &Options{Rotate: 90}},
+		{"fv", &Options{FlipVertical: true}},
+		{"fh", &Options{FlipHorizontal: true}},
+
+		// duplicate flags (last one wins)
+		{"1x2,3x4", &Options{Width: 3, Height: 4}},
+		{"1x2,3", &Options{Width: 3, Height: 3}},
+		{"1x2,0x3", &Options{Width: 0, Height: 3}},
+		{"1x,x2", &Options{Width: 1, Height: 2}},
+		{"r90,r270", &Options{Rotate: 270}},
+
+		// mix of valid and invalid flags
+		{"FOO,1,BAR,r90,BAZ", &Options{Width: 1, Height: 1, Rotate: 90}},
 
 		{"1x2,fit,r90,fv,fh", &Options{1, 2, true, 90, true, true}},
+		{"r90,fh,1x2,fv,fit", &Options{1, 2, true, 90, true, true}},
 	}
 
 	for i, tt := range tests {
