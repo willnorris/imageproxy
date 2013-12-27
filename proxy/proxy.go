@@ -83,8 +83,8 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !p.allowed(req.URL) {
-		glog.Errorf("remote URL is not for an allowed host: %v", req.URL.Host)
-		http.Error(w, fmt.Sprintf("remote URL is not for an allowed host: %v", req.URL.Host), http.StatusBadRequest)
+		glog.Errorf("remote URL is not for an allowed host: %v", req.URL)
+		http.Error(w, fmt.Sprintf("remote URL is not for an allowed host: %v", req.URL), http.StatusBadRequest)
 		return
 	}
 
