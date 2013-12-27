@@ -24,6 +24,7 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"time"
 
 	"github.com/golang/glog"
 	"github.com/gregjones/httpcache"
@@ -102,9 +103,16 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Add("Content-Length", resp.Header.Get("Content-Length"))
+	w.Header().Add("Last-Modified", resp.Header.Get("Last-Modified"))
 	w.Header().Add("Expires", resp.Header.Get("Expires"))
+	w.Header().Add("Etag", resp.Header.Get("Etag"))
 
+	if is304 := check304(w, r, resp); is304 {
+		w.WriteHeader(http.StatusNotModified)
+		return
+	}
+
+	w.Header().Add("Content-Length", resp.Header.Get("Content-Length"))
 	defer resp.Body.Close()
 	io.Copy(w, resp.Body)
 }
@@ -119,6 +127,27 @@ func (p *Proxy) allowed(u *url.URL) bool {
 		if u.Host == host {
 			return true
 		}
+	}
+
+	return false
+}
+
+func check304(w http.ResponseWriter, req *http.Request, resp *http.Response) bool {
+	etag := resp.Header.Get("Etag")
+	if etag != "" && etag == req.Header.Get("If-None-Match") {
+		return true
+	}
+
+	lastModified, err := time.Parse(time.RFC1123, resp.Header.Get("Last-Modified"))
+	if err != nil {
+		return false
+	}
+	ifModSince, err := time.Parse(time.RFC1123, req.Header.Get("If-Modified-Since"))
+	if err != nil {
+		return false
+	}
+	if lastModified.Before(ifModSince) {
+		return true
 	}
 
 	return false
