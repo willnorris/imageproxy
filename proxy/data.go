@@ -22,8 +22,17 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 )
+
+// URLError reports a malformed URL error.
+type URLError struct {
+	Message string
+	URL     *url.URL
+}
+
+func (e URLError) Error() string {
+	return fmt.Sprintf("malformed URL %q: %s", e.URL, e.Message)
+}
 
 // Options specifies transformations that can be performed on a
 // requested image.
@@ -152,21 +161,4 @@ func NewRequest(r *http.Request) (*Request, error) {
 	// query string is always part of the remote URL
 	req.URL.RawQuery = r.URL.RawQuery
 	return req, nil
-}
-
-// Image represents a remote image that is being proxied.  It tracks where
-// the image was originally retrieved from and how long the image can be cached.
-type Image struct {
-	// URL of original remote image.
-	URL string
-
-	// Expires is the cache expiration time for the original image, as
-	// returned by the remote server.
-	Expires time.Time
-
-	// Etag returned from server when fetching image.
-	Etag string
-
-	// Bytes contains the actual image.
-	Bytes []byte
 }

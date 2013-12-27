@@ -16,27 +16,18 @@
 package proxy
 
 import (
-	"errors"
+	"bufio"
+	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"strconv"
-	"time"
+	"reflect"
 
 	"github.com/golang/glog"
 	"github.com/gregjones/httpcache"
 )
-
-// URLError reports a malformed URL error.
-type URLError struct {
-	Message string
-	URL     *url.URL
-}
-
-func (e URLError) Error() string {
-	return fmt.Sprintf("malformed URL %q: %s", e.URL, e.Message)
-}
 
 // Proxy serves image requests.
 type Proxy struct {
@@ -52,23 +43,24 @@ type Proxy struct {
 
 // NewProxy constructs a new proxy.  The provided http Client will be used to
 // fetch remote URLs.  If nil is provided, http.DefaultClient will be used.
-func NewProxy(client *http.Client, cache Cache) *Proxy {
-	if client == nil {
-		client = http.DefaultClient
+func NewProxy(transport http.RoundTripper, cache Cache) *Proxy {
+	if transport == nil {
+		transport = http.DefaultTransport
 	}
 	if cache == nil {
 		cache = NopCache
 	}
 
+	client := new(http.Client)
+	client.Transport = &httpcache.Transport{
+		Transport:           &TransformingTransport{transport, client},
+		Cache:               cache,
+		MarkCachedResponses: true,
+	}
+
 	return &Proxy{
-		Client: &http.Client{
-			Transport: &httpcache.Transport{
-				Transport:           client.Transport,
-				Cache:               cache,
-				MarkCachedResponses: true,
-			},
-		},
-		Cache: cache,
+		Client: client,
+		Cache:  cache,
 	}
 }
 
@@ -88,52 +80,33 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		req.Options.Height = float64(p.MaxHeight)
 	}
 
-	u := req.URL.String()
-	glog.Infof("request for image: %v", u)
-
 	if !p.allowed(req.URL) {
 		glog.Errorf("remote URL is not for an allowed host: %v", req.URL.Host)
 		http.Error(w, fmt.Sprintf("remote URL is not for an allowed host: %v", req.URL.Host), http.StatusBadRequest)
 		return
 	}
 
-	image, err := p.fetchRemoteImage(u)
+	u := req.URL.String()
+	if req.Options != nil && !reflect.DeepEqual(req.Options, emptyOptions) {
+		u += "#" + req.Options.String()
+	}
+	resp, err := p.Client.Get(u)
 	if err != nil {
 		glog.Errorf("error fetching remote image: %v", err)
 		http.Error(w, fmt.Sprintf("Error fetching remote image: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	b, _ := Transform(image.Bytes, req.Options)
-	image.Bytes = b
-
-	w.Header().Add("Content-Length", strconv.Itoa(len(image.Bytes)))
-	w.Header().Add("Expires", image.Expires.Format(time.RFC1123))
-	w.Write(image.Bytes)
-}
-
-func (p *Proxy) fetchRemoteImage(u string) (*Image, error) {
-	resp, err := p.Client.Get(u)
-	if err != nil {
-		return nil, err
-	}
-
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New(fmt.Sprintf("HTTP status not OK: %v", resp.Status))
+		http.Error(w, fmt.Sprintf("Remote URL %q returned status: %v", req.URL, resp.Status), http.StatusInternalServerError)
+		return
 	}
+
+	w.Header().Add("Content-Length", resp.Header.Get("Content-Length"))
+	w.Header().Add("Expires", resp.Header.Get("Expires"))
 
 	defer resp.Body.Close()
-	b, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Image{
-		URL:     u,
-		Expires: parseExpires(resp),
-		Etag:    resp.Header.Get("Etag"),
-		Bytes:   b,
-	}, nil
+	io.Copy(w, resp.Body)
 }
 
 // allowed returns whether the specified URL is on the whitelist of remote hosts.
@@ -151,16 +124,47 @@ func (p *Proxy) allowed(u *url.URL) bool {
 	return false
 }
 
-func parseExpires(resp *http.Response) time.Time {
-	exp := resp.Header.Get("Expires")
-	if exp == "" {
-		return time.Now()
+// TransformingTransport is an implementation of http.RoundTripper that
+// optionally transforms images using the options specified in the request URL
+// fragment.
+type TransformingTransport struct {
+	// Transport is used to satisfy non-transform requests (those that do not include a URL fragment)
+	Transport http.RoundTripper
+
+	// Client is used to fetch images to be resized.
+	Client *http.Client
+}
+
+// RoundTrip implements http.RoundTripper.
+func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	if req.URL.Fragment == "" {
+		// normal requests pass through
+		glog.Infof("fetching remote URL: %v", req.URL)
+		return t.Transport.RoundTrip(req)
 	}
 
-	t, err := time.Parse(time.RFC1123, exp)
+	u := *req.URL
+	u.Fragment = ""
+	resp, err := t.Client.Get(u.String())
+
+	defer resp.Body.Close()
+	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return time.Now()
+		return nil, err
 	}
 
-	return t
+	opt := ParseOptions(req.URL.Fragment)
+	img, err := Transform(b, opt)
+	if err != nil {
+		img = b
+	}
+
+	// replay response with transformed image and updated content length
+	buf := new(bytes.Buffer)
+	fmt.Fprintf(buf, "%s %s\n", resp.Proto, resp.Status)
+	resp.Header.WriteSubset(buf, map[string]bool{"Content-Length": true})
+	fmt.Fprintf(buf, "Content-Length: %d\n\n", len(img))
+	buf.Write(img)
+
+	return http.ReadResponse(bufio.NewReader(buf), req)
 }
