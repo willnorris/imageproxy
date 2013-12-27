@@ -24,6 +24,7 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/golang/glog"
@@ -125,6 +126,9 @@ func (p *Proxy) allowed(u *url.URL) bool {
 
 	for _, host := range p.Whitelist {
 		if u.Host == host {
+			return true
+		}
+		if strings.HasPrefix(host, "*.") && strings.HasSuffix(u.Host, host[2:]) {
 			return true
 		}
 	}
