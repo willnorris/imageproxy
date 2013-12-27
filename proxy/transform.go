@@ -40,16 +40,26 @@ func Transform(img []byte, opt *Options) ([]byte, error) {
 	}
 
 	// convert percentage width and height values to absolute values
+	imgW := m.Bounds().Max.X - m.Bounds().Min.X
+	imgH := m.Bounds().Max.Y - m.Bounds().Min.Y
 	var h, w int
 	if opt.Width > 0 && opt.Width < 1 {
-		w = int(float64(m.Bounds().Max.X-m.Bounds().Min.X) * opt.Width)
+		w = int(float64(imgW) * opt.Width)
 	} else {
 		w = int(opt.Width)
 	}
 	if opt.Height > 0 && opt.Height < 1 {
-		h = int(float64(m.Bounds().Max.Y-m.Bounds().Min.Y) * opt.Height)
+		h = int(float64(imgH) * opt.Height)
 	} else {
 		h = int(opt.Height)
+	}
+
+	// never resize larger than the original image
+	if w > imgW {
+		w = imgW
+	}
+	if h > imgH {
+		h = imgH
 	}
 
 	// resize
