@@ -103,7 +103,7 @@ func Transform(img []byte, opt *Options) ([]byte, error) {
 		gif.Encode(buf, m, nil)
 		break
 	case "jpeg":
-		jpeg.Encode(buf, m, nil)
+		jpeg.Encode(buf, m, &jpeg.Options{95})
 		break
 	case "png":
 		png.Encode(buf, m)
