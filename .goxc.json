@@ -9,7 +9,7 @@
 			},
 			"metadata-deb": {
 				"Depends": "golang",
-				"Homepage": "https://github.com/willnorris/imageproxy"
+				"Homepage": "https://willnorris.com/go/imageproxy"
 			}
 		}
 	},

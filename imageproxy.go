@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// imageproxy starts an HTTP server that proxies requests for remote images.
 package main
 
 import (
@@ -23,7 +24,7 @@ import (
 
 	"github.com/gregjones/httpcache"
 	"github.com/gregjones/httpcache/diskcache"
-	"github.com/willnorris/imageproxy/proxy"
+	"willnorris.com/go/imageproxy/proxy"
 )
 
 // goxc values
