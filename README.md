@@ -87,18 +87,18 @@ strings.
 The following live examples demonstrate setting different options on [this
 source image][small-things], which measures 1024 by 678 pixels.
 
-[small-things]: https://willnorris.com/content/uploads/2013/12/small-things.jpg
+[small-things]: https://willnorris.com/2013/12/small-things.jpg
 
 Options | Meaning                                  | Image
 --------|------------------------------------------|------
-200x    | 200px wide, proportional height          | ![200x](https://s.wjn.me/200x/https://willnorris.com/content/uploads/2013/12/small-things.jpg)
-0.15x   | 15% original width, proportional height  | ![0.15x](https://s.wjn.me/0.15x/https://willnorris.com/content/uploads/2013/12/small-things.jpg)
-x100    | 100px tall, proportional width           | ![x100](https://s.wjn.me/x100/https://willnorris.com/content/uploads/2013/12/small-things.jpg)
-100x150 | 100 by 150 pixels, cropping as needed    | ![100x150](https://s.wjn.me/100x150/https://willnorris.com/content/uploads/2013/12/small-things.jpg)
-100     | 100px square, cropping as needed         | ![100](https://s.wjn.me/100/https://willnorris.com/content/uploads/2013/12/small-things.jpg)
-150,fit | scale to fit 150px square, no cropping   | ![150,fit](https://s.wjn.me/150,fit/https://willnorris.com/content/uploads/2013/12/small-things.jpg)
-100,r90 | 100px square, rotated 90 degrees         | ![100,r90](https://s.wjn.me/100,r90/https://willnorris.com/content/uploads/2013/12/small-things.jpg)
-100,fv,fh | 100px square, flipped horizontal and vertical | ![100,fv,fh](https://s.wjn.me/100,fv,fh/https://willnorris.com/content/uploads/2013/12/small-things.jpg)
+200x    | 200px wide, proportional height          | ![200x](https://s.wjn.me/200x/https://willnorris.com/2013/12/small-things.jpg)
+0.15x   | 15% original width, proportional height  | ![0.15x](https://s.wjn.me/0.15x/https://willnorris.com/2013/12/small-things.jpg)
+x100    | 100px tall, proportional width           | ![x100](https://s.wjn.me/x100/https://willnorris.com/2013/12/small-things.jpg)
+100x150 | 100 by 150 pixels, cropping as needed    | ![100x150](https://s.wjn.me/100x150/https://willnorris.com/2013/12/small-things.jpg)
+100     | 100px square, cropping as needed         | ![100](https://s.wjn.me/100/https://willnorris.com/2013/12/small-things.jpg)
+150,fit | scale to fit 150px square, no cropping   | ![150,fit](https://s.wjn.me/150,fit/https://willnorris.com/2013/12/small-things.jpg)
+100,r90 | 100px square, rotated 90 degrees         | ![100,r90](https://s.wjn.me/100,r90/https://willnorris.com/2013/12/small-things.jpg)
+100,fv,fh | 100px square, flipped horizontal and vertical | ![100,fv,fh](https://s.wjn.me/100,fv,fh/https://willnorris.com/2013/12/small-things.jpg)
 
 
 ## License ##
