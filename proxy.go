@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Package proxy provides the image proxy.
-package proxy
+package imageproxy
 
 import (
 	"bufio"

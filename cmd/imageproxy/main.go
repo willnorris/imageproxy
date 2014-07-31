@@ -24,7 +24,7 @@ import (
 
 	"github.com/gregjones/httpcache"
 	"github.com/gregjones/httpcache/diskcache"
-	"willnorris.com/go/imageproxy/proxy"
+	"willnorris.com/go/imageproxy"
 )
 
 // goxc values
@@ -56,7 +56,7 @@ func main() {
 		c = httpcache.NewMemoryCache()
 	}
 
-	p := proxy.NewProxy(nil, c)
+	p := imageproxy.NewProxy(nil, c)
 	p.MaxWidth = 2000
 	p.MaxHeight = 2000
 	if *whitelist != "" {

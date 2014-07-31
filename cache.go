@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package proxy
+package imageproxy
 
 // The Cache interface defines a cache for storing arbitrary data.  The
 // interface is designed to align with httpcache.Cache.

@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package transform handles image transformation such as resizing.
-package proxy
+package imageproxy
 
 import (
 	"bytes"

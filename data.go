@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Package data provides common shared data structures for imageproxy.
-package proxy
+package imageproxy
 
 import (
 	"bytes"
