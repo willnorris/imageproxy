@@ -1,6 +1,6 @@
 {
 	"ArtifactsDest": "build",
-	"PackageVersion": "0.2.0",
+	"PackageVersion": "0.2.1",
 	"TaskSettings": {
 		"pkg-build": {
 			"metadata": {
@@ -8,7 +8,6 @@
 				"maintainer": "Will Norris (https://willnorris.com/)"
 			},
 			"metadata-deb": {
-				"Depends": "golang",
 				"Homepage": "https://willnorris.com/go/imageproxy"
 			}
 		}
