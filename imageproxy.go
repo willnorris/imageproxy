@@ -168,6 +168,9 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 	u := *req.URL
 	u.Fragment = ""
 	resp, err := t.Client.Get(u.String())
+	if err != nil {
+		return nil, err
+	}
 
 	defer resp.Body.Close()
 	b, err := ioutil.ReadAll(resp.Body)
