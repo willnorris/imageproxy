@@ -86,13 +86,10 @@ func Transform(img []byte, opt *Options) ([]byte, error) {
 	switch opt.Rotate {
 	case 90:
 		m = imaging.Rotate90(m)
-		break
 	case 180:
 		m = imaging.Rotate180(m)
-		break
 	case 270:
 		m = imaging.Rotate270(m)
-		break
 	}
 
 	// encode image
@@ -100,13 +97,10 @@ func Transform(img []byte, opt *Options) ([]byte, error) {
 	switch format {
 	case "gif":
 		gif.Encode(buf, m, nil)
-		break
 	case "jpeg":
 		jpeg.Encode(buf, m, &jpeg.Options{95})
-		break
 	case "png":
 		png.Encode(buf, m)
-		break
 	}
 
 	return buf.Bytes(), nil
