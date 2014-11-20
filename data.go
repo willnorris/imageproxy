@@ -51,7 +51,7 @@ type Options struct {
 	FlipHorizontal bool
 }
 
-var emptyOptions = new(Options)
+var emptyOptions = Options{}
 
 func (o Options) String() string {
 	buf := new(bytes.Buffer)
@@ -71,8 +71,8 @@ func (o Options) String() string {
 	return buf.String()
 }
 
-func ParseOptions(str string) *Options {
-	o := new(Options)
+func ParseOptions(str string) Options {
+	o := Options{}
 
 	parts := strings.Split(str, ",")
 	for _, part := range parts {
@@ -125,7 +125,7 @@ func ParseOptions(str string) *Options {
 
 type Request struct {
 	URL     *url.URL // URL of the image to proxy
-	Options *Options // Image transformation to perform
+	Options Options  // Image transformation to perform
 }
 
 // NewRequest parses an http.Request into an image request.

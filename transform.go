@@ -20,7 +20,6 @@ import (
 	"image/gif"
 	"image/jpeg"
 	"image/png"
-	"reflect"
 
 	"github.com/disintegration/imaging"
 )
@@ -29,8 +28,8 @@ import (
 const jpegQuality = 95
 
 // Transform the provided image.
-func Transform(img []byte, opt *Options) ([]byte, error) {
-	if opt == nil || reflect.DeepEqual(opt, emptyOptions) {
+func Transform(img []byte, opt Options) ([]byte, error) {
+	if opt == emptyOptions {
 		// bail if no transformation was requested
 		return img, nil
 	}

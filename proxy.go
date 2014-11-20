@@ -23,7 +23,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"reflect"
 	"strings"
 	"time"
 
@@ -79,7 +78,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	u := req.URL.String()
-	if req.Options != nil && !reflect.DeepEqual(req.Options, emptyOptions) {
+	if req.Options != emptyOptions {
 		u += "#" + req.Options.String()
 	}
 	resp, err := p.Client.Get(u)

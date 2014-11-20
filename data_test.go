@@ -16,18 +16,20 @@ package imageproxy
 
 import (
 	"net/http"
-	"reflect"
 	"testing"
 )
 
 func TestOptions_String(t *testing.T) {
 	tests := []struct {
-		Options *Options
+		Options Options
 		String  string
 	}{
-		{emptyOptions, "0x0"},
 		{
-			&Options{1, 2, true, 90, true, true},
+			emptyOptions,
+			"0x0",
+		},
+		{
+			Options{1, 2, true, 90, true, true},
 			"1x2,fit,r90,fv,fh",
 		},
 	}
@@ -42,7 +44,7 @@ func TestOptions_String(t *testing.T) {
 func TestParseOptions(t *testing.T) {
 	tests := []struct {
 		Input   string
-		Options *Options
+		Options Options
 	}{
 		{"", emptyOptions},
 		{"x", emptyOptions},
@@ -50,34 +52,34 @@ func TestParseOptions(t *testing.T) {
 		{",,,,", emptyOptions},
 
 		// size variations
-		{"1x", &Options{Width: 1}},
-		{"x1", &Options{Height: 1}},
-		{"1x2", &Options{Width: 1, Height: 2}},
-		{"0.1x0.2", &Options{Width: 0.1, Height: 0.2}},
+		{"1x", Options{Width: 1}},
+		{"x1", Options{Height: 1}},
+		{"1x2", Options{Width: 1, Height: 2}},
+		{"0.1x0.2", Options{Width: 0.1, Height: 0.2}},
 
 		// additional flags
-		{"fit", &Options{Fit: true}},
-		{"r90", &Options{Rotate: 90}},
-		{"fv", &Options{FlipVertical: true}},
-		{"fh", &Options{FlipHorizontal: true}},
+		{"fit", Options{Fit: true}},
+		{"r90", Options{Rotate: 90}},
+		{"fv", Options{FlipVertical: true}},
+		{"fh", Options{FlipHorizontal: true}},
 
 		// duplicate flags (last one wins)
-		{"1x2,3x4", &Options{Width: 3, Height: 4}},
-		{"1x2,3", &Options{Width: 3, Height: 3}},
-		{"1x2,0x3", &Options{Width: 0, Height: 3}},
-		{"1x,x2", &Options{Width: 1, Height: 2}},
-		{"r90,r270", &Options{Rotate: 270}},
+		{"1x2,3x4", Options{Width: 3, Height: 4}},
+		{"1x2,3", Options{Width: 3, Height: 3}},
+		{"1x2,0x3", Options{Width: 0, Height: 3}},
+		{"1x,x2", Options{Width: 1, Height: 2}},
+		{"r90,r270", Options{Rotate: 270}},
 
 		// mix of valid and invalid flags
-		{"FOO,1,BAR,r90,BAZ", &Options{Width: 1, Height: 1, Rotate: 90}},
+		{"FOO,1,BAR,r90,BAZ", Options{Width: 1, Height: 1, Rotate: 90}},
 
-		{"1x2,fit,r90,fv,fh", &Options{1, 2, true, 90, true, true}},
-		{"r90,fh,1x2,fv,fit", &Options{1, 2, true, 90, true, true}},
+		{"1x2,fit,r90,fv,fh", Options{1, 2, true, 90, true, true}},
+		{"r90,fh,1x2,fv,fit", Options{1, 2, true, 90, true, true}},
 	}
 
-	for i, tt := range tests {
-		if got, want := ParseOptions(tt.Input), tt.Options; !reflect.DeepEqual(got, want) {
-			t.Errorf("%d. ParseOptions returned %#v, want %#v", i, got, want)
+	for _, tt := range tests {
+		if got, want := ParseOptions(tt.Input), tt.Options; got != want {
+			t.Errorf("ParseOptions(%q) returned %#v, want %#v", tt.Input, got, want)
 		}
 	}
 }
@@ -90,21 +92,21 @@ func TestNewRequest(t *testing.T) {
 	tests := []struct {
 		URL         string
 		RemoteURL   string
-		Options     *Options
+		Options     Options
 		ExpectError bool
 	}{
 		// invalid URLs
 		{
-			"http://localhost/", "", nil, true,
+			"http://localhost/", "", emptyOptions, true,
 		},
 		{
-			"http://localhost/1/", "", nil, true,
+			"http://localhost/1/", "", emptyOptions, true,
 		},
 		{
-			"http://localhost//example.com/foo", "", nil, true,
+			"http://localhost//example.com/foo", "", emptyOptions, true,
 		},
 		{
-			"http://localhost//ftp://example.com/foo", "", nil, true,
+			"http://localhost//ftp://example.com/foo", "", emptyOptions, true,
 		},
 
 		// invalid options.  These won't return errors, but will not fully parse the options
@@ -114,13 +116,13 @@ func TestNewRequest(t *testing.T) {
 		},
 		{
 			"http://localhost/1xs/http://example.com/",
-			"http://example.com/", &Options{Width: 1}, false,
+			"http://example.com/", Options{Width: 1}, false,
 		},
 
 		// valid URLs
 		{
 			"http://localhost/http://example.com/foo",
-			"http://example.com/foo", nil, false,
+			"http://example.com/foo", emptyOptions, false,
 		},
 		{
 			"http://localhost//http://example.com/foo",
@@ -132,7 +134,7 @@ func TestNewRequest(t *testing.T) {
 		},
 		{
 			"http://localhost/1x2/http://example.com/foo",
-			"http://example.com/foo", &Options{Width: 1, Height: 2}, false,
+			"http://example.com/foo", Options{Width: 1, Height: 2}, false,
 		},
 		{
 			"http://localhost//http://example.com/foo?bar",
@@ -140,29 +142,29 @@ func TestNewRequest(t *testing.T) {
 		},
 	}
 
-	for i, tt := range tests {
+	for _, tt := range tests {
 		req, err := http.NewRequest("GET", tt.URL, nil)
 		if err != nil {
-			t.Errorf("%d. Error parsing request: %v", i, err)
+			t.Errorf("http.NewRequest(%q) returned error: %v", tt.URL, err)
 			continue
 		}
 
 		r, err := NewRequest(req)
 		if tt.ExpectError {
 			if err == nil {
-				t.Errorf("%d. Expected parsing error", i)
+				t.Errorf("NewRequest(%v) did not return expected error", req)
 			}
 			continue
 		} else if err != nil {
-			t.Errorf("%d. Error parsing request: %v", i, err)
+			t.Errorf("NewRequest(%v) return unexpected error: %v", req, err)
 			continue
 		}
 
-		if got := r.URL.String(); tt.RemoteURL != got {
-			t.Errorf("%d. Request URL = %v, want %v", i, got, tt.RemoteURL)
+		if got, want := r.URL.String(), tt.RemoteURL; got != want {
+			t.Errorf("NewRequest(%q) request URL = %v, want %v", tt.URL, got, want)
 		}
-		if !reflect.DeepEqual(tt.Options, r.Options) {
-			t.Errorf("%d. Request Options = %v, want %v", i, r.Options, tt.Options)
+		if got, want := r.Options, tt.Options; got != want {
+			t.Errorf("NewRequest(%q) request options = %v, want %v", tt.URL, got, want)
 		}
 	}
 }
