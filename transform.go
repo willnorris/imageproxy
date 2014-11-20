@@ -25,6 +25,9 @@ import (
 	"github.com/disintegration/imaging"
 )
 
+// compression quality of resized jpegs
+const jpegQuality = 95
+
 // Transform the provided image.
 func Transform(img []byte, opt *Options) ([]byte, error) {
 	if opt == nil || reflect.DeepEqual(opt, emptyOptions) {
@@ -98,7 +101,7 @@ func Transform(img []byte, opt *Options) ([]byte, error) {
 	case "gif":
 		gif.Encode(buf, m, nil)
 	case "jpeg":
-		jpeg.Encode(buf, m, &jpeg.Options{95})
+		jpeg.Encode(buf, m, &jpeg.Options{Quality: jpegQuality})
 	case "png":
 		png.Encode(buf, m)
 	}
