@@ -91,14 +91,14 @@ source image][small-things], which measures 1024 by 678 pixels.
 
 Options | Meaning                                  | Image
 --------|------------------------------------------|------
-200x    | 200px wide, proportional height          | ![200x](https://willnorris.com/api/imageproxy/200x/https://willnorris.com/2013/12/small-things.jpg)
-0.15x   | 15% original width, proportional height  | ![0.15x](https://willnorris.com/api/imageproxy/0.15x/https://willnorris.com/2013/12/small-things.jpg)
-x100    | 100px tall, proportional width           | ![x100](https://willnorris.com/api/imageproxy/x100/https://willnorris.com/2013/12/small-things.jpg)
-100x150 | 100 by 150 pixels, cropping as needed    | ![100x150](https://willnorris.com/api/imageproxy/100x150/https://willnorris.com/2013/12/small-things.jpg)
-100     | 100px square, cropping as needed         | ![100](https://willnorris.com/api/imageproxy/100/https://willnorris.com/2013/12/small-things.jpg)
-150,fit | scale to fit 150px square, no cropping   | ![150,fit](https://willnorris.com/api/imageproxy/150,fit/https://willnorris.com/2013/12/small-things.jpg)
-100,r90 | 100px square, rotated 90 degrees         | ![100,r90](https://willnorris.com/api/imageproxy/100,r90/https://willnorris.com/2013/12/small-things.jpg)
-100,fv,fh | 100px square, flipped horizontal and vertical | ![100,fv,fh](https://willnorris.com/api/imageproxy/100,fv,fh/https://willnorris.com/2013/12/small-things.jpg)
+200x    | 200px wide, proportional height          | <a href="https://willnorris.com/api/imageproxy/200x/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/200x/https://willnorris.com/2013/12/small-things.jpg" alt="200x"></a>
+0.15x   | 15% original width, proportional height  | <a href="https://willnorris.com/api/imageproxy/0.15x/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/0.15x/https://willnorris.com/2013/12/small-things.jpg" alt="0.15x"></a>
+x100    | 100px tall, proportional width           | <a href="https://willnorris.com/api/imageproxy/x100/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/x100/https://willnorris.com/2013/12/small-things.jpg" alt="x100"></a>
+100x150 | 100 by 150 pixels, cropping as needed    | <a href="https://willnorris.com/api/imageproxy/100x150/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/100x150/https://willnorris.com/2013/12/small-things.jpg" alt="100x150"></a>
+100     | 100px square, cropping as needed         | <a href="https://willnorris.com/api/imageproxy/100/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/100/https://willnorris.com/2013/12/small-things.jpg" alt="100"></a>
+150,fit | scale to fit 150px square, no cropping   | <a href="https://willnorris.com/api/imageproxy/150,fit/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/150,fit/https://willnorris.com/2013/12/small-things.jpg" alt="150,fit"></a>
+100,r90 | 100px square, rotated 90 degrees         | <a href="https://willnorris.com/api/imageproxy/100,r90/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/100,r90/https://willnorris.com/2013/12/small-things.jpg" alt="100,r90"></a>
+100,fv,fh | 100px square, flipped horizontal and vertical | <a href="https://willnorris.com/api/imageproxy/100,fv,fh/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/100,fv,fh/https://willnorris.com/2013/12/small-things.jpg" alt="100,fv,fh"></a>
 
 
 ## License ##
