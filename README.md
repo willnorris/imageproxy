@@ -25,7 +25,7 @@ imageproxy URLs are of the form `http://localhost/{options}/{remote_url}`.
 ### Options ###
 
 Options are specified as a comma delimited list of parameters, which can be
-supplied in any order.  Duplicate parameters overwrite previous values.  
+supplied in any order.  Duplicate parameters overwrite previous values.
 
 The format is a superset of [resize.ly's options](https://resize.ly/#demo).
 
@@ -99,6 +99,78 @@ x100    | 100px tall, proportional width           | <a href="https://willnorris
 150,fit | scale to fit 150px square, no cropping   | <a href="https://willnorris.com/api/imageproxy/150,fit/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/150,fit/https://willnorris.com/2013/12/small-things.jpg" alt="150,fit"></a>
 100,r90 | 100px square, rotated 90 degrees         | <a href="https://willnorris.com/api/imageproxy/100,r90/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/100,r90/https://willnorris.com/2013/12/small-things.jpg" alt="100,r90"></a>
 100,fv,fh | 100px square, flipped horizontal and vertical | <a href="https://willnorris.com/api/imageproxy/100,fv,fh/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/100,fv,fh/https://willnorris.com/2013/12/small-things.jpg" alt="100,fv,fh"></a>
+
+
+## Getting Started ##
+
+Install the package using:
+
+    go get willnorris.com/go/imageproxy
+
+Once installed, change directories to `$GOPATH/willnorris.com/go/imageproxy` and run the proxy using:
+
+    go run cmd/imageproxy/main.go
+
+This will start the proxy on port 8080, without any caching and with no host
+whitelist (meaning any remote URL can be proxied).  Test this by navigating to
+<http://localhost:8080/500/https://octodex.github.com/images/codercat.jpg> and
+you should see a 500px square coder octocat.
+
+### Disk cache ###
+
+To cache images on disk, include the `cacheDir` flag:
+
+    go run cmd/imageproxy/main.go -cacheDir /tmp/imageproxy
+
+Reload the [codercat URL](http://localhost:8080/500/https://octodex.github.com/images/codercat.jpg),
+and then inspect the contents of `/tmp/imageproxy`.  There should be two files
+there, one for the original full-size codercat image, and one for the resized
+500px version.
+
+### Host whitelist ###
+
+You can limit the remote hosts that the proxy will fetch images from using the
+`whitelist` flag.  This is useful, for example, for locking the proxy down to
+your own hosts to prevent others from abusing it.  Of course if you want to
+support fetching from any host, leave off the whitelist flag.  Try it out by
+running:
+
+    go run cmd/imageproxy/main.go -whitelist example.com
+
+Reload the [codercat URL](http://localhost:8080/500/https://octodex.github.com/images/codercat.jpg),
+and you should now get an error message.  You can specify multiple hosts as a
+comma separated list, or prefix a host value with `*.` to allow all sub-domains
+as well.
+
+Run `go run cmd/imageproxy/main.go -help` for a complete list of flags the
+command accepts.
+
+
+## Deploying ##
+
+You can build and deploy imageproxy using any standard go toolchain, but here's
+how I do it.
+
+I use [goxc](https://github.com/laher/goxc) to build and deploy to an Ubuntu
+server.  I have a `$GOPATH/willnorris.com/go/imageproxy/.goxc.local.json` file
+which limits builds to 64-bit linux:
+
+``` json
+ {
+   "ConfigVersion": "0.9",
+   "BuildConstraints": "linux,amd64"
+ }
+```
+
+I then run `goxc` which compiles the static binary and creates a deb package at
+`build/0.2.1/imageproxy_0.2.1_amd64.deb` (or whatever the current version is).
+I copy this file to my server and install it using `sudo dpkg -i
+imageproxy_0.2.1_amd64.deb`, which is installed to `/usr/bin/imageproxy`.
+
+Ubuntu uses upstart to manage services, so I copy `etc/imageproxy.conf` to
+`/etc/init/imageproxy.conf` on my server and start it using `sudo service
+imageproxy start`.  You will certainly want to modify that upstart script to
+suit your desired configuration.
 
 
 ## License ##
