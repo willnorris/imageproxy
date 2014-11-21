@@ -24,6 +24,7 @@ import (
 
 	"github.com/gregjones/httpcache"
 	"github.com/gregjones/httpcache/diskcache"
+	"github.com/peterbourgon/diskv"
 	"willnorris.com/go/imageproxy"
 )
 
@@ -39,6 +40,7 @@ var (
 var addr = flag.String("addr", "localhost:8080", "TCP address to listen on")
 var whitelist = flag.String("whitelist", "", "comma separated list of allowed remote hosts")
 var cacheDir = flag.String("cacheDir", "", "directory to use for file cache")
+var cacheSize = flag.Uint64("cacheSize", 100, "maximum size of file cache (in MB)")
 var version = flag.Bool("version", false, "print version information")
 
 func main() {
@@ -51,7 +53,11 @@ func main() {
 
 	var c httpcache.Cache
 	if *cacheDir != "" {
-		c = diskcache.New(*cacheDir)
+		d := diskv.New(diskv.Options{
+			BasePath:     *cacheDir,
+			CacheSizeMax: *cacheSize * 1024 * 1024,
+		})
+		c = diskcache.NewWithDiskv(d)
 	} else {
 		c = httpcache.NewMemoryCache()
 	}
