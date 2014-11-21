@@ -118,7 +118,8 @@ you should see a 500px square coder octocat.
 
 ### Disk cache ###
 
-To cache images on disk, include the `cacheDir` flag:
+By default, the imageproxy command uses an in-memory cache that will grow
+unbounded.  To cache images on disk instead, include the `cacheDir` flag:
 
     go run cmd/imageproxy/main.go -cacheDir /tmp/imageproxy
 
@@ -143,7 +144,9 @@ comma separated list, or prefix a host value with `*.` to allow all sub-domains
 as well.
 
 Run `go run cmd/imageproxy/main.go -help` for a complete list of flags the
-command accepts.
+command accepts.  If you want to use a different caching implementation, it's
+probably easiest to just make a copy of `cmd/imageproxy/main.go` and customize
+it to fit your needs... it's a very simple command.
 
 
 ## Deploying ##
@@ -167,10 +170,11 @@ I then run `goxc` which compiles the static binary and creates a deb package at
 I copy this file to my server and install it using `sudo dpkg -i
 imageproxy_0.2.1_amd64.deb`, which is installed to `/usr/bin/imageproxy`.
 
-Ubuntu uses upstart to manage services, so I copy `etc/imageproxy.conf` to
-`/etc/init/imageproxy.conf` on my server and start it using `sudo service
-imageproxy start`.  You will certainly want to modify that upstart script to
-suit your desired configuration.
+Ubuntu uses upstart to manage services, so I copy
+[`etc/imageproxy.conf`](etc/imageproxy.conf) to `/etc/init/imageproxy.conf` on
+my server and start it using `sudo service imageproxy start`.  You will
+certainly want to modify that upstart script to suit your desired
+configuration.
 
 
 ## License ##
