@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package proxy provides the image proxy.
+// Package imageproxy provides an image proxy server.
 package imageproxy // import "willnorris.com/go/imageproxy"
 
 import (
@@ -97,7 +97,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Expires", resp.Header.Get("Expires"))
 	w.Header().Add("Etag", resp.Header.Get("Etag"))
 
-	if is304 := check304(w, r, resp); is304 {
+	if is304 := check304(r, resp); is304 {
 		w.WriteHeader(http.StatusNotModified)
 		return
 	}
@@ -125,7 +125,13 @@ func (p *Proxy) allowed(u *url.URL) bool {
 	return false
 }
 
-func check304(w http.ResponseWriter, req *http.Request, resp *http.Response) bool {
+// check304 checks whether we should send a 304 Not Modified in response to
+// req, based on the response resp.  This is determined using the last modified
+// time and the entity tag of resp.
+func check304(req *http.Request, resp *http.Response) bool {
+	// TODO(willnorris): if-none-match header can be a comma separated list
+	// of multiple tags to be matched, or the special value "*" which
+	// matches all etags
 	etag := resp.Header.Get("Etag")
 	if etag != "" && etag == req.Header.Get("If-None-Match") {
 		return true
