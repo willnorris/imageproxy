@@ -154,7 +154,7 @@ func NewRequest(r *http.Request) (*Request, error) {
 	}
 
 	if req.URL.Scheme != "http" && req.URL.Scheme != "https" {
-		return nil, URLError{"remote URL must have http or https URL", r.URL}
+		return nil, URLError{"remote URL must have http or https scheme", r.URL}
 	}
 
 	// query string is always part of the remote URL

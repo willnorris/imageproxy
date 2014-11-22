@@ -66,14 +66,16 @@ func NewProxy(transport http.RoundTripper, cache Cache) *Proxy {
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	req, err := NewRequest(r)
 	if err != nil {
-		glog.Errorf("invalid request URL: %v", err)
-		http.Error(w, fmt.Sprintf("invalid request URL: %v", err), http.StatusBadRequest)
+		msg := fmt.Sprintf("invalid request URL: %v", err)
+		glog.Error(msg)
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 
 	if !p.allowed(req.URL) {
-		glog.Errorf("remote URL is not for an allowed host: %v", req.URL)
-		http.Error(w, fmt.Sprintf("remote URL is not for an allowed host: %v", req.URL), http.StatusBadRequest)
+		msg := fmt.Sprintf("remote URL is not for an allowed host: %v", req.URL)
+		glog.Error(msg)
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 
@@ -83,13 +85,16 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	resp, err := p.Client.Get(u)
 	if err != nil {
-		glog.Errorf("error fetching remote image: %v", err)
-		http.Error(w, fmt.Sprintf("Error fetching remote image: %v", err), http.StatusInternalServerError)
+		msg := fmt.Sprintf("error fetching remote image: %v", err)
+		glog.Error(msg)
+		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		http.Error(w, fmt.Sprintf("Remote URL %q returned status: %v", req.URL, resp.Status), http.StatusInternalServerError)
+		msg := fmt.Sprintf("remote URL %q returned status: %v", req.URL, resp.Status)
+		glog.Error(msg)
+		http.Error(w, msg, resp.StatusCode)
 		return
 	}
 
