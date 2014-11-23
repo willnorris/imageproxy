@@ -55,7 +55,10 @@ func TestParseOptions(t *testing.T) {
 		{"1x", Options{Width: 1}},
 		{"x1", Options{Height: 1}},
 		{"1x2", Options{Width: 1, Height: 2}},
+		{"-1x-2", Options{Width: -1, Height: -2}},
 		{"0.1x0.2", Options{Width: 0.1, Height: 0.2}},
+		{"1", Options{Width: 1, Height: 1}},
+		{"0.1", Options{Width: 0.1, Height: 0.1}},
 
 		// additional flags
 		{"fit", Options{Fit: true}},
@@ -73,6 +76,7 @@ func TestParseOptions(t *testing.T) {
 		// mix of valid and invalid flags
 		{"FOO,1,BAR,r90,BAZ", Options{Width: 1, Height: 1, Rotate: 90}},
 
+		// all flags, in different orders
 		{"1x2,fit,r90,fv,fh", Options{1, 2, true, 90, true, true}},
 		{"r90,fh,1x2,fv,fit", Options{1, 2, true, 90, true, true}},
 	}
@@ -90,24 +94,16 @@ func TestParseOptions(t *testing.T) {
 // the various Options that can be specified; see TestParseOptions for that.
 func TestNewRequest(t *testing.T) {
 	tests := []struct {
-		URL         string
-		RemoteURL   string
-		Options     Options
-		ExpectError bool
+		URL         string  // input URL to parse as an imageproxy request
+		RemoteURL   string  // expected URL of remote image parsed from input
+		Options     Options // expected options parsed from input
+		ExpectError bool    // whether an error is expected from NewRequest
 	}{
 		// invalid URLs
-		{
-			"http://localhost/", "", emptyOptions, true,
-		},
-		{
-			"http://localhost/1/", "", emptyOptions, true,
-		},
-		{
-			"http://localhost//example.com/foo", "", emptyOptions, true,
-		},
-		{
-			"http://localhost//ftp://example.com/foo", "", emptyOptions, true,
-		},
+		{"http://localhost/", "", emptyOptions, true},
+		{"http://localhost/1/", "", emptyOptions, true},
+		{"http://localhost//example.com/foo", "", emptyOptions, true},
+		{"http://localhost//ftp://example.com/foo", "", emptyOptions, true},
 
 		// invalid options.  These won't return errors, but will not fully parse the options
 		{

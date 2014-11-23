@@ -33,17 +33,18 @@ func (e URLError) Error() string {
 	return fmt.Sprintf("malformed URL %q: %s", e.URL, e.Message)
 }
 
-// Options specifies transformations that can be performed on a
-// requested image.
+// Options specifies transformations to be performed on the requested image.
 type Options struct {
-	Width  float64 // requested width, in pixels
-	Height float64 // requested height, in pixels
+	// See ParseOptions for interpretation of Width and Height values
+	Width  float64
+	Height float64
 
 	// If true, resize the image to fit in the specified dimensions.  Image
 	// will not be cropped, and aspect ratio will be maintained.
 	Fit bool
 
-	// Rotate image the specified degrees counter-clockwise.  Valid values are 90, 180, 270.
+	// Rotate image the specified degrees counter-clockwise.  Valid values
+	// are 90, 180, 270.
 	Rotate int
 
 	FlipVertical   bool
@@ -70,64 +71,109 @@ func (o Options) String() string {
 	return buf.String()
 }
 
+// ParseOptions parses str as a list of comma separated transformation options.
+// The following options can be specified in any order:
+//
+// Size and Cropping
+//
+// The size option takes the general form "{width}x{height}", where width and
+// height are numbers. Integer values greater than 1 are interpreted as exact
+// pixel values. Floats between 0 and 1 are interpreted as percentages of the
+// original image size. If either value is omitted or set to 0, it will be
+// automatically set to preserve the aspect ratio based on the other dimension.
+// If a single number is provided (with no "x" separator), it will be used for
+// both height and width.
+//
+// Depending on the size options specified, an image may be cropped to fit the
+// requested size. In all cases, the original aspect ratio of the image will be
+// preserved; imageproxy will never stretch the original image.
+//
+// When no explicit crop mode is specified, the following rules are followed:
+//
+// - If both width and height values are specified, the image will be scaled to
+// fill the space, cropping if necessary to fit the exact dimension.
+//
+// - If only one of the width or height values is specified, the image will be
+// resized to fit the specified dimension, scaling the other dimension as
+// needed to maintain the aspect ratio.
+//
+// If the "fit" option is specified together with a width and height value, the
+// image will be resized to fit within a containing box of the specified size.
+// As always, the original aspect ratio will be preserved. Specifying the "fit"
+// option with only one of either width or height does the same thing as if
+// "fit" had not been specified.
+//
+// Rotation and Flips
+//
+// The "r{degrees}" option will rotate the image the specified number of
+// degrees, counter-clockwise. Valid degrees values are 90, 180, and 270.
+//
+// The "fv" option will flip the image vertically. The "fh" option will flip
+// the image horizontally. Images are flipped after being rotated.
+//
+// Examples
+//
+// 	0x0       - no resizing
+// 	200x      - 200 pixels wide, proportional height
+// 	0.15x     - 15% original width, proportional height
+// 	x100      - 100 pixels tall, proportional width
+// 	100x150   - 100 by 150 pixels, cropping as needed
+// 	100       - 100 pixels square, cropping as needed
+// 	150,fit   - scale to fit 150 pixels square, no cropping
+// 	100,r90   - 100 pixels square, rotated 90 degrees
+// 	100,fv,fh - 100 pixels square, flipped horizontal and vertical
 func ParseOptions(str string) Options {
-	o := Options{}
+	options := Options{}
 
-	parts := strings.Split(str, ",")
-	for _, part := range parts {
-		if part == "fit" {
-			o.Fit = true
-			continue
-		}
-		if part == "fv" {
-			o.FlipVertical = true
-			continue
-		}
-		if part == "fh" {
-			o.FlipHorizontal = true
-			continue
-		}
-
-		if len(part) > 2 && part[:1] == "r" {
-			o.Rotate, _ = strconv.Atoi(part[1:])
-			continue
-		}
-
-		if strings.ContainsRune(part, 'x') {
-			var h, w string
-			size := strings.SplitN(part, "x", 2)
-			w = size[0]
-			if len(size) > 1 {
-				h = size[1]
-			} else {
-				h = w
+	for _, opt := range strings.Split(str, ",") {
+		switch {
+		case opt == "fit":
+			options.Fit = true
+		case opt == "fv":
+			options.FlipVertical = true
+		case opt == "fh":
+			options.FlipHorizontal = true
+		case len(opt) > 2 && opt[:1] == "r":
+			options.Rotate, _ = strconv.Atoi(opt[1:])
+		case strings.ContainsRune(opt, 'x'):
+			size := strings.SplitN(opt, "x", 2)
+			if w := size[0]; w != "" {
+				options.Width, _ = strconv.ParseFloat(w, 64)
 			}
-
-			if w != "" {
-				o.Width, _ = strconv.ParseFloat(w, 64)
+			if h := size[1]; h != "" {
+				options.Height, _ = strconv.ParseFloat(h, 64)
 			}
-			if h != "" {
-				o.Height, _ = strconv.ParseFloat(h, 64)
+		default:
+			if size, err := strconv.ParseFloat(opt, 64); err == nil {
+				options.Width = size
+				options.Height = size
 			}
-			continue
-		}
-
-		if size, err := strconv.ParseFloat(part, 64); err == nil {
-			o.Width = size
-			o.Height = size
-			continue
 		}
 	}
 
-	return o
+	return options
 }
 
+// Request is an imageproxy request which includes a remote URL of an image to
+// proxy, and an optional set of transformations to perform.
 type Request struct {
 	URL     *url.URL // URL of the image to proxy
 	Options Options  // Image transformation to perform
 }
 
-// NewRequest parses an http.Request into an image request.
+// NewRequest parses an http.Request into an imageproxy Request.  Options and
+// the remote image URL are specified in the request path, formatted as:
+// /{options}/{remote_url}.  Options may be omitted, so a request path may
+// simply contian /{remote_url}.  The remote URL must be an absolute "http" or
+// "https" URL, should not be URL encoded, and may contain a query string.
+//
+// Assuming an imageproxy server running on localhost, the following are all
+// valid imageproxy requests:
+//
+// 	http://localhost/100x200/http://example.com/image.jpg
+// 	http://localhost/100x200,r90/http://example.com/image.jpg?foo=bar
+// 	http://localhost//http://example.com/image.jpg
+// 	http://localhost/http://example.com/image.jpg
 func NewRequest(r *http.Request) (*Request, error) {
 	var err error
 	req := new(Request)
@@ -135,7 +181,7 @@ func NewRequest(r *http.Request) (*Request, error) {
 	path := r.URL.Path[1:] // strip leading slash
 	req.URL, err = url.Parse(path)
 	if err != nil || !req.URL.IsAbs() {
-		// first segment is likely options
+		// first segment should be options
 		parts := strings.SplitN(path, "/", 2)
 		if len(parts) != 2 {
 			return nil, URLError{"too few path segments", r.URL}
