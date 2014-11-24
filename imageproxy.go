@@ -64,6 +64,10 @@ func NewProxy(transport http.RoundTripper, cache Cache) *Proxy {
 
 // ServeHTTP handles image requests.
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path == "/favicon.ico" {
+		return // ignore favicon requests
+	}
+
 	req, err := NewRequest(r)
 	if err != nil {
 		msg := fmt.Sprintf("invalid request URL: %v", err)
