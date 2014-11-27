@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package imageproxy provides an image proxy server.
+// Package imageproxy provides an image proxy server.  For typical use of
+// creating and using a Proxy, see cmd/imageproxy/main.go.
 package imageproxy // import "willnorris.com/go/imageproxy"
 
 import (
@@ -31,16 +32,22 @@ import (
 )
 
 // Proxy serves image requests.
+//
+// Note that a Proxy should not be run behind a http.ServeMux, since the
+// ServeMux aggressively cleans URLs and removes the double slash in the
+// embedded request URL.
 type Proxy struct {
 	Client *http.Client // client used to fetch remote URLs
-	Cache  Cache
+	Cache  Cache        // cache used to cache responses
 
-	// Whitelist specifies a list of remote hosts that images can be proxied from.  An empty list means all hosts are allowed.
+	// Whitelist specifies a list of remote hosts that images can be
+	// proxied from.  An empty list means all hosts are allowed.
 	Whitelist []string
 }
 
-// NewProxy constructs a new proxy.  The provided http Client will be used to
-// fetch remote URLs.  If nil is provided, http.DefaultClient will be used.
+// NewProxy constructs a new proxy.  The provided http RoundTripper will be
+// used to fetch remote URLs.  If nil is provided, http.DefaultTransport will
+// be used.
 func NewProxy(transport http.RoundTripper, cache Cache) *Proxy {
 	if transport == nil {
 		transport = http.DefaultTransport
@@ -165,14 +172,17 @@ func check304(req *http.Request, resp *http.Response) bool {
 // optionally transforms images using the options specified in the request URL
 // fragment.
 type TransformingTransport struct {
-	// Transport is used to satisfy non-transform requests (those that do not include a URL fragment)
+	// Transport is the underlying http.RoundTripper used to satisfy
+	// non-transform requests (those that do not include a URL fragment).
 	Transport http.RoundTripper
 
-	// Client is used to fetch images to be resized.
-	Client *http.Client
+	// CachingClient is used to fetch images to be resized.  This client is
+	// used rather than Transport directly in order to ensure that
+	// responses are properly cached.
+	CachingClient *http.Client
 }
 
-// RoundTrip implements http.RoundTripper.
+// RoundTrip implements the http.RoundTripper interface.
 func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if req.URL.Fragment == "" {
 		// normal requests pass through
@@ -182,7 +192,7 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 
 	u := *req.URL
 	u.Fragment = ""
-	resp, err := t.Client.Get(u.String())
+	resp, err := t.CachingClient.Get(u.String())
 	if err != nil {
 		return nil, err
 	}
