@@ -27,6 +27,9 @@ import (
 // compression quality of resized jpegs
 const jpegQuality = 95
 
+// resample filter used when resizing images
+var resampleFilter = imaging.Lanczos
+
 // Transform the provided image.  img should contain the raw bytes of an
 // encoded image in one of the supported formats (gif, jpeg, or png).  The
 // bytes of a similarly encoded image is returned.
@@ -91,12 +94,12 @@ func transformImage(m image.Image, opt Options) image.Image {
 	// resize
 	if w != 0 || h != 0 {
 		if opt.Fit {
-			m = imaging.Fit(m, w, h, imaging.Lanczos)
+			m = imaging.Fit(m, w, h, resampleFilter)
 		} else {
 			if w == 0 || h == 0 {
-				m = imaging.Resize(m, w, h, imaging.Lanczos)
+				m = imaging.Resize(m, w, h, resampleFilter)
 			} else {
-				m = imaging.Thumbnail(m, w, h, imaging.Lanczos)
+				m = imaging.Thumbnail(m, w, h, resampleFilter)
 			}
 		}
 	}
