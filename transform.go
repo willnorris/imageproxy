@@ -27,7 +27,9 @@ import (
 // compression quality of resized jpegs
 const jpegQuality = 95
 
-// Transform the provided image.
+// Transform the provided image.  img should contain the raw bytes of an
+// encoded image in one of the supported formats (gif, jpeg, or png).  The
+// bytes of a similarly encoded image is returned.
 func Transform(img []byte, opt Options) ([]byte, error) {
 	if opt == emptyOptions {
 		// bail if no transformation was requested
@@ -40,6 +42,25 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 		return nil, err
 	}
 
+	m = transformImage(m, opt)
+
+	// encode image
+	buf := new(bytes.Buffer)
+	switch format {
+	case "gif":
+		gif.Encode(buf, m, nil)
+	case "jpeg":
+		jpeg.Encode(buf, m, &jpeg.Options{Quality: jpegQuality})
+	case "png":
+		png.Encode(buf, m)
+	}
+
+	return buf.Bytes(), nil
+}
+
+// transformImage modifies the image m based on the transformations specified
+// in opt.
+func transformImage(m image.Image, opt Options) image.Image {
 	// convert percentage width and height values to absolute values
 	imgW := m.Bounds().Max.X - m.Bounds().Min.X
 	imgH := m.Bounds().Max.Y - m.Bounds().Min.Y
@@ -98,16 +119,5 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 		m = imaging.Rotate270(m)
 	}
 
-	// encode image
-	buf := new(bytes.Buffer)
-	switch format {
-	case "gif":
-		gif.Encode(buf, m, nil)
-	case "jpeg":
-		jpeg.Encode(buf, m, &jpeg.Options{Quality: jpegQuality})
-	case "png":
-		png.Encode(buf, m)
-	}
-
-	return buf.Bytes(), nil
+	return m
 }
