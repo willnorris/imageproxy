@@ -1,9 +1,14 @@
 package imageproxy
 
 import (
+	"bytes"
 	"image"
 	"image/color"
 	"image/draw"
+	"image/gif"
+	"image/jpeg"
+	"image/png"
+	"io"
 	"reflect"
 	"testing"
 
@@ -30,6 +35,52 @@ func newImage(w, h int, pixels ...color.NRGBA) image.Image {
 		}
 	}
 	return m
+}
+
+func TestTransform(t *testing.T) {
+	src := newImage(2, 2, red, green, blue, yellow)
+
+	buf := new(bytes.Buffer)
+	png.Encode(buf, src)
+
+	tests := []struct {
+		name        string
+		encode      func(io.Writer, image.Image)
+		exactOutput bool // whether input and output should match exactly
+	}{
+		{"gif", func(w io.Writer, m image.Image) { gif.Encode(w, m, nil) }, true},
+		{"jpeg", func(w io.Writer, m image.Image) { jpeg.Encode(w, m, nil) }, false},
+		{"png", func(w io.Writer, m image.Image) { png.Encode(w, m) }, true},
+	}
+
+	for _, tt := range tests {
+		buf := new(bytes.Buffer)
+		tt.encode(buf, src)
+		in := buf.Bytes()
+
+		out, err := Transform(in, emptyOptions)
+		if err != nil {
+			t.Errorf("Transform with encoder %s returned unexpected error: %v", err)
+		}
+		if !reflect.DeepEqual(in, out) {
+			t.Errorf("Transform with with encoder %s with empty options returned modified result")
+		}
+
+		out, err = Transform(in, Options{Width: -1, Height: -1})
+		if err != nil {
+			t.Errorf("Transform with encoder %s returned unexpected error: %v", tt.name, err)
+		}
+		if len(out) == 0 {
+			t.Errorf("Transform with encoder %s returned empty bytes", tt.name)
+		}
+		if tt.exactOutput && !reflect.DeepEqual(in, out) {
+			t.Errorf("Transform with encoder %s with noop Options returned modified result", tt.name)
+		}
+	}
+
+	if _, err := Transform([]byte{}, Options{Width: 1}); err == nil {
+		t.Errorf("Transform with invalid image input did not return expected err")
+	}
 }
 
 func TestTransformImage(t *testing.T) {
