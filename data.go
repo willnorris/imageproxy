@@ -28,6 +28,7 @@ const (
 	optFlipVertical   = "fv"
 	optFlipHorizontal = "fh"
 	optRotatePrefix   = "r"
+	optQualityPrefix  = "q"
 	optSizeDelimiter  = "x"
 )
 
@@ -57,6 +58,9 @@ type Options struct {
 
 	FlipVertical   bool
 	FlipHorizontal bool
+
+	// Quality of output image
+	Quality int
 }
 
 var emptyOptions = Options{}
@@ -76,6 +80,7 @@ func (o Options) String() string {
 	if o.FlipHorizontal {
 		fmt.Fprintf(buf, ",%s", optFlipHorizontal)
 	}
+	fmt.Fprintf(buf, ",%s%d", string(optQualityPrefix), o.Quality)
 	return buf.String()
 }
 
@@ -119,6 +124,11 @@ func (o Options) String() string {
 // The "fv" option will flip the image vertically. The "fh" option will flip
 // the image horizontally. Images are flipped after being rotated.
 //
+// Quality
+//
+// The "q{qualityPercentage}" option can be used to specify the quality of the
+// output file (JPEG only)
+//
 // Examples
 //
 // 	0x0       - no resizing
@@ -130,6 +140,7 @@ func (o Options) String() string {
 // 	150,fit   - scale to fit 150 pixels square, no cropping
 // 	100,r90   - 100 pixels square, rotated 90 degrees
 // 	100,fv,fh - 100 pixels square, flipped horizontal and vertical
+// 	200x,q80  - 200 pixels wide, proportional height, 80% quality
 func ParseOptions(str string) Options {
 	options := Options{}
 
@@ -146,6 +157,9 @@ func ParseOptions(str string) Options {
 		case strings.HasPrefix(opt, optRotatePrefix):
 			value := strings.TrimPrefix(opt, optRotatePrefix)
 			options.Rotate, _ = strconv.Atoi(value)
+		case strings.HasPrefix(opt, optQualityPrefix):
+			value := strings.TrimPrefix(opt, optQualityPrefix)
+			options.Quality, _ = strconv.Atoi(value)
 		case strings.Contains(opt, optSizeDelimiter):
 			size := strings.SplitN(opt, optSizeDelimiter, 2)
 			if w := size[0]; w != "" {

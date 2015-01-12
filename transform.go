@@ -53,7 +53,13 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 	case "gif":
 		gif.Encode(buf, m, nil)
 	case "jpeg":
-		jpeg.Encode(buf, m, &jpeg.Options{Quality: jpegQuality})
+		quality := opt.Quality
+
+		if quality == 0 {
+			quality = jpegQuality
+		}
+
+		jpeg.Encode(buf, m, &jpeg.Options{Quality: quality})
 	case "png":
 		png.Encode(buf, m)
 	}

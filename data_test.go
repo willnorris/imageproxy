@@ -26,15 +26,15 @@ func TestOptions_String(t *testing.T) {
 	}{
 		{
 			emptyOptions,
-			"0x0",
+			"0x0,q0",
 		},
 		{
-			Options{1, 2, true, 90, true, true},
-			"1x2,fit,r90,fv,fh",
+			Options{1, 2, true, 90, true, true, 80},
+			"1x2,fit,r90,fv,fh,q80",
 		},
 		{
-			Options{0.15, 1.3, false, 45, false, false},
-			"0.15x1.3,r45",
+			Options{0.15, 1.3, false, 45, false, false, 95},
+			"0.15x1.3,r45,q95",
 		},
 	}
 
@@ -82,8 +82,8 @@ func TestParseOptions(t *testing.T) {
 		{"FOO,1,BAR,r90,BAZ", Options{Width: 1, Height: 1, Rotate: 90}},
 
 		// all flags, in different orders
-		{"1x2,fit,r90,fv,fh", Options{1, 2, true, 90, true, true}},
-		{"r90,fh,1x2,fv,fit", Options{1, 2, true, 90, true, true}},
+		{"q70,1x2,fit,r90,fv,fh", Options{1, 2, true, 90, true, true, 70}},
+		{"r90,fh,q90,1x2,fv,fit", Options{1, 2, true, 90, true, true, 90}},
 	}
 
 	for _, tt := range tests {

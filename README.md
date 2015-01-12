@@ -66,6 +66,11 @@ The `r{degrees}` option will rotate the image the specified number of degrees,
 counter-clockwise.  Valid degrees values are `90`, `180`, and `270`.  Images
 are rotated **after** being resized.
 
+#### Quality ####
+
+The `q{percentage}` option can be used to specify the output quality (JPEG
+only).
+
 #### Flip ####
 
 The `fv` option will flip the image vertically.  The `fh` option will flip the
@@ -99,6 +104,7 @@ x100    | 100px tall, proportional width           | <a href="https://willnorris
 150,fit | scale to fit 150px square, no cropping   | <a href="https://willnorris.com/api/imageproxy/150,fit/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/150,fit/https://willnorris.com/2013/12/small-things.jpg" alt="150,fit"></a>
 100,r90 | 100px square, rotated 90 degrees         | <a href="https://willnorris.com/api/imageproxy/100,r90/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/100,r90/https://willnorris.com/2013/12/small-things.jpg" alt="100,r90"></a>
 100,fv,fh | 100px square, flipped horizontal and vertical | <a href="https://willnorris.com/api/imageproxy/100,fv,fh/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/100,fv,fh/https://willnorris.com/2013/12/small-things.jpg" alt="100,fv,fh"></a>
+200x,q60 | 200px wide, proportional height, 60% quality | <a href="https://willnorris.com/api/imageproxy/200x,q60/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/200x,q60/https://willnorris.com/2013/12/small-things.jpg" alt="200x,q60"></a>
 
 
 ## Getting Started ##
