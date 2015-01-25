@@ -23,6 +23,14 @@ import (
 	"strings"
 )
 
+const (
+	optFit            = "fit"
+	optFlipVertical   = "fv"
+	optFlipHorizontal = "fh"
+	optRotatePrefix   = "r"
+	optSizeDelimiter  = "x"
+)
+
 // URLError reports a malformed URL error.
 type URLError struct {
 	Message string
@@ -55,18 +63,18 @@ var emptyOptions = Options{}
 
 func (o Options) String() string {
 	buf := new(bytes.Buffer)
-	fmt.Fprintf(buf, "%vx%v", o.Width, o.Height)
+	fmt.Fprintf(buf, "%v%s%v", o.Width, optSizeDelimiter, o.Height)
 	if o.Fit {
-		buf.WriteString(",fit")
+		fmt.Fprintf(buf, ",%s", optFit)
 	}
 	if o.Rotate != 0 {
-		fmt.Fprintf(buf, ",r%d", o.Rotate)
+		fmt.Fprintf(buf, ",%s%d", string(optRotatePrefix), o.Rotate)
 	}
 	if o.FlipVertical {
-		buf.WriteString(",fv")
+		fmt.Fprintf(buf, ",%s", optFlipVertical)
 	}
 	if o.FlipHorizontal {
-		buf.WriteString(",fh")
+		fmt.Fprintf(buf, ",%s", optFlipHorizontal)
 	}
 	return buf.String()
 }
@@ -127,16 +135,19 @@ func ParseOptions(str string) Options {
 
 	for _, opt := range strings.Split(str, ",") {
 		switch {
-		case opt == "fit":
+		case len(opt) == 0:
+			break
+		case opt == optFit:
 			options.Fit = true
-		case opt == "fv":
+		case opt == optFlipVertical:
 			options.FlipVertical = true
-		case opt == "fh":
+		case opt == optFlipHorizontal:
 			options.FlipHorizontal = true
-		case len(opt) > 2 && opt[:1] == "r":
-			options.Rotate, _ = strconv.Atoi(opt[1:])
-		case strings.ContainsRune(opt, 'x'):
-			size := strings.SplitN(opt, "x", 2)
+		case strings.HasPrefix(opt, optRotatePrefix):
+			value := strings.TrimPrefix(opt, optRotatePrefix)
+			options.Rotate, _ = strconv.Atoi(value)
+		case strings.Contains(opt, optSizeDelimiter):
+			size := strings.SplitN(opt, optSizeDelimiter, 2)
 			if w := size[0]; w != "" {
 				options.Width, _ = strconv.ParseFloat(w, 64)
 			}

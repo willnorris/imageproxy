@@ -32,6 +32,10 @@ func TestOptions_String(t *testing.T) {
 			Options{1, 2, true, 90, true, true},
 			"1x2,fit,r90,fv,fh",
 		},
+		{
+			Options{0.15, 1.3, false, 45, false, false},
+			"0.15x1.3,r45",
+		},
 	}
 
 	for i, tt := range tests {
@@ -48,6 +52,7 @@ func TestParseOptions(t *testing.T) {
 	}{
 		{"", emptyOptions},
 		{"x", emptyOptions},
+		{"r", emptyOptions},
 		{"0", emptyOptions},
 		{",,,,", emptyOptions},
 
