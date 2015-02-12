@@ -60,10 +60,10 @@ func TestTransform(t *testing.T) {
 
 		out, err := Transform(in, emptyOptions)
 		if err != nil {
-			t.Errorf("Transform with encoder %s returned unexpected error: %v", err)
+			t.Errorf("Transform with encoder %s returned unexpected error: %v", tt.name, err)
 		}
 		if !reflect.DeepEqual(in, out) {
-			t.Errorf("Transform with with encoder %s with empty options returned modified result")
+			t.Errorf("Transform with with encoder %s with empty options returned modified result", tt.name)
 		}
 
 		out, err = Transform(in, Options{Width: -1, Height: -1})

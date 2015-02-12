@@ -181,7 +181,7 @@ func TestProxy_ServeHTTP(t *testing.T) {
 		p.ServeHTTP(resp, req)
 
 		if got, want := resp.Code, tt.code; got != want {
-			t.Errorf("ServeHTTP(%q) returned status %d, want %d", req, got, want)
+			t.Errorf("ServeHTTP(%v) returned status %d, want %d", req, got, want)
 		}
 	}
 }
@@ -200,10 +200,10 @@ func TestProxy_ServeHTTP_is304(t *testing.T) {
 	p.ServeHTTP(resp, req)
 
 	if got, want := resp.Code, http.StatusNotModified; got != want {
-		t.Errorf("ServeHTTP(%q) returned status %d, want %d", req, got, want)
+		t.Errorf("ServeHTTP(%v) returned status %d, want %d", req, got, want)
 	}
 	if got, want := resp.Header().Get("Etag"), `"tag"`; got != want {
-		t.Errorf("ServeHTTP(%q) returned etag header %v, want %v", req, got, want)
+		t.Errorf("ServeHTTP(%v) returned etag header %v, want %v", req, got, want)
 	}
 }
 
@@ -237,7 +237,7 @@ func TestTransformingTransport(t *testing.T) {
 			t.Errorf("RoundTrip(%v) did not return expected error", tt.url)
 		}
 		if got, want := resp.StatusCode, tt.code; got != want {
-			t.Errorf("RoundTrip(%v) returned status code %d, want %d", got, want)
+			t.Errorf("RoundTrip(%v) returned status code %d, want %d", tt.url, got, want)
 		}
 	}
 }

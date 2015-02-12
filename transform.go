@@ -24,8 +24,8 @@ import (
 	"github.com/disintegration/imaging"
 )
 
-// compression quality of resized jpegs
-const jpegQuality = 95
+// default compression quality of resized jpegs
+const defaultQuality = 95
 
 // resample filter used when resizing images
 var resampleFilter = imaging.Lanczos
@@ -54,9 +54,8 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 		gif.Encode(buf, m, nil)
 	case "jpeg":
 		quality := opt.Quality
-
 		if quality == 0 {
-			quality = jpegQuality
+			quality = defaultQuality
 		}
 
 		jpeg.Encode(buf, m, &jpeg.Options{Quality: quality})
