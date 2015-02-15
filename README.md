@@ -127,7 +127,7 @@ you should see a 500px square coder octocat.
 By default, the imageproxy command uses an in-memory cache that will grow
 unbounded.  To cache images on disk instead, include the `cacheDir` flag:
 
-    go run cmd/imageproxy/main.go -cacheDir /tmp/imageproxy
+    imageproxy -cacheDir /tmp/imageproxy
 
 Reload the [codercat URL](http://localhost:8080/500/https://octodex.github.com/images/codercat.jpg),
 and then inspect the contents of `/tmp/imageproxy`.  There should be two files
@@ -142,17 +142,17 @@ your own hosts to prevent others from abusing it.  Of course if you want to
 support fetching from any host, leave off the whitelist flag.  Try it out by
 running:
 
-    go run cmd/imageproxy/main.go -whitelist example.com
+    imageproxy -whitelist example.com
 
 Reload the [codercat URL](http://localhost:8080/500/https://octodex.github.com/images/codercat.jpg),
 and you should now get an error message.  You can specify multiple hosts as a
 comma separated list, or prefix a host value with `*.` to allow all sub-domains
 as well.
 
-Run `go run cmd/imageproxy/main.go -help` for a complete list of flags the
-command accepts.  If you want to use a different caching implementation, it's
-probably easiest to just make a copy of `cmd/imageproxy/main.go` and customize
-it to fit your needs... it's a very simple command.
+Run `imageproxy -help` for a complete list of flags the command accepts.  If
+you want to use a different caching implementation, it's probably easiest to
+just make a copy of `cmd/imageproxy/main.go` and customize it to fit your
+needs... it's a very simple command.
 
 
 ## Deploying ##
