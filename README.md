@@ -66,15 +66,15 @@ The `r{degrees}` option will rotate the image the specified number of degrees,
 counter-clockwise.  Valid degrees values are `90`, `180`, and `270`.  Images
 are rotated **after** being resized.
 
-#### Quality ####
-
-The `q{percentage}` option can be used to specify the output quality (JPEG
-only).
-
 #### Flip ####
 
 The `fv` option will flip the image vertically.  The `fh` option will flip the
 image horizontally.  Images are flipped **after** being resized and rotated.
+
+#### Quality ####
+
+The `q{percentage}` option can be used to specify the output quality (JPEG
+only).  If not specified, the default value of `95` is used.
 
 ### Remote URL ###
 
