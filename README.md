@@ -111,11 +111,11 @@ x100    | 100px tall, proportional width           | <a href="https://willnorris
 
 Install the package using:
 
-    go get willnorris.com/go/imageproxy
+    go get willnorris.com/go/imageproxy/cmd/imageproxy
 
-Once installed, change directories to `$GOPATH/willnorris.com/go/imageproxy` and run the proxy using:
+Once installed, ensure `$GOPATH/bin` is in your `$PATH`, then run the proxy using:
 
-    go run cmd/imageproxy/main.go
+    imageproxy
 
 This will start the proxy on port 8080, without any caching and with no host
 whitelist (meaning any remote URL can be proxied).  Test this by navigating to
