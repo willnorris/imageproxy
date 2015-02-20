@@ -4,8 +4,10 @@
 	"TaskSettings": {
 		"pkg-build": {
 			"metadata": {
-				"description": "imageproxy is a caching image proxy server",
-				"maintainer": "Will Norris (https://willnorris.com/)"
+				"description": "image proxy server",
+				"long-description": " imageproxy is a caching image proxy server",
+				"maintainer": "Will Norris",
+				"maintainer-email": "will@willnorris.com"
 			},
 			"metadata-deb": {
 				"Homepage": "https://willnorris.com/go/imageproxy"
