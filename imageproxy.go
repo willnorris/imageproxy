@@ -119,6 +119,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Add("Content-Length", resp.Header.Get("Content-Length"))
+	w.Header().Add("Content-Type", resp.Header.Get("Content-Type"))
 	defer resp.Body.Close()
 	io.Copy(w, resp.Body)
 }
