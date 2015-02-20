@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/gregjones/httpcache"
@@ -39,6 +40,7 @@ var (
 
 var addr = flag.String("addr", "localhost:8080", "TCP address to listen on")
 var whitelist = flag.String("whitelist", "", "comma separated list of allowed remote hosts")
+var baseURL = flag.String("baseURL", "", "default base URL for relative remote URLs")
 var cacheDir = flag.String("cacheDir", "", "directory to use for file cache")
 var cacheSize = flag.Uint64("cacheSize", 100, "maximum size of file cache (in MB)")
 var version = flag.Bool("version", false, "print version information")
@@ -65,6 +67,13 @@ func main() {
 	p := imageproxy.NewProxy(nil, c)
 	if *whitelist != "" {
 		p.Whitelist = strings.Split(*whitelist, ",")
+	}
+	if *baseURL != "" {
+		var err error
+		p.DefaultBaseURL, err = url.Parse(*baseURL)
+		if err != nil {
+			log.Fatalf("error parsing baseURL: %v", err)
+		}
 	}
 
 	server := &http.Server{

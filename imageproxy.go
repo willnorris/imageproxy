@@ -43,6 +43,11 @@ type Proxy struct {
 	// Whitelist specifies a list of remote hosts that images can be
 	// proxied from.  An empty list means all hosts are allowed.
 	Whitelist []string
+
+	// DefaultBaseURL is the URL that relative remote URLs are resolved in
+	// reference to.  If nil, all remote URLs specified in requests must be
+	// absolute.
+	DefaultBaseURL *url.URL
 }
 
 // NewProxy constructs a new proxy.  The provided http RoundTripper will be
@@ -75,7 +80,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return // ignore favicon requests
 	}
 
-	req, err := NewRequest(r)
+	req, err := NewRequest(r, p.DefaultBaseURL)
 	if err != nil {
 		msg := fmt.Sprintf("invalid request URL: %v", err)
 		glog.Error(msg)

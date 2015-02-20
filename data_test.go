@@ -150,7 +150,7 @@ func TestNewRequest(t *testing.T) {
 			continue
 		}
 
-		r, err := NewRequest(req)
+		r, err := NewRequest(req, nil)
 		if tt.ExpectError {
 			if err == nil {
 				t.Errorf("NewRequest(%v) did not return expected error", req)

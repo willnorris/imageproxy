@@ -199,7 +199,7 @@ type Request struct {
 // 	http://localhost/100x200,r90/http://example.com/image.jpg?foo=bar
 // 	http://localhost//http://example.com/image.jpg
 // 	http://localhost/http://example.com/image.jpg
-func NewRequest(r *http.Request) (*Request, error) {
+func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 	var err error
 	req := new(Request)
 
@@ -218,6 +218,10 @@ func NewRequest(r *http.Request) (*Request, error) {
 		}
 
 		req.Options = ParseOptions(parts[0])
+	}
+
+	if baseURL != nil {
+		req.URL = baseURL.ResolveReference(req.URL)
 	}
 
 	if !req.URL.IsAbs() {

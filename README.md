@@ -154,6 +154,20 @@ you want to use a different caching implementation, it's probably easiest to
 just make a copy of `cmd/imageproxy/main.go` and customize it to fit your
 needs... it's a very simple command.
 
+### Default Base URL ###
+
+Typically, remote images to be proxied are specified as absolute URLs.
+However, if you commonly proxy images from a single source, you can provide a
+base URL and then specify remote images relative to that base.  Try it out by running:
+
+    imageproxy -baseURL https://octodex.github.com/
+
+Then load the codercat image, specified as a URL relative to that base:
+<http://localhost:8080/500/images/codercat.jpg>.  Note that this is not an
+effective method to mask the true source of the images being proxied; it is
+trivial to discover the base URL being used.  Even when a base URL is
+specified, you can always provide the absolute URL of the image to be proxied.
+
 
 ## Deploying ##
 
