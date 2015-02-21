@@ -109,19 +109,26 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Add("Last-Modified", resp.Header.Get("Last-Modified"))
-	w.Header().Add("Expires", resp.Header.Get("Expires"))
-	w.Header().Add("Etag", resp.Header.Get("Etag"))
+	copyHeader(w, resp, "Last-Modified")
+	copyHeader(w, resp, "Expires")
+	copyHeader(w, resp, "Etag")
 
 	if is304 := check304(r, resp); is304 {
 		w.WriteHeader(http.StatusNotModified)
 		return
 	}
 
-	w.Header().Add("Content-Length", resp.Header.Get("Content-Length"))
-	w.Header().Add("Content-Type", resp.Header.Get("Content-Type"))
+	copyHeader(w, resp, "Content-Length")
+	copyHeader(w, resp, "Content-Type")
 	defer resp.Body.Close()
 	io.Copy(w, resp.Body)
+}
+
+func copyHeader(w http.ResponseWriter, r *http.Response, header string) {
+	key := http.CanonicalHeaderKey(header)
+	if value, ok := r.Header[key]; ok {
+		w.Header()[key] = value
+	}
 }
 
 // allowed returns whether the specified URL is on the whitelist of remote hosts.
