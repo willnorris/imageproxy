@@ -94,6 +94,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if req.Options != emptyOptions {
 		u += "#" + req.Options.String()
 	}
+
 	resp, err := p.Client.Get(u)
 	if err != nil {
 		msg := fmt.Sprintf("error fetching remote image: %v", err)
@@ -101,6 +102,10 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
+	defer resp.Body.Close()
+
+	cached := resp.Header.Get(httpcache.XFromCache)
+	glog.Infof("request: %v (served from cache: %v)", *req, cached == "1")
 
 	if resp.StatusCode != http.StatusOK {
 		msg := fmt.Sprintf("remote URL %q returned status: %v", req.URL, resp.Status)
@@ -120,7 +125,6 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	copyHeader(w, resp, "Content-Length")
 	copyHeader(w, resp, "Content-Type")
-	defer resp.Body.Close()
 	io.Copy(w, resp.Body)
 }
 
