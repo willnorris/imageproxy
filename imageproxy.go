@@ -218,6 +218,7 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 	opt := ParseOptions(req.URL.Fragment)
 	img, err := Transform(b, opt)
 	if err != nil {
+		glog.Errorf("error transforming image: %v", err)
 		img = b
 	}
 
