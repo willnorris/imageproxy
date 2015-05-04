@@ -142,7 +142,7 @@ func (o Options) String() string {
 // 	100,fv,fh - 100 pixels square, flipped horizontal and vertical
 // 	200x,q80  - 200 pixels wide, proportional height, 80% quality
 func ParseOptions(str string) Options {
-	options := Options{}
+	var options Options
 
 	for _, opt := range strings.Split(str, ",") {
 		switch {
@@ -212,6 +212,7 @@ func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 			return nil, URLError{"too few path segments", r.URL}
 		}
 
+		var err error
 		req.URL, err = url.Parse(parts[1])
 		if err != nil {
 			return nil, URLError{fmt.Sprintf("unable to parse remote URL: %v", err), r.URL}
