@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/willnorris/imageproxy.svg?branch=master)](https://travis-ci.org/willnorris/imageproxy)
+[![GoDoc](https://godoc.org/willnorris.com/go/imageproxy?status.svg)](https://godoc.org/willnorris.com/go/imageproxy)
+
 # imageproxy #
 
 imageproxy is a caching image proxy server written in golang.  It supports
