@@ -1,0 +1,8 @@
+#/etc/default/imageproxy
+
+DAEMON_USER=www-data
+ADDR="localhost:4593"
+LOG_DIR=/var/log/imageproxy
+CACHE_DIR=/var/cache/imageproxy
+#CACHE_SIZE=1024 #MB
+#ALLOWED_REMOTE_HOSTS=""

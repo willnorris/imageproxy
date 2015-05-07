@@ -1,0 +1,69 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:          imageproxy
+# Required-Start:    $local_fs $remote_fs $network
+# Required-Stop:     $local_fs $remote_fs $network
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: starts the imageproxy web server
+# Description:       starts imageproxy using start-stop-daemon
+### END INIT INFO
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/go/bin
+DAEMON=/usr/local/go/bin/imageproxy
+DAEMON_OPTS=
+NAME=imageproxy
+DESC=imageproxy
+
+test -x $DAEMON || exit 0
+
+#set -e
+
+. /lib/lsb/init-functions
+
+case "$1" in
+	start)
+		. /etc/default/imageproxy
+
+		test -n "$ADDR" && DAEMON_OPTS+=" -addr=$ADDR"
+		test -n "$CACHE_DIR" && DAEMON_OPTS+=" -cacheDir=$CACHE_DIR"
+		test -n "$CACHE_SIZE" && DAEMON_OPTS+=" -cacheSize=$CACHE_SIZE"
+		test -n "$LOG_DIR" && DAEMON_OPTS+=" -log_dir=$LOG_DIR"
+		test -n "$ALLOWED_REMOTE_HOSTS" && DAEMON_OPTS+=" -whitelist=$ALLOWED_REMOTE_HOSTS"
+
+		echo -n "Starting $NAME: "
+		start-stop-daemon --start --quiet --pidfile /var/run/$NAME.pid \
+			--chuid $DAEMON_USER --background --make-pidfile \
+		    --exec $DAEMON -- $DAEMON_OPTS || true
+		sleep 1
+		echo "."
+		;;
+
+	stop)
+		echo -n "Stopping $NAME: "
+		start-stop-daemon --stop --quiet --pidfile /var/run/$NAME.pid \
+		    --exec $DAEMON || true
+		echo "."
+		;;
+
+	restart|force-reload)
+		echo -n "Restarting $NAME: "
+		start-stop-daemon --stop --quiet --pidfile \
+		    /var/run/$NAME.pid --exec $DAEMON || true
+		sleep 1
+		start-stop-daemon --start --quiet --pidfile \
+		    /var/run/$NAME.pid --exec $DAEMON -- $DAEMON_OPTS || true
+		echo "."
+		;;
+
+	status)
+		status_of_proc -p /var/run/$NAME.pid "$DAEMON" imageproxy && exit 0 || exit $?
+		;;
+	*)
+		echo "Usage: $NAME {start|stop|restart|status}" >&2
+		exit 1
+		;;
+esac
+
+exit 0
