@@ -15,7 +15,7 @@ import (
 )
 
 func TestAllowed(t *testing.T) {
-	whitelist := []string{"a.test", "*.b.test", "*c.test"}
+	whitelist := []string{"good.test"}
 
 	tests := []struct {
 		url       string
@@ -25,16 +25,8 @@ func TestAllowed(t *testing.T) {
 		{"http://foo/image", nil, true},
 		{"http://foo/image", []string{}, true},
 
-		{"http://a.test/image", whitelist, true},
-		{"http://x.a.test/image", whitelist, false},
-
-		{"http://b.test/image", whitelist, true},
-		{"http://x.b.test/image", whitelist, true},
-		{"http://x.y.b.test/image", whitelist, true},
-
-		{"http://c.test/image", whitelist, false},
-		{"http://xc.test/image", whitelist, false},
-		{"/image", whitelist, false},
+		{"http://good.test/image", whitelist, true},
+		{"http://bad.test/image", whitelist, false},
 	}
 
 	for _, tt := range tests {
@@ -45,8 +37,39 @@ func TestAllowed(t *testing.T) {
 		if err != nil {
 			t.Errorf("error parsing url %q: %v", tt.url, err)
 		}
-		if got, want := p.allowed(u), tt.allowed; got != want {
+		req := &Request{u, emptyOptions}
+		if got, want := p.allowed(req), tt.allowed; got != want {
 			t.Errorf("allowed(%q) returned %v, want %v", u, got, want)
+		}
+	}
+}
+
+func TestValidHost(t *testing.T) {
+	whitelist := []string{"a.test", "*.b.test", "*c.test"}
+
+	tests := []struct {
+		url   string
+		valid bool
+	}{
+		{"http://a.test/image", true},
+		{"http://x.a.test/image", false},
+
+		{"http://b.test/image", true},
+		{"http://x.b.test/image", true},
+		{"http://x.y.b.test/image", true},
+
+		{"http://c.test/image", false},
+		{"http://xc.test/image", false},
+		{"/image", false},
+	}
+
+	for _, tt := range tests {
+		u, err := url.Parse(tt.url)
+		if err != nil {
+			t.Errorf("error parsing url %q: %v", tt.url, err)
+		}
+		if got, want := validHost(whitelist, u), tt.valid; got != want {
+			t.Errorf("validHost(%v, %q) returned %v, want %v", whitelist, u, got, want)
 		}
 	}
 }
@@ -168,7 +191,7 @@ func TestProxy_ServeHTTP(t *testing.T) {
 	}{
 		{"/favicon.ico", http.StatusOK},
 		{"//foo", http.StatusBadRequest},                            // invalid request URL
-		{"/http://bad.test/", http.StatusBadRequest},                // Disallowed host
+		{"/http://bad.test/", http.StatusForbidden},                 // Disallowed host
 		{"/http://good.test/error", http.StatusInternalServerError}, // HTTP protocol error
 		{"/http://good.test/nocontent", http.StatusNoContent},       // non-OK response
 

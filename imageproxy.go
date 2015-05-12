@@ -88,10 +88,10 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !p.allowed(req.URL) {
-		msg := fmt.Sprintf("remote URL is not for an allowed host: %v", req.URL)
+	if !p.allowed(req) {
+		msg := fmt.Sprintf("request does not contain an allowed host")
 		glog.Error(msg)
-		http.Error(w, msg, http.StatusBadRequest)
+		http.Error(w, msg, http.StatusForbidden)
 		return
 	}
 
@@ -135,13 +135,26 @@ func copyHeader(w http.ResponseWriter, r *http.Response, header string) {
 	}
 }
 
-// allowed returns whether the specified URL is on the whitelist of remote hosts.
-func (p *Proxy) allowed(u *url.URL) bool {
+// allowed returns whether the specified request is allowed because it matches
+// a host in the proxy whitelist.
+func (p *Proxy) allowed(r *Request) bool {
 	if len(p.Whitelist) == 0 {
-		return true
+		return true // no whitelist, all requests accepted
 	}
 
-	for _, host := range p.Whitelist {
+	if len(p.Whitelist) > 0 {
+		if validHost(p.Whitelist, r.URL) {
+			return true
+		}
+		glog.Infof("remote URL is not for an allowed host: %v", r.URL)
+	}
+
+	return false
+}
+
+// validHost returns whether the host in u matches one of hosts.
+func validHost(hosts []string, u *url.URL) bool {
+	for _, host := range hosts {
 		if u.Host == host {
 			return true
 		}
