@@ -95,12 +95,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	u := req.URL.String()
-	if req.Options != emptyOptions {
-		u += "#" + req.Options.String()
-	}
-
-	resp, err := p.Client.Get(u)
+	resp, err := p.Client.Get(req.String())
 	if err != nil {
 		msg := fmt.Sprintf("error fetching remote image: %v", err)
 		glog.Error(msg)

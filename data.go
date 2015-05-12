@@ -186,6 +186,14 @@ type Request struct {
 	Options Options  // Image transformation to perform
 }
 
+// String returns the request URL as a string, with r.Options encoded in the
+// URL fragment.
+func (r Request) String() string {
+	u := *r.URL
+	u.Fragment = r.Options.String()
+	return u.String()
+}
+
 // NewRequest parses an http.Request into an imageproxy Request.  Options and
 // the remote image URL are specified in the request path, formatted as:
 // /{options}/{remote_url}.  Options may be omitted, so a request path may
