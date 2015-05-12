@@ -18,6 +18,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -43,6 +44,7 @@ var whitelist = flag.String("whitelist", "", "comma separated list of allowed re
 var baseURL = flag.String("baseURL", "", "default base URL for relative remote URLs")
 var cacheDir = flag.String("cacheDir", "", "directory to use for file cache")
 var cacheSize = flag.Uint64("cacheSize", 100, "maximum size of file cache (in MB)")
+var signatureKey = flag.String("signatureKey", "", "HMAC key used in calculating request signatures")
 var version = flag.Bool("version", false, "print version information")
 
 func main() {
@@ -67,6 +69,18 @@ func main() {
 	p := imageproxy.NewProxy(nil, c)
 	if *whitelist != "" {
 		p.Whitelist = strings.Split(*whitelist, ",")
+	}
+	if *signatureKey != "" {
+		key := []byte(*signatureKey)
+		if strings.HasPrefix(*signatureKey, "@") {
+			file := strings.TrimPrefix(*signatureKey, "@")
+			var err error
+			key, err = ioutil.ReadFile(file)
+			if err != nil {
+				log.Fatalf("error reading signature file: %v", err)
+			}
+		}
+		p.SignatureKey = key
 	}
 	if *baseURL != "" {
 		var err error
