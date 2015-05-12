@@ -80,7 +80,9 @@ func (o Options) String() string {
 	if o.FlipHorizontal {
 		fmt.Fprintf(buf, ",%s", optFlipHorizontal)
 	}
-	fmt.Fprintf(buf, ",%s%d", string(optQualityPrefix), o.Quality)
+	if o.Quality != 0 {
+		fmt.Fprintf(buf, ",%s%d", string(optQualityPrefix), o.Quality)
+	}
 	return buf.String()
 }
 
@@ -184,6 +186,14 @@ func ParseOptions(str string) Options {
 type Request struct {
 	URL     *url.URL // URL of the image to proxy
 	Options Options  // Image transformation to perform
+}
+
+// String returns the request URL as a string, with r.Options encoded in the
+// URL fragment.
+func (r Request) String() string {
+	u := *r.URL
+	u.Fragment = r.Options.String()
+	return u.String()
 }
 
 // NewRequest parses an http.Request into an imageproxy Request.  Options and
