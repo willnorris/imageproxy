@@ -24,12 +24,13 @@ import (
 )
 
 const (
-	optFit            = "fit"
-	optFlipVertical   = "fv"
-	optFlipHorizontal = "fh"
-	optRotatePrefix   = "r"
-	optQualityPrefix  = "q"
-	optSizeDelimiter  = "x"
+	optFit             = "fit"
+	optFlipVertical    = "fv"
+	optFlipHorizontal  = "fh"
+	optRotatePrefix    = "r"
+	optQualityPrefix   = "q"
+	optSignaturePrefix = "s"
+	optSizeDelimiter   = "x"
 )
 
 // URLError reports a malformed URL error.
@@ -61,6 +62,9 @@ type Options struct {
 
 	// Quality of output image
 	Quality int
+
+	// HMAC Signature for signed requests.
+	Signature string
 }
 
 var emptyOptions = Options{}
@@ -82,6 +86,9 @@ func (o Options) String() string {
 	}
 	if o.Quality != 0 {
 		fmt.Fprintf(buf, ",%s%d", string(optQualityPrefix), o.Quality)
+	}
+	if o.Signature != "" {
+		fmt.Fprintf(buf, ",%s%s", string(optSignaturePrefix), o.Signature)
 	}
 	return buf.String()
 }
@@ -162,6 +169,8 @@ func ParseOptions(str string) Options {
 		case strings.HasPrefix(opt, optQualityPrefix):
 			value := strings.TrimPrefix(opt, optQualityPrefix)
 			options.Quality, _ = strconv.Atoi(value)
+		case strings.HasPrefix(opt, optSignaturePrefix):
+			options.Signature = strings.TrimPrefix(opt, optSignaturePrefix)
 		case strings.Contains(opt, optSizeDelimiter):
 			size := strings.SplitN(opt, optSizeDelimiter, 2)
 			if w := size[0]; w != "" {

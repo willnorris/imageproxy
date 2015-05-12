@@ -19,6 +19,9 @@ package imageproxy // import "willnorris.com/go/imageproxy"
 import (
 	"bufio"
 	"bytes"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -48,6 +51,9 @@ type Proxy struct {
 	// reference to.  If nil, all remote URLs specified in requests must be
 	// absolute.
 	DefaultBaseURL *url.URL
+
+	// SignatureKey is the HMAC key used to verify signed requests.
+	SignatureKey []byte
 }
 
 // NewProxy constructs a new proxy.  The provided http RoundTripper will be
@@ -89,7 +95,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !p.allowed(req) {
-		msg := fmt.Sprintf("request does not contain an allowed host")
+		msg := fmt.Sprintf("request does not contain an allowed host or valid signature")
 		glog.Error(msg)
 		http.Error(w, msg, http.StatusForbidden)
 		return
@@ -136,17 +142,24 @@ func copyHeader(w http.ResponseWriter, r *http.Response, header string) {
 }
 
 // allowed returns whether the specified request is allowed because it matches
-// a host in the proxy whitelist.
+// a host in the proxy whitelist or it has a valid signature.
 func (p *Proxy) allowed(r *Request) bool {
-	if len(p.Whitelist) == 0 {
-		return true // no whitelist, all requests accepted
+	if len(p.Whitelist) == 0 && len(p.SignatureKey) == 0 {
+		return true // no whitelist or signature key, all requests accepted
 	}
 
 	if len(p.Whitelist) > 0 {
 		if validHost(p.Whitelist, r.URL) {
 			return true
 		}
-		glog.Infof("remote URL is not for an allowed host: %v", r.URL)
+		glog.Infof("request is not for an allowed host: %v", r)
+	}
+
+	if len(p.SignatureKey) > 0 {
+		if validSignature(p.SignatureKey, r) {
+			return true
+		}
+		glog.Infof("request contains invalid signature: %v", r)
 	}
 
 	return false
@@ -164,6 +177,26 @@ func validHost(hosts []string, u *url.URL) bool {
 	}
 
 	return false
+}
+
+// validSignature returns whether the request signature is valid.
+func validSignature(key []byte, r *Request) bool {
+	sig := r.Options.Signature
+	if m := len(sig) % 4; m != 0 { // add padding if missing
+		sig += strings.Repeat("=", 4-m)
+	}
+
+	got, err := base64.URLEncoding.DecodeString(sig)
+	if err != nil {
+		glog.Errorf("error base64 decoding signature %q", r.Options.Signature)
+		return false
+	}
+
+	mac := hmac.New(sha256.New, key)
+	mac.Write([]byte(r.URL.String()))
+	want := mac.Sum(nil)
+
+	return hmac.Equal(got, want)
 }
 
 // check304 checks whether we should send a 304 Not Modified in response to

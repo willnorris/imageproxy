@@ -15,31 +15,46 @@ import (
 )
 
 func TestAllowed(t *testing.T) {
-	whitelist := []string{"good.test"}
+	whitelist := []string{"good"}
+	key := []byte("c0ffee")
 
 	tests := []struct {
 		url       string
+		options   Options
 		whitelist []string
+		key       []byte
 		allowed   bool
 	}{
-		{"http://foo/image", nil, true},
-		{"http://foo/image", []string{}, true},
+		// no whitelist or signature key
+		{"http://test/image", emptyOptions, nil, nil, true},
 
-		{"http://good.test/image", whitelist, true},
-		{"http://bad.test/image", whitelist, false},
+		// whitelist
+		{"http://good/image", emptyOptions, whitelist, nil, true},
+		{"http://bad/image", emptyOptions, whitelist, nil, false},
+
+		// signature key
+		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ="}, nil, key, true},
+		{"http://test/image", Options{Signature: "deadbeef"}, nil, key, false},
+		{"http://test/image", emptyOptions, nil, key, false},
+
+		// whitelist and signature
+		{"http://good/image", emptyOptions, whitelist, key, true},
+		{"http://bad/image", Options{Signature: "gWivrPhXBbsYEwpmWAKjbJEiAEgZwbXbltg95O2tgNI="}, nil, key, true},
+		{"http://bad/image", emptyOptions, whitelist, key, false},
 	}
 
 	for _, tt := range tests {
 		p := NewProxy(nil, nil)
 		p.Whitelist = tt.whitelist
+		p.SignatureKey = tt.key
 
 		u, err := url.Parse(tt.url)
 		if err != nil {
 			t.Errorf("error parsing url %q: %v", tt.url, err)
 		}
-		req := &Request{u, emptyOptions}
+		req := &Request{u, tt.options}
 		if got, want := p.allowed(req), tt.allowed; got != want {
-			t.Errorf("allowed(%q) returned %v, want %v", u, got, want)
+			t.Errorf("allowed(%q) returned %v, want %v", req, got, want)
 		}
 	}
 }
@@ -70,6 +85,31 @@ func TestValidHost(t *testing.T) {
 		}
 		if got, want := validHost(whitelist, u), tt.valid; got != want {
 			t.Errorf("validHost(%v, %q) returned %v, want %v", whitelist, u, got, want)
+		}
+	}
+}
+
+func TestValidSignature(t *testing.T) {
+	key := []byte("c0ffee")
+
+	tests := []struct {
+		url     string
+		options Options
+		valid   bool
+	}{
+		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ="}, true},
+		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ"}, true},
+		{"http://test/image", emptyOptions, false},
+	}
+
+	for _, tt := range tests {
+		u, err := url.Parse(tt.url)
+		if err != nil {
+			t.Errorf("error parsing url %q: %v", tt.url, err)
+		}
+		req := &Request{u, tt.options}
+		if got, want := validSignature(key, req), tt.valid; got != want {
+			t.Errorf("validSignature(%v, %q) returned %v, want %v", key, u, got, want)
 		}
 	}
 }
