@@ -80,7 +80,9 @@ func (o Options) String() string {
 	if o.FlipHorizontal {
 		fmt.Fprintf(buf, ",%s", optFlipHorizontal)
 	}
-	fmt.Fprintf(buf, ",%s%d", string(optQualityPrefix), o.Quality)
+	if o.Quality != 0 {
+		fmt.Fprintf(buf, ",%s%d", string(optQualityPrefix), o.Quality)
+	}
 	return buf.String()
 }
 

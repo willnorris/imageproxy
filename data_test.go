@@ -26,7 +26,7 @@ func TestOptions_String(t *testing.T) {
 	}{
 		{
 			emptyOptions,
-			"0x0,q0",
+			"0x0",
 		},
 		{
 			Options{1, 2, true, 90, true, true, 80},
