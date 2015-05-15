@@ -17,11 +17,12 @@ package imageproxy
 import (
 	"bytes"
 	"image"
-	"image/gif"
+	_ "image/gif" // register gif format
 	"image/jpeg"
 	"image/png"
 
 	"github.com/disintegration/imaging"
+	"willnorris.com/go/imageproxy/third_party/gifresize"
 )
 
 // default compression quality of resized jpegs
@@ -45,21 +46,27 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 		return nil, err
 	}
 
-	m = transformImage(m, opt)
-
-	// encode image
+	// transform and encode image
 	buf := new(bytes.Buffer)
 	switch format {
 	case "gif":
-		gif.Encode(buf, m, nil)
+		fn := func(img image.Image) image.Image {
+			return transformImage(img, opt)
+		}
+		err = gifresize.Process(buf, bytes.NewReader(img), fn)
+		if err != nil {
+			return nil, err
+		}
 	case "jpeg":
 		quality := opt.Quality
 		if quality == 0 {
 			quality = defaultQuality
 		}
 
+		m = transformImage(m, opt)
 		jpeg.Encode(buf, m, &jpeg.Options{Quality: quality})
 	case "png":
+		m = transformImage(m, opt)
 		png.Encode(buf, m)
 	}
 
