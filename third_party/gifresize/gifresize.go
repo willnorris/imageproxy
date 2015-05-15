@@ -12,45 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
-
-// This demonstrates a solution to resizing animated gifs.
+// Package gifresize resizes animated gifs.
 //
 // Frames in an animated gif aren't necessarily the same size, subsequent
 // frames are overlayed on previous frames. Therefore, resizing the frames
 // individually may cause problems due to aliasing of transparent pixels. This
-// example tries to avoid this by building frames from all previous frames and
+// package tries to avoid this by building frames from all previous frames and
 // resizing the frames as RGB.
+package gifresize
 
 import (
 	"image"
 	"image/color/palette"
 	"image/draw"
 	"image/gif"
-	"log"
-	"os"
-
-	"github.com/nfnt/resize"
+	"io"
 )
 
-func main() {
-	process("shapes")
-	process("blob")
-}
+// TransformFunc is a function that transforms an image.
+type TransformFunc func(image.Image) image.Image
 
-func process(filename string) {
-
-	// Open image file.
-	f, err := os.Open(filename + ".gif")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	defer f.Close()
-
+// Process the GIF read from r, applying transform to each frame, and writing
+// the result to w.
+func Process(w io.Writer, r io.Reader, transform TransformFunc) error {
 	// Decode the original gif.
-	im, err := gif.DecodeAll(f)
+	im, err := gif.DecodeAll(r)
 	if err != nil {
-		log.Fatal(err.Error())
+		return err
 	}
 
 	// Create a new RGBA image to hold the incremental frames.
@@ -62,23 +50,14 @@ func process(filename string) {
 	for index, frame := range im.Image {
 		bounds := frame.Bounds()
 		draw.Draw(img, bounds, frame, bounds.Min, draw.Over)
-		im.Image[index] = ImageToPaletted(ProcessImage(img))
+		im.Image[index] = imageToPaletted(transform(img))
 	}
 
-	// Write resized gif.
-	out, err := os.Create(filename + ".out.fixed.gif")
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	defer out.Close()
-	gif.EncodeAll(out, im)
+	gif.EncodeAll(w, im)
+	return nil
 }
 
-func ProcessImage(img image.Image) image.Image {
-	return resize.Resize(250, 0, img, resize.NearestNeighbor)
-}
-
-func ImageToPaletted(img image.Image) *image.Paletted {
+func imageToPaletted(img image.Image) *image.Paletted {
 	b := img.Bounds()
 	pm := image.NewPaletted(b, palette.Plan9)
 	draw.FloydSteinberg.Draw(pm, b, img, image.ZP)
