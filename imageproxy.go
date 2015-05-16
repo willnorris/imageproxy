@@ -113,13 +113,6 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	cached := resp.Header.Get(httpcache.XFromCache)
 	glog.Infof("request: %v (served from cache: %v)", *req, cached == "1")
 
-	if resp.StatusCode != http.StatusOK {
-		msg := fmt.Sprintf("remote URL %q returned status: %v", req.URL, resp.Status)
-		glog.Error(msg)
-		http.Error(w, msg, resp.StatusCode)
-		return
-	}
-
 	copyHeader(w, resp, "Last-Modified")
 	copyHeader(w, resp, "Expires")
 	copyHeader(w, resp, "Etag")
@@ -131,6 +124,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	copyHeader(w, resp, "Content-Length")
 	copyHeader(w, resp, "Content-Type")
+	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body)
 }
 
