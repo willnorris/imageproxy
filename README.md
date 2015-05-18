@@ -1,21 +1,20 @@
 # imageproxy [![Build Status](https://travis-ci.org/willnorris/imageproxy.svg?branch=master)](https://travis-ci.org/willnorris/imageproxy) [![GoDoc](https://godoc.org/willnorris.com/go/imageproxy?status.svg)](https://godoc.org/willnorris.com/go/imageproxy) [![Apache 2.0 License](https://img.shields.io/badge/license-Apache%202.0-blue.svg?style=flat)](LICENSE)
 
-imageproxy is a caching image proxy server written in golang.  It supports
-dynamic image resizing and URL whitelisting.
+imageproxy is a caching image proxy server written in go.  It supports basic
+image adjustments like resizing, cropping, and rotation, and access control
+using host whitelists or request signing.  And because it's pure go, deployment
+is a breeze.
 
-This project was inspired by, and is designed to be an alternative to,
-WordPress's [photon service][photon].  Photon is a great free service, but is
-limited to sites hosted on WordPress.com, or that use the [Jetpack
-plugin][jetpack].  If you don't want to use Jetpack, then you're asked to use a
-different service.  If you're looking for an alternative hosted service, I'd
-recommend [resize.ly][], [embed.ly][], or [cloudinary][].  I decided to try
-building my own for fun.
+This project was originally inspired by, and was designed to be an alternative
+to, WordPress's [photon service][photon] (read more in [this post][]).
+Personally, I use it primarily to dynamically resize images hosted on my own
+site.  But you can also enable request signing and use it as an SSL proxy for
+remote images, similar to [atmos/camo][] but with additional image adjustment
+options.
 
 [photon]: http://developer.wordpress.com/docs/photon/
-[jetpack]: http://jetpack.me/
-[resize.ly]: https://resize.ly/
-[embed.ly]: http://embed.ly/display
-[cloudinary]: http://cloudinary.com/
+[this post]: https://willnorris.com/2014/01/a-self-hosted-alternative-to-jetpacks-photon-service
+[atmos/camo]: https://github.com/atmos/camo
 
 
 ## URL Structure ##
@@ -235,5 +234,5 @@ configuration.
 
 ## License ##
 
-This application is distributed under the Apache 2.0 license found in the
-[LICENSE](./LICENSE) file.
+imageproxy is copyright Google, but is not an official Google product.  It is
+available under the [Apache 2.0 License](./LICENSE).
