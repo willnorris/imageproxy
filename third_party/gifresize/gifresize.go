@@ -53,8 +53,7 @@ func Process(w io.Writer, r io.Reader, transform TransformFunc) error {
 		im.Image[index] = imageToPaletted(transform(img))
 	}
 
-	gif.EncodeAll(w, im)
-	return nil
+	return gif.EncodeAll(w, im)
 }
 
 func imageToPaletted(img image.Image) *image.Paletted {
