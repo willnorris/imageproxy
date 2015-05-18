@@ -23,7 +23,7 @@ package gifresize
 
 import (
 	"image"
-	"image/color/palette"
+	"image/color"
 	"image/draw"
 	"image/gif"
 	"io"
@@ -50,15 +50,15 @@ func Process(w io.Writer, r io.Reader, transform TransformFunc) error {
 	for index, frame := range im.Image {
 		bounds := frame.Bounds()
 		draw.Draw(img, bounds, frame, bounds.Min, draw.Over)
-		im.Image[index] = imageToPaletted(transform(img))
+		im.Image[index] = imageToPaletted(transform(img), frame.Palette)
 	}
 
 	return gif.EncodeAll(w, im)
 }
 
-func imageToPaletted(img image.Image) *image.Paletted {
+func imageToPaletted(img image.Image, p color.Palette) *image.Paletted {
 	b := img.Bounds()
-	pm := image.NewPaletted(b, palette.Plan9)
+	pm := image.NewPaletted(b, p)
 	draw.FloydSteinberg.Draw(pm, b, img, image.ZP)
 	return pm
 }
