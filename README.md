@@ -118,6 +118,9 @@ Install the package using:
 
     go get willnorris.com/go/imageproxy/cmd/imageproxy
 
+(Note that go1.2 and earlier may have trouble fetching the package with `go
+get`).
+
 Once installed, ensure `$GOPATH/bin` is in your `$PATH`, then run the proxy using:
 
     imageproxy
