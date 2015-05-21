@@ -1,18 +1,18 @@
 # imageproxy [![Build Status](https://travis-ci.org/willnorris/imageproxy.svg?branch=master)](https://travis-ci.org/willnorris/imageproxy) [![GoDoc](https://godoc.org/willnorris.com/go/imageproxy?status.svg)](https://godoc.org/willnorris.com/go/imageproxy) [![Apache 2.0 License](https://img.shields.io/badge/license-Apache%202.0-blue.svg?style=flat)](LICENSE)
 
-imageproxy is a caching image proxy server written in go.  It supports basic
-image adjustments like resizing, cropping, and rotation, and access control
-using host whitelists or request signing.  And because it's pure go, deployment
-is a breeze.
+imageproxy is a caching image proxy server written in go.  It features:
 
-This project was originally inspired by, and was designed to be an alternative
-to, WordPress's [photon service][photon] (read more in [this post][]).
+ - basic image adjustments like resizing, cropping, and rotation
+ - access control using host whitelists or request signing (HMAC-SHA256)
+ - support for jpeg, png, and gif image formats (including animated gifs)
+ - on-disk caching, respecting the cache headers of the original images
+ - easy deployment, since it's pure go
+
 Personally, I use it primarily to dynamically resize images hosted on my own
-site.  But you can also enable request signing and use it as an SSL proxy for
-remote images, similar to [atmos/camo][] but with additional image adjustment
-options.
+site (read more in [this post][]).  But you can also enable request signing and
+use it as an SSL proxy for remote images, similar to [atmos/camo][] but with
+additional image adjustment options.
 
-[photon]: http://developer.wordpress.com/docs/photon/
 [this post]: https://willnorris.com/2014/01/a-self-hosted-alternative-to-jetpacks-photon-service
 [atmos/camo]: https://github.com/atmos/camo
 
@@ -110,6 +110,13 @@ x100    | 100px tall, proportional width           | <a href="https://willnorris
 100,r90 | 100px square, rotated 90 degrees         | <a href="https://willnorris.com/api/imageproxy/100,r90/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/100,r90/https://willnorris.com/2013/12/small-things.jpg" alt="100,r90"></a>
 100,fv,fh | 100px square, flipped horizontal and vertical | <a href="https://willnorris.com/api/imageproxy/100,fv,fh/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/100,fv,fh/https://willnorris.com/2013/12/small-things.jpg" alt="100,fv,fh"></a>
 200x,q60 | 200px wide, proportional height, 60% quality | <a href="https://willnorris.com/api/imageproxy/200x,q60/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/200x,q60/https://willnorris.com/2013/12/small-things.jpg" alt="200x,q60"></a>
+
+Transformation also works on animated gifs.  Here is [this source
+image][material-animation] resized to 200px square and rotated 270 degrees:
+
+[material-animation]: https://willnorris.com/2015/05/material-animations.gif
+
+<a href="https://willnorris.com/api/imageproxy/200,r270/https://willnorris.com/2015/05/material-animations.gif"><img src="https://willnorris.com/api/imageproxy/200,r270/https://willnorris.com/2015/05/material-animations.gif" alt="200,r270"></a>
 
 
 ## Getting Started ##
