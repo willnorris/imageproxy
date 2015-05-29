@@ -241,6 +241,14 @@ my server and start it using `sudo service imageproxy start`.  You will
 certainly want to modify that upstart script to suit your desired
 configuration.
 
+## Docker ##
+
+A docker image is available at [`willnorris/imageproxy`](https://registry.hub.docker.com/u/willnorris/imageproxy/dockerfile/).
+
+You can run it by
+```
+docker run -p 8080:8080 willnorris/imageproxy -addr 0.0.0.0:8080
+```
 
 ## License ##
 
