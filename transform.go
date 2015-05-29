@@ -64,10 +64,16 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 		}
 
 		m = transformImage(m, opt)
-		jpeg.Encode(buf, m, &jpeg.Options{Quality: quality})
+		err = jpeg.Encode(buf, m, &jpeg.Options{Quality: quality})
+		if err != nil {
+			return nil, err
+		}
 	case "png":
 		m = transformImage(m, opt)
-		png.Encode(buf, m)
+		err = png.Encode(buf, m)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return buf.Bytes(), nil
