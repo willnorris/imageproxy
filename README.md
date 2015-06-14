@@ -150,6 +150,17 @@ full-size codercat image, and one for the resized 500px version.
 
 [codercat URL]: http://localhost:8080/500/https://octodex.github.com/images/codercat.jpg
 
+### Referrer Whitelist ###
+
+You can limit images to only be accessible for certain hosts in the HTTP referrer header. This may be useful to prevent others from hotlinking to images, and using your valuable bandwidth! It can be enabled be running:
+
+    imageproxy  -referrers example.com
+
+
+Reload the [codercat URL][], and you should now get an error message.  You can
+specify multiple hosts as a comma separated list, or prefix a host value with
+`*.` to allow all sub-domains as well.
+
 ### Host whitelist ###
 
 You can limit the remote hosts that the proxy will fetch images from using the

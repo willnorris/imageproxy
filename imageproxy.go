@@ -47,6 +47,11 @@ type Proxy struct {
 	// proxied from.  An empty list means all hosts are allowed.
 	Whitelist []string
 
+	// Referrers, when given, requires that requests to the image
+	// proxy come from a referring host. An empty list means all
+	// hosts are allowed.
+	Referrers []string
+
 	// DefaultBaseURL is the URL that relative remote URLs are resolved in
 	// reference to.  If nil, all remote URLs specified in requests must be
 	// absolute.
@@ -138,6 +143,11 @@ func copyHeader(w http.ResponseWriter, r *http.Response, header string) {
 // allowed returns whether the specified request is allowed because it matches
 // a host in the proxy whitelist or it has a valid signature.
 func (p *Proxy) allowed(r *Request) bool {
+	if len(p.Referrers) > 0 && !validReferrer(p.Referrers, r.Original) {
+		glog.Infof("request not coming from allowed referrer: %v", r)
+		return false
+	}
+
 	if len(p.Whitelist) == 0 && len(p.SignatureKey) == 0 {
 		return true // no whitelist or signature key, all requests accepted
 	}
@@ -171,6 +181,16 @@ func validHost(hosts []string, u *url.URL) bool {
 	}
 
 	return false
+}
+
+// returns whether the referrer from the request is in the host list.
+func validReferrer(hosts []string, r *http.Request) bool {
+	parsed, err := url.Parse(r.Header.Get("Referer"))
+	if err != nil { // malformed or blank header, just deny
+		return false
+	}
+
+	return validHost(hosts, parsed)
 }
 
 // validSignature returns whether the request signature is valid.

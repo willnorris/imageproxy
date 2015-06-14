@@ -41,6 +41,7 @@ var (
 
 var addr = flag.String("addr", "localhost:8080", "TCP address to listen on")
 var whitelist = flag.String("whitelist", "", "comma separated list of allowed remote hosts")
+var referrers = flag.String("referrers", "", "comma separated list of allowed referring hosts")
 var baseURL = flag.String("baseURL", "", "default base URL for relative remote URLs")
 var cacheDir = flag.String("cacheDir", "", "directory to use for file cache")
 var cacheSize = flag.Uint64("cacheSize", 100, "maximum size of file cache (in MB)")
@@ -69,6 +70,9 @@ func main() {
 	p := imageproxy.NewProxy(nil, c)
 	if *whitelist != "" {
 		p.Whitelist = strings.Split(*whitelist, ",")
+	}
+	if *referrers != "" {
+		p.Referrers = strings.Split(*referrers, ",")
 	}
 	if *signatureKey != "" {
 		key := []byte(*signatureKey)
