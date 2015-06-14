@@ -20,43 +20,60 @@ func TestAllowed(t *testing.T) {
 	whitelist := []string{"good"}
 	key := []byte("c0ffee")
 
+	genRequest := func(headers map[string]string) *http.Request {
+		req := &http.Request{Header: make(http.Header)}
+		for key, value := range headers {
+			req.Header.Set(key, value)
+		}
+		return req
+	}
+
 	tests := []struct {
 		url       string
 		options   Options
 		whitelist []string
+		referrers []string
 		key       []byte
+		request   *http.Request
 		allowed   bool
 	}{
 		// no whitelist or signature key
-		{"http://test/image", emptyOptions, nil, nil, true},
+		{"http://test/image", emptyOptions, nil, nil, nil, nil, true},
 
 		// whitelist
-		{"http://good/image", emptyOptions, whitelist, nil, true},
-		{"http://bad/image", emptyOptions, whitelist, nil, false},
+		{"http://good/image", emptyOptions, whitelist, nil, nil, nil, true},
+		{"http://bad/image", emptyOptions, whitelist, nil, nil, nil, false},
+
+		// referrer
+		{"http://test/image", emptyOptions, nil, whitelist, nil, genRequest(map[string]string{"Referer": "http://good/foo"}), true},
+		{"http://test/image", emptyOptions, nil, whitelist, nil, genRequest(map[string]string{"Referer": "http://bad/foo"}), false},
+		{"http://test/image", emptyOptions, nil, whitelist, nil, genRequest(map[string]string{"Referer": "MALFORMED!!"}), false},
+		{"http://test/image", emptyOptions, nil, whitelist, nil, genRequest(map[string]string{}), false},
 
 		// signature key
-		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ="}, nil, key, true},
-		{"http://test/image", Options{Signature: "deadbeef"}, nil, key, false},
-		{"http://test/image", emptyOptions, nil, key, false},
+		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ="}, nil, nil, key, nil, true},
+		{"http://test/image", Options{Signature: "deadbeef"}, nil, nil, key, nil, false},
+		{"http://test/image", emptyOptions, nil, nil, key, nil, false},
 
 		// whitelist and signature
-		{"http://good/image", emptyOptions, whitelist, key, true},
-		{"http://bad/image", Options{Signature: "gWivrPhXBbsYEwpmWAKjbJEiAEgZwbXbltg95O2tgNI="}, nil, key, true},
-		{"http://bad/image", emptyOptions, whitelist, key, false},
+		{"http://good/image", emptyOptions, whitelist, nil, key, nil, true},
+		{"http://bad/image", Options{Signature: "gWivrPhXBbsYEwpmWAKjbJEiAEgZwbXbltg95O2tgNI="}, nil, nil, key, nil, true},
+		{"http://bad/image", emptyOptions, whitelist, nil, key, nil, false},
 	}
 
 	for _, tt := range tests {
 		p := NewProxy(nil, nil)
 		p.Whitelist = tt.whitelist
 		p.SignatureKey = tt.key
+		p.Referrers = tt.referrers
 
 		u, err := url.Parse(tt.url)
 		if err != nil {
 			t.Errorf("error parsing url %q: %v", tt.url, err)
 		}
-		req := &Request{u, tt.options}
+		req := &Request{u, tt.options, tt.request}
 		if got, want := p.allowed(req), tt.allowed; got != want {
-			t.Errorf("allowed(%q) returned %v, want %v", req, got, want)
+			t.Errorf("allowed(%q) returned %v, want %v.\nTest struct: %#v", req, got, want, tt)
 		}
 	}
 }
@@ -109,7 +126,7 @@ func TestValidSignature(t *testing.T) {
 		if err != nil {
 			t.Errorf("error parsing url %q: %v", tt.url, err)
 		}
-		req := &Request{u, tt.options}
+		req := &Request{u, tt.options, &http.Request{}}
 		if got, want := validSignature(key, req), tt.valid; got != want {
 			t.Errorf("validSignature(%v, %q) returned %v, want %v", key, u, got, want)
 		}

@@ -196,8 +196,9 @@ func ParseOptions(str string) Options {
 // Request is an imageproxy request which includes a remote URL of an image to
 // proxy, and an optional set of transformations to perform.
 type Request struct {
-	URL     *url.URL // URL of the image to proxy
-	Options Options  // Image transformation to perform
+	URL      *url.URL      // URL of the image to proxy
+	Options  Options       // Image transformation to perform
+	Original *http.Request // The original HTTP request
 }
 
 // String returns the request URL as a string, with r.Options encoded in the
@@ -223,7 +224,7 @@ func (r Request) String() string {
 // 	http://localhost/http://example.com/image.jpg
 func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 	var err error
-	req := new(Request)
+	req := &Request{Original: r}
 
 	path := r.URL.Path[1:] // strip leading slash
 	req.URL, err = url.Parse(path)
