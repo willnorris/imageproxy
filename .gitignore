@@ -1,3 +1,4 @@
 build
 .goxc.local.json
+.idea/*
 *.test

@@ -140,12 +140,21 @@ whitelist (meaning any remote URL can be proxied).  Test this by navigating to
 <http://localhost:8080/500/https://octodex.github.com/images/codercat.jpg> and
 you should see a 500px square coder octocat.
 
-### Disk cache ###
+### Caching ###
 
 By default, the imageproxy command uses an in-memory cache that will grow
 unbounded.  To cache images on disk instead, include the `cacheDir` flag:
 
     imageproxy -cacheDir /tmp/imageproxy
+
+Using s3 as a cache, which allows you to add a CDN like CloudFront for resized
+images, is also possible by using a s3 URL:
+
+    imageproxy -cacheDir s3://s3-us-west-2.amazonaws.com/my-bucket
+
+S3 cache requires either an IAM role and instance profile with access to your
+your bucket or `AWS_ACCESS_KEY_ID` and `AWS_SECRET_KEY` environmental parameters
+set.
 
 Reload the [codercat URL][], and then inspect the contents of
 `/tmp/imageproxy`.  There should be two files there, one for the original
@@ -155,7 +164,9 @@ full-size codercat image, and one for the resized 500px version.
 
 ### Referrer Whitelist ###
 
-You can limit images to only be accessible for certain hosts in the HTTP referrer header. This may be useful to prevent others from hotlinking to images, and using your valuable bandwidth! It can be enabled be running:
+You can limit images to only be accessible for certain hosts in the HTTP referrer header.
+This may be useful to prevent others from hotlinking to images, and using your valuable bandwidth!
+It can be enabled be running:
 
     imageproxy  -referrers example.com
 
