@@ -150,6 +150,10 @@ enabled using the `-cache` flag.  It supports the following values:
    available memory and is not recommended for production systems)
  - directory on local disk (e.g. `/tmp/imageproxy`) - will cache images
    on disk, limited to the size specified in the `-cacheSize` flag.
+ - s3 URL (e.g. `s3://s3-us-west-2.amazonaws.com/my-bucket`) - will cache
+   images on Amazon S3.  This requires either an IAM role and instance profile
+   with access to your your bucket or `AWS_ACCESS_KEY_ID` and `AWS_SECRET_KEY`
+   environmental parameters set.
 
 For example, to cache files on disk, allowing up to 100MB of space:
 

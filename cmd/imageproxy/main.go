@@ -27,6 +27,7 @@ import (
 	"github.com/gregjones/httpcache"
 	"github.com/gregjones/httpcache/diskcache"
 	"github.com/peterbourgon/diskv"
+	"sourcegraph.com/sourcegraph/s3cache"
 	"willnorris.com/go/imageproxy"
 )
 
@@ -120,6 +121,9 @@ func parseCache() (imageproxy.Cache, error) {
 	}
 
 	switch u.Scheme {
+	case "s3":
+		u.Scheme = "https"
+		return s3cache.New(u.String()), nil
 	case "file":
 		fallthrough
 	default:
