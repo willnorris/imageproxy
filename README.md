@@ -213,6 +213,11 @@ effective method to mask the true source of the images being proxied; it is
 trivial to discover the base URL being used.  Even when a base URL is
 specified, you can always provide the absolute URL of the image to be proxied.
 
+### Scaling beyond original size ###
+
+By default, the imageproxy won't scale images beyond their original size. However, you can use the `scaleUp` command-line flag to allow this to happen:
+
+    imageproxy -scaleUp true
 
 ## Deploying ##
 
