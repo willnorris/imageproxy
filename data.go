@@ -65,6 +65,9 @@ type Options struct {
 
 	// HMAC Signature for signed requests.
 	Signature string
+
+	// Allow images to scale beyond their original dimensions.
+	ScaleUp bool
 }
 
 var emptyOptions = Options{}

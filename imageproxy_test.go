@@ -12,6 +12,8 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+
+	"github.com/gregjones/httpcache"
 )
 
 func TestAllowed(t *testing.T) {
@@ -187,6 +189,15 @@ func TestCheck304(t *testing.T) {
 	}
 }
 
+// make sure that the proxy is passed to transport in order
+// to access the command line flags.
+func TestProxyPointer(t *testing.T) {
+	p := NewProxy(nil, nil)
+	if p.Client.Transport.(*httpcache.Transport).Transport.(*TransformingTransport).Proxy != p {
+		t.Errorf("Transport doesnt have proxy pointer")
+	}
+}
+
 // testTransport is an http.RoundTripper that returns certained canned
 // responses for particular requests.
 type testTransport struct{}
@@ -272,7 +283,10 @@ func TestProxy_ServeHTTP_is304(t *testing.T) {
 
 func TestTransformingTransport(t *testing.T) {
 	client := new(http.Client)
-	tr := &TransformingTransport{testTransport{}, client}
+	tr := &TransformingTransport{
+		Transport:     testTransport{},
+		CachingClient: client,
+	}
 	client.Transport = tr
 
 	tests := []struct {

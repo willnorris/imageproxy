@@ -102,11 +102,13 @@ func transformImage(m image.Image, opt Options) image.Image {
 	}
 
 	// never resize larger than the original image
-	if w > imgW {
-		w = imgW
-	}
-	if h > imgH {
-		h = imgH
+	if !opt.ScaleUp {
+		if w > imgW {
+			w = imgW
+		}
+		if h > imgH {
+			h = imgH
+		}
 	}
 
 	// resize

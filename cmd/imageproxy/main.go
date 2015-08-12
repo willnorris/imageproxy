@@ -45,6 +45,7 @@ var baseURL = flag.String("baseURL", "", "default base URL for relative remote U
 var cacheDir = flag.String("cacheDir", "", "directory to use for file cache")
 var cacheSize = flag.Uint64("cacheSize", 100, "maximum size of file cache (in MB)")
 var signatureKey = flag.String("signatureKey", "", "HMAC key used in calculating request signatures")
+var scaleUp = flag.Bool("scaleUp", false, "allow images to scale beyond their original dimensions")
 var version = flag.Bool("version", false, "print version information")
 
 func main() {
@@ -89,6 +90,8 @@ func main() {
 			log.Fatalf("error parsing baseURL: %v", err)
 		}
 	}
+
+	p.ScaleUp = *scaleUp
 
 	server := &http.Server{
 		Addr:    *addr,

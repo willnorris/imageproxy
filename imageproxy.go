@@ -54,6 +54,9 @@ type Proxy struct {
 
 	// SignatureKey is the HMAC key used to verify signed requests.
 	SignatureKey []byte
+
+	// Allow images to scale beyond their original dimensions.
+	ScaleUp bool
 }
 
 // NewProxy constructs a new proxy.  The provided http RoundTripper will be
@@ -67,17 +70,20 @@ func NewProxy(transport http.RoundTripper, cache Cache) *Proxy {
 		cache = NopCache
 	}
 
+	proxy := Proxy{
+		Cache: cache,
+	}
+
 	client := new(http.Client)
 	client.Transport = &httpcache.Transport{
-		Transport:           &TransformingTransport{transport, client},
+		Transport:           &TransformingTransport{transport, client, &proxy},
 		Cache:               cache,
 		MarkCachedResponses: true,
 	}
 
-	return &Proxy{
-		Client: client,
-		Cache:  cache,
-	}
+	proxy.Client = client
+
+	return &proxy
 }
 
 // ServeHTTP handles image requests.
@@ -232,6 +238,9 @@ type TransformingTransport struct {
 	// used rather than Transport directly in order to ensure that
 	// responses are properly cached.
 	CachingClient *http.Client
+
+	// Proxy is used to access command line flag settings during roundtripping.
+	Proxy *Proxy
 }
 
 // RoundTrip implements the http.RoundTripper interface.
@@ -256,6 +265,12 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 	}
 
 	opt := ParseOptions(req.URL.Fragment)
+
+	// assign static settings from proxy to options
+	if t.Proxy != nil {
+		opt.ScaleUp = t.Proxy.ScaleUp
+	}
+
 	img, err := Transform(b, opt)
 	if err != nil {
 		glog.Errorf("error transforming image: %v", err)
