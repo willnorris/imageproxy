@@ -62,7 +62,7 @@ func main() {
 			CacheSizeMax: *cacheSize * 1024 * 1024,
 		})
 		c = diskcache.NewWithDiskv(d)
-	} else {
+	} else if *cacheSize != 0 {
 		c = httpcache.NewMemoryCache()
 	}
 
