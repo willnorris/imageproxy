@@ -14,7 +14,7 @@
 
 // Package imageproxy provides an image proxy server.  For typical use of
 // creating and using a Proxy, see cmd/imageproxy/main.go.
-package imageproxy // import "willnorris.com/go/imageproxy"
+package imageproxy // import "github.com/Toubib/imageproxy"
 
 import (
 	"bufio"
@@ -46,6 +46,10 @@ type Proxy struct {
 	// Whitelist specifies a list of remote hosts that images can be
 	// proxied from.  An empty list means all hosts are allowed.
 	Whitelist []string
+
+	// Filetypes specifies a list of file types that images can be
+	// proxied from.  An empty list means all file types are allowed.
+	Filetypes []string
 
 	// DefaultBaseURL is the URL that relative remote URLs are resolved in
 	// reference to.  If nil, all remote URLs specified in requests must be
@@ -138,6 +142,14 @@ func copyHeader(w http.ResponseWriter, r *http.Response, header string) {
 // allowed returns whether the specified request is allowed because it matches
 // a host in the proxy whitelist or it has a valid signature.
 func (p *Proxy) allowed(r *Request) bool {
+
+	if len(p.Filetypes) > 0 {
+		if validUrl(p.Filetypes, r.URL) == false {
+			glog.Infof("request is not for an allowed filetype: %v", r)
+			return false
+		}
+	}
+
 	if len(p.Whitelist) == 0 && len(p.SignatureKey) == 0 {
 		return true // no whitelist or signature key, all requests accepted
 	}
@@ -154,6 +166,17 @@ func (p *Proxy) allowed(r *Request) bool {
 			return true
 		}
 		glog.Infof("request contains invalid signature: %v", r)
+	}
+
+	return false
+}
+
+// validUrl returns whether the url in u matches one of filetype.
+func validUrl(filetypes []string, u *url.URL) bool {
+	for _, filetype := range filetypes {
+		if strings.HasSuffix(u.Path, filetype) {
+			return true
+		}
 	}
 
 	return false

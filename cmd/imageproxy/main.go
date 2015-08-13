@@ -27,7 +27,8 @@ import (
 	"github.com/gregjones/httpcache"
 	"github.com/gregjones/httpcache/diskcache"
 	"github.com/peterbourgon/diskv"
-	"willnorris.com/go/imageproxy"
+	//"willnorris.com/go/imageproxy"
+	"github.com/Toubib/imageproxy"
 )
 
 // goxc values
@@ -41,6 +42,7 @@ var (
 
 var addr = flag.String("addr", "localhost:8080", "TCP address to listen on")
 var whitelist = flag.String("whitelist", "", "comma separated list of allowed remote hosts")
+var filetypes = flag.String("filetypes", "", "comma separated list of allowed file types")
 var baseURL = flag.String("baseURL", "", "default base URL for relative remote URLs")
 var cacheDir = flag.String("cacheDir", "", "directory to use for file cache")
 var cacheSize = flag.Uint64("cacheSize", 100, "maximum size of file cache (in MB)")
@@ -70,6 +72,10 @@ func main() {
 	if *whitelist != "" {
 		p.Whitelist = strings.Split(*whitelist, ",")
 	}
+	if *filetypes != "" {
+		p.Filetypes = strings.Split(*filetypes, ",")
+	}
+
 	if *signatureKey != "" {
 		key := []byte(*signatureKey)
 		if strings.HasPrefix(*signatureKey, "@") {

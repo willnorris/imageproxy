@@ -16,36 +16,43 @@ import (
 
 func TestAllowed(t *testing.T) {
 	whitelist := []string{"good"}
+	filetypes := []string{"png","jpg"}
 	key := []byte("c0ffee")
 
 	tests := []struct {
 		url       string
 		options   Options
 		whitelist []string
+		filetypes []string
 		key       []byte
 		allowed   bool
 	}{
 		// no whitelist or signature key
-		{"http://test/image", emptyOptions, nil, nil, true},
+		{"http://test/image", emptyOptions, nil, nil, nil, true},
 
 		// whitelist
-		{"http://good/image", emptyOptions, whitelist, nil, true},
-		{"http://bad/image", emptyOptions, whitelist, nil, false},
+		{"http://good/image", emptyOptions, whitelist, nil, nil, true},
+		{"http://bad/image", emptyOptions, whitelist, nil, nil, false},
+
+		// filetypes
+		{"http://test/image.png", emptyOptions, nil, filetypes, nil, true},
+		{"http://test/image.bmp", emptyOptions, nil, filetypes, nil, false},
 
 		// signature key
-		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ="}, nil, key, true},
-		{"http://test/image", Options{Signature: "deadbeef"}, nil, key, false},
-		{"http://test/image", emptyOptions, nil, key, false},
+		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ="}, nil, nil, key, true},
+		{"http://test/image", Options{Signature: "deadbeef"}, nil, nil, key, false},
+		{"http://test/image", emptyOptions, nil, nil, key, false},
 
 		// whitelist and signature
-		{"http://good/image", emptyOptions, whitelist, key, true},
-		{"http://bad/image", Options{Signature: "gWivrPhXBbsYEwpmWAKjbJEiAEgZwbXbltg95O2tgNI="}, nil, key, true},
-		{"http://bad/image", emptyOptions, whitelist, key, false},
+		{"http://good/image", emptyOptions, whitelist, nil, key, true},
+		{"http://bad/image", Options{Signature: "gWivrPhXBbsYEwpmWAKjbJEiAEgZwbXbltg95O2tgNI="}, nil, nil, key, true},
+		{"http://bad/image", emptyOptions, whitelist, nil, key, false},
 	}
 
 	for _, tt := range tests {
 		p := NewProxy(nil, nil)
 		p.Whitelist = tt.whitelist
+		p.Filetypes = tt.filetypes
 		p.SignatureKey = tt.key
 
 		u, err := url.Parse(tt.url)
