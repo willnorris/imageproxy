@@ -246,6 +246,10 @@ my server and start it using `sudo service imageproxy start`.  You will
 certainly want to modify that upstart script to suit your desired
 configuration.
 
+## Deploying to Heroku ##
+
+It's easy to vendorize the dependencies with `Godep` and deploy to Heroku. Take a look at [this GitHub repo](https://github.com/oreillymedia/prototype-imageproxy)
+
 ## Docker ##
 
 A docker image is available at [`willnorris/imageproxy`](https://registry.hub.docker.com/u/willnorris/imageproxy/dockerfile/).
