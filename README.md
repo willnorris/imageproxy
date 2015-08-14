@@ -81,6 +81,8 @@ The `s{signature}` option specifies an optional base64 encoded HMAC used to
 sign the remote URL in the request.  The HMAC key used to verify signatures is
 provided to the imageproxy server on startup.
 
+See [the wiki](https://github.com/willnorris/imageproxy/wiki/URL-signing) for more informations.
+
 ### Remote URL ###
 
 The URL of the original image to load is specified as the remainder of the
