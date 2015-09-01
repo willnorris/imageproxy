@@ -42,10 +42,12 @@ var (
 var addr = flag.String("addr", "localhost:8080", "TCP address to listen on")
 var whitelist = flag.String("whitelist", "", "comma separated list of allowed remote hosts")
 var filetypes = flag.String("filetypes", "", "comma separated list of allowed file types")
+var referrers = flag.String("referrers", "", "comma separated list of allowed referring hosts")
 var baseURL = flag.String("baseURL", "", "default base URL for relative remote URLs")
 var cacheDir = flag.String("cacheDir", "", "directory to use for file cache")
 var cacheSize = flag.Uint64("cacheSize", 100, "maximum size of file cache (in MB)")
 var signatureKey = flag.String("signatureKey", "", "HMAC key used in calculating request signatures")
+var scaleUp = flag.Bool("scaleUp", false, "allow images to scale beyond their original dimensions")
 var version = flag.Bool("version", false, "print version information")
 
 func main() {
@@ -63,16 +65,22 @@ func main() {
 			CacheSizeMax: *cacheSize * 1024 * 1024,
 		})
 		c = diskcache.NewWithDiskv(d)
-	} else {
+	} else if *cacheSize != 0 {
 		c = httpcache.NewMemoryCache()
 	}
 
 	p := imageproxy.NewProxy(nil, c)
+
 	if *whitelist != "" {
 		p.Whitelist = strings.Split(*whitelist, ",")
 	}
+
 	if *filetypes != "" {
 		p.Filetypes = strings.Split(*filetypes, ",")
+	}
+
+	if *referrers != "" {
+		p.Referrers = strings.Split(*referrers, ",")
 	}
 
 	if *signatureKey != "" {
@@ -87,6 +95,7 @@ func main() {
 		}
 		p.SignatureKey = key
 	}
+
 	if *baseURL != "" {
 		var err error
 		p.DefaultBaseURL, err = url.Parse(*baseURL)
@@ -94,6 +103,8 @@ func main() {
 			log.Fatalf("error parsing baseURL: %v", err)
 		}
 	}
+
+	p.ScaleUp = *scaleUp
 
 	server := &http.Server{
 		Addr:    *addr,

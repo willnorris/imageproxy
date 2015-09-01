@@ -81,6 +81,9 @@ The `s{signature}` option specifies an optional base64 encoded HMAC used to
 sign the remote URL in the request.  The HMAC key used to verify signatures is
 provided to the imageproxy server on startup.
 
+See [URL Signing](https://github.com/willnorris/imageproxy/wiki/URL-signing)
+for examples of generating signatures.
+
 ### Remote URL ###
 
 The URL of the original image to load is specified as the remainder of the
@@ -150,6 +153,17 @@ full-size codercat image, and one for the resized 500px version.
 
 [codercat URL]: http://localhost:8080/500/https://octodex.github.com/images/codercat.jpg
 
+### Referrer Whitelist ###
+
+You can limit images to only be accessible for certain hosts in the HTTP referrer header. This may be useful to prevent others from hotlinking to images, and using your valuable bandwidth! It can be enabled be running:
+
+    imageproxy  -referrers example.com
+
+
+Reload the [codercat URL][], and you should now get an error message.  You can
+specify multiple hosts as a comma separated list, or prefix a host value with
+`*.` to allow all sub-domains as well.
+
 ### Host whitelist ###
 
 You can limit the remote hosts that the proxy will fetch images from using the
@@ -187,7 +201,7 @@ Reload the [codercat URL][], and you should see an error message.  Now load a
 [signed codercat URL]: http://localhost:8080/500,sXyMwWKIC5JPCtlYOQ2f4yMBTqpjtUsfI67Sp7huXIYY=/https://octodex.github.com/images/codercat.jpg
 
 Some simple code samples for generating signatures in various languages can be
-found starting in [this comment](https://github.com/willnorris/imageproxy/issues/11#issuecomment-101428470).
+found in [URL Signing](https://github.com/willnorris/imageproxy/wiki/URL-signing).
 
 If both a whiltelist and signatureKey are specified, requests can match either.
 In other words, requests that match one of the whitelisted hosts don't
@@ -213,6 +227,11 @@ effective method to mask the true source of the images being proxied; it is
 trivial to discover the base URL being used.  Even when a base URL is
 specified, you can always provide the absolute URL of the image to be proxied.
 
+### Scaling beyond original size ###
+
+By default, the imageproxy won't scale images beyond their original size. However, you can use the `scaleUp` command-line flag to allow this to happen:
+
+    imageproxy -scaleUp true
 
 ## Deploying ##
 
@@ -240,6 +259,10 @@ Ubuntu uses upstart to manage services, so I copy
 my server and start it using `sudo service imageproxy start`.  You will
 certainly want to modify that upstart script to suit your desired
 configuration.
+
+## Deploying to Heroku ##
+
+It's easy to vendorize the dependencies with `Godep` and deploy to Heroku. Take a look at [this GitHub repo](https://github.com/oreillymedia/prototype-imageproxy)
 
 ## Docker ##
 

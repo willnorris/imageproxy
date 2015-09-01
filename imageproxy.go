@@ -51,6 +51,11 @@ type Proxy struct {
 	// proxied from.  An empty list means all file types are allowed.
 	Filetypes []string
 
+	// Referrers, when given, requires that requests to the image
+	// proxy come from a referring host. An empty list means all
+	// hosts are allowed.
+	Referrers []string
+
 	// DefaultBaseURL is the URL that relative remote URLs are resolved in
 	// reference to.  If nil, all remote URLs specified in requests must be
 	// absolute.
@@ -58,6 +63,9 @@ type Proxy struct {
 
 	// SignatureKey is the HMAC key used to verify signed requests.
 	SignatureKey []byte
+
+	// Allow images to scale beyond their original dimensions.
+	ScaleUp bool
 }
 
 // NewProxy constructs a new proxy.  The provided http RoundTripper will be
@@ -71,17 +79,20 @@ func NewProxy(transport http.RoundTripper, cache Cache) *Proxy {
 		cache = NopCache
 	}
 
+	proxy := Proxy{
+		Cache: cache,
+	}
+
 	client := new(http.Client)
 	client.Transport = &httpcache.Transport{
-		Transport:           &TransformingTransport{transport, client},
+		Transport:           &TransformingTransport{transport, client, &proxy},
 		Cache:               cache,
 		MarkCachedResponses: true,
 	}
 
-	return &Proxy{
-		Client: client,
-		Cache:  cache,
-	}
+	proxy.Client = client
+
+	return &proxy
 }
 
 // ServeHTTP handles image requests.
@@ -150,6 +161,11 @@ func (p *Proxy) allowed(r *Request) bool {
 		}
 	}
 
+	if len(p.Referrers) > 0 && !validReferrer(p.Referrers, r.Original) {
+		glog.Infof("request not coming from allowed referrer: %v", r)
+		return false
+	}
+
 	if len(p.Whitelist) == 0 && len(p.SignatureKey) == 0 {
 		return true // no whitelist or signature key, all requests accepted
 	}
@@ -194,6 +210,16 @@ func validHost(hosts []string, u *url.URL) bool {
 	}
 
 	return false
+}
+
+// returns whether the referrer from the request is in the host list.
+func validReferrer(hosts []string, r *http.Request) bool {
+	parsed, err := url.Parse(r.Header.Get("Referer"))
+	if err != nil { // malformed or blank header, just deny
+		return false
+	}
+
+	return validHost(hosts, parsed)
 }
 
 // validSignature returns whether the request signature is valid.
@@ -255,6 +281,9 @@ type TransformingTransport struct {
 	// used rather than Transport directly in order to ensure that
 	// responses are properly cached.
 	CachingClient *http.Client
+
+	// Proxy is used to access command line flag settings during roundtripping.
+	Proxy *Proxy
 }
 
 // RoundTrip implements the http.RoundTripper interface.
@@ -279,6 +308,12 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 	}
 
 	opt := ParseOptions(req.URL.Fragment)
+
+	// assign static settings from proxy to options
+	if t.Proxy != nil {
+		opt.ScaleUp = t.Proxy.ScaleUp
+	}
+
 	img, err := Transform(b, opt)
 	if err != nil {
 		glog.Errorf("error transforming image: %v", err)

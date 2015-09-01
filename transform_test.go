@@ -127,6 +127,11 @@ func TestTransformImage(t *testing.T) {
 			Options{Width: 100, Height: 100},
 			ref,
 		},
+		{ // can resize larger than original image
+			ref,
+			Options{Width: 4, Height: 4, ScaleUp: true},
+			newImage(4, 4, red, red, green, green, red, red, green, green, blue, blue, yellow, yellow, blue, blue, yellow, yellow),
+		},
 		{ // invalid values
 			ref,
 			Options{Width: -1, Height: -1},
