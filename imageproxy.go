@@ -154,11 +154,9 @@ func copyHeader(w http.ResponseWriter, r *http.Response, header string) {
 // a host in the proxy whitelist or it has a valid signature.
 func (p *Proxy) allowed(r *Request) bool {
 
-	if len(p.Filetypes) > 0 {
-		if validUrl(p.Filetypes, r.URL) == false {
-			glog.Infof("request is not for an allowed filetype: %v", r)
-			return false
-		}
+	if len(p.Filetypes) > 0 && !validUrl(p.Filetypes, r.URL) {
+		glog.Infof("filetype not allowed: %v", r)
+		return false
 	}
 
 	if len(p.Referrers) > 0 && !validReferrer(p.Referrers, r.Original) {
