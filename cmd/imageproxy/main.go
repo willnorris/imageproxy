@@ -23,7 +23,11 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"os"
+	"os/signal"
+	"syscall"
 
+	"github.com/sitano/glog"
 	"github.com/gregjones/httpcache"
 	"github.com/gregjones/httpcache/diskcache"
 	"github.com/peterbourgon/diskv"
@@ -52,6 +56,18 @@ var version = flag.Bool("version", false, "print version information")
 
 func main() {
 	flag.Parse()
+
+	//set sighup handler for log rotation
+	signalChannel := make(chan os.Signal, 1)
+	signal.Notify(signalChannel, syscall.SIGHUP)
+
+	//rotate log
+	go func() {
+		for {
+			<-signalChannel
+			glog.Rotate()
+		}
+	}()
 
 	if *version {
 		fmt.Printf("%v\nBuild: %v\n", VERSION, BUILD_DATE)
