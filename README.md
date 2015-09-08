@@ -153,7 +153,7 @@ full-size codercat image, and one for the resized 500px version.
 
 [codercat URL]: http://localhost:8080/500/https://octodex.github.com/images/codercat.jpg
 
-By default this disk cache will grow to 100MB. You can change this size by using the `-cacheSize` flag. The following example will change the cache size to 500MB.
+By default the disk cache will grow to 100MB. You can change this size by using the `-cacheSize` flag. The following example will allow the cache to take up 500MB of space.
 
     imageproxy -cacheDir /tmp/imageproxy -cacheSize 500
 
