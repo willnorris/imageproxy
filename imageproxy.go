@@ -128,6 +128,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	cached := resp.Header.Get(httpcache.XFromCache)
 	glog.Infof("request: %v (served from cache: %v)", *req, cached == "1")
 
+	copyHeader(w, resp, "Cache-Control")
 	copyHeader(w, resp, "Last-Modified")
 	copyHeader(w, resp, "Expires")
 	copyHeader(w, resp, "Etag")
