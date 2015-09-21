@@ -48,6 +48,8 @@ var whitelist = flag.String("whitelist", "", "comma separated list of allowed re
 var filetypes = flag.String("filetypes", "", "comma separated list of allowed file types")
 var referrers = flag.String("referrers", "", "comma separated list of allowed referring hosts")
 var baseURL = flag.String("baseURL", "", "default base URL for relative remote URLs")
+var fileCache = flag.Bool("fileCache", false, "use file cache on disk")
+var memCache = flag.Bool("memCache", false, "use memory cache")
 var cacheDir = flag.String("cacheDir", "", "directory to use for file cache")
 var cacheSize = flag.Uint64("cacheSize", 100, "maximum size of file cache (in MB)")
 var signatureKey = flag.String("signatureKey", "", "HMAC key used in calculating request signatures")
@@ -75,14 +77,20 @@ func main() {
 	}
 
 	var c httpcache.Cache
-	if *cacheDir != "" {
-		d := diskv.New(diskv.Options{
-			BasePath:     *cacheDir,
-			CacheSizeMax: *cacheSize * 1024 * 1024,
-		})
-		c = diskcache.NewWithDiskv(d)
-	} else if *cacheSize != 0 {
+	if *fileCache {
+		if *cacheDir != "" {
+			d := diskv.New(diskv.Options{
+				BasePath:     *cacheDir,
+				CacheSizeMax: *cacheSize * 1024 * 1024,
+			})
+			c = diskcache.NewWithDiskv(d)
+		} else {
+			log.Fatalf("cacheDir option is mandatory for fileCache use")
+		}
+	} else if *memCache {
 		c = httpcache.NewMemoryCache()
+	} else {
+		c = nil
 	}
 
 	p := imageproxy.NewProxy(nil, c)
