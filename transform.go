@@ -79,13 +79,10 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// transformImage modifies the image m based on the transformations specified
-// in opt.
-func transformImage(m image.Image, opt Options) image.Image {
+func resizeParams(m image.Image, opt *Options) (w, h int) {
 	// convert percentage width and height values to absolute values
 	imgW := m.Bounds().Max.X - m.Bounds().Min.X
 	imgH := m.Bounds().Max.Y - m.Bounds().Min.Y
-	var w, h int
 	if 0 < opt.Width && opt.Width < 1 {
 		w = int(float64(imgW) * opt.Width)
 	} else if opt.Width < 0 {
@@ -110,9 +107,14 @@ func transformImage(m image.Image, opt Options) image.Image {
 			h = imgH
 		}
 	}
+	return
+}
 
-	// resize
-	if w != 0 || h != 0 {
+// transformImage modifies the image m based on the transformations specified
+// in opt.
+func transformImage(m image.Image, opt Options) image.Image {
+	// resize if needed
+	if w, h := resizeParams(m, &opt); w != 0 || h != 0 {
 		if opt.Fit {
 			m = imaging.Fit(m, w, h, resampleFilter)
 		} else {

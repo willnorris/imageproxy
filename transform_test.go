@@ -37,6 +37,27 @@ func newImage(w, h int, pixels ...color.NRGBA) image.Image {
 	return m
 }
 
+func TestResizeParams(t *testing.T) {
+	src := image.NewNRGBA(image.Rect(0, 0, 64, 128))
+	tests := []struct {
+		opt Options
+		w,h int
+	}{
+		{Options{Width:0.5}, 32, 0},
+		{Options{Height:0.5}, 0, 64},
+		{Options{Width:0.5, Height:0.5}, 32, 64},
+		{Options{Width:100, Height: 200}, 64, 128},
+		{Options{Width:64}, 64, 0},
+		{Options{Height:128}, 0, 128},
+	}
+	for ti,tt := range tests {
+		w,h := resizeParams(src, &tt.opt)
+		if w != tt.w || h!= tt.h {
+			t.Errorf("test %d problem, want: %d,%d got: %d,%d", ti, tt.w, tt.h, w, h)
+		}
+	}
+}
+
 func TestTransform(t *testing.T) {
 	src := newImage(2, 2, red, green, blue, yellow)
 
