@@ -1,0 +1,56 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"path": "github.com/disintegration/imaging",
+			"revision": "546cb3c5137b3f1232e123a26aa033aade6b3066",
+			"revisionTime": "2015-10-03T04:44:24+03:00"
+		},
+		{
+			"path": "github.com/golang/glog",
+			"revision": "fca8c8854093a154ff1eb580aae10276ad6b1b5f",
+			"revisionTime": "2015-08-01T08:52:21+10:00"
+		},
+		{
+			"path": "github.com/gregjones/httpcache",
+			"revision": "ae1d6feaf2d3354cece07d7dcf420de6745ad7b6",
+			"revisionTime": "2015-10-25T15:48:47Z"
+		},
+		{
+			"path": "github.com/gregjones/httpcache/diskcache",
+			"revision": "ae1d6feaf2d3354cece07d7dcf420de6745ad7b6",
+			"revisionTime": "2015-10-25T15:48:47Z"
+		},
+		{
+			"path": "github.com/petar/GoLLRB/llrb",
+			"revision": "53be0d36a84c2a886ca057d34b6aa4468df9ccb4",
+			"revisionTime": "2013-04-27T17:51:48-04:00"
+		},
+		{
+			"path": "github.com/peterbourgon/diskv",
+			"revision": "72aa5da9f7d1125b480b83c6dc5ad09a1f04508c",
+			"revisionTime": "2014-12-31T15:08:51+01:00"
+		},
+		{
+			"path": "golang.org/x/image/bmp",
+			"revision": "baddd3465a05d84a6d8d3507547a91cb188c81ea",
+			"revisionTime": "2015-09-11T13:43:18+10:00"
+		},
+		{
+			"path": "golang.org/x/image/tiff",
+			"revision": "baddd3465a05d84a6d8d3507547a91cb188c81ea",
+			"revisionTime": "2015-09-11T13:43:18+10:00"
+		},
+		{
+			"path": "golang.org/x/image/tiff/lzw",
+			"revision": "baddd3465a05d84a6d8d3507547a91cb188c81ea",
+			"revisionTime": "2015-09-11T13:43:18+10:00"
+		},
+		{
+			"path": "willnorris.com/go/gifresize",
+			"revision": "9ea3f344c54d0eaa7e9494e3a00bec96676c9bab",
+			"revisionTime": "2015-05-29T07:34:41-07:00"
+		}
+	]
+}
