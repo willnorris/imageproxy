@@ -40,8 +40,8 @@ func newImage(w, h int, pixels ...color.NRGBA) image.Image {
 func TestResizeParams(t *testing.T) {
 	src := image.NewNRGBA(image.Rect(0, 0, 64, 128))
 	tests := []struct {
-		opt  Options
-		w, h int
+		opt    Options
+		w, h   int
 		resize bool
 	}{
 		{Options{Width: 0.5}, 32, 0, true},
@@ -52,10 +52,10 @@ func TestResizeParams(t *testing.T) {
 		{Options{Width: 64}, 0, 0, false},
 		{Options{Height: 128}, 0, 0, false},
 	}
-	for ti, tt := range tests {
-		w, h, resize := resizeParams(src, &tt.opt)
+	for _, tt := range tests {
+		w, h, resize := resizeParams(src, tt.opt)
 		if w != tt.w || h != tt.h || resize != tt.resize {
-			t.Errorf("test %d problem, want: %d,%d,%t got: %d,%d,%t", ti, tt.w, tt.h, tt.resize, w, h, resize)
+			t.Errorf("resizeParams(%v) returned (%d,%d,%t), want (%d,%d,%t)", tt.opt, w, h, resize, tt.w, tt.h, tt.resize)
 		}
 	}
 }
