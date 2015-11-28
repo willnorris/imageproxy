@@ -22,11 +22,13 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/gregjones/httpcache"
 	"github.com/gregjones/httpcache/diskcache"
 	"github.com/peterbourgon/diskv"
+	"sourcegraph.com/sourcegraph/s3cache"
 	"willnorris.com/go/imageproxy"
 )
 
@@ -43,7 +45,7 @@ var addr = flag.String("addr", "localhost:8080", "TCP address to listen on")
 var whitelist = flag.String("whitelist", "", "comma separated list of allowed remote hosts")
 var referrers = flag.String("referrers", "", "comma separated list of allowed referring hosts")
 var baseURL = flag.String("baseURL", "", "default base URL for relative remote URLs")
-var cacheDir = flag.String("cacheDir", "", "directory to use for file cache")
+var cacheDir = flag.String("cacheDir", "", "directory to use for file cache. can also be s3://s3-us-west-2.amazonaws.com/my-bucket")
 var cacheSize = flag.Uint64("cacheSize", 100, "maximum size of file cache (in MB)")
 var signatureKey = flag.String("signatureKey", "", "HMAC key used in calculating request signatures")
 var scaleUp = flag.Bool("scaleUp", false, "allow images to scale beyond their original dimensions")
@@ -59,11 +61,21 @@ func main() {
 
 	var c httpcache.Cache
 	if *cacheDir != "" {
-		d := diskv.New(diskv.Options{
-			BasePath:     *cacheDir,
-			CacheSizeMax: *cacheSize * 1024 * 1024,
-		})
-		c = diskcache.NewWithDiskv(d)
+		_, err := os.Stat(*cacheDir)
+		if err == nil {
+			d := diskv.New(diskv.Options{
+				BasePath:     *cacheDir,
+				CacheSizeMax: *cacheSize * 1024 * 1024,
+			})
+			c = diskcache.NewWithDiskv(d)
+		} else if strings.HasPrefix(*cacheDir, "s3://") {
+			fmt.Printf("Using s3 as a cache backend: %v\n", *cacheDir)
+			bucket_url := strings.Replace(*cacheDir, "s3://", "https://", 1)
+			c = s3cache.New(bucket_url)
+		} else {
+			fmt.Printf("Unknown directory or s3 bucket")
+			return
+		}
 	} else if *cacheSize != 0 {
 		c = httpcache.NewMemoryCache()
 	}
