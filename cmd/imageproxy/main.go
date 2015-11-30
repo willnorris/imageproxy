@@ -23,7 +23,11 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"os"
+	"os/signal"
+	"syscall"
 
+	"github.com/sitano/glog"
 	"github.com/gregjones/httpcache"
 	"github.com/gregjones/httpcache/diskcache"
 	"github.com/peterbourgon/diskv"
@@ -41,8 +45,11 @@ var (
 
 var addr = flag.String("addr", "localhost:8080", "TCP address to listen on")
 var whitelist = flag.String("whitelist", "", "comma separated list of allowed remote hosts")
+var filetypes = flag.String("filetypes", "", "comma separated list of allowed file types")
 var referrers = flag.String("referrers", "", "comma separated list of allowed referring hosts")
 var baseURL = flag.String("baseURL", "", "default base URL for relative remote URLs")
+var fileCache = flag.Bool("fileCache", false, "use file cache on disk")
+var memCache = flag.Bool("memCache", false, "use memory cache")
 var cacheDir = flag.String("cacheDir", "", "directory to use for file cache")
 var cacheSize = flag.Uint64("cacheSize", 100, "maximum size of file cache (in MB)")
 var signatureKey = flag.String("signatureKey", "", "HMAC key used in calculating request signatures")
@@ -52,29 +59,54 @@ var version = flag.Bool("version", false, "print version information")
 func main() {
 	flag.Parse()
 
+	//set sighup handler for log rotation
+	signalChannel := make(chan os.Signal, 1)
+	signal.Notify(signalChannel, syscall.SIGHUP)
+
+	//rotate log
+	go func() {
+		for {
+			<-signalChannel
+			glog.Rotate()
+		}
+	}()
+
 	if *version {
 		fmt.Printf("%v\nBuild: %v\n", VERSION, BUILD_DATE)
 		return
 	}
 
 	var c httpcache.Cache
-	if *cacheDir != "" {
-		d := diskv.New(diskv.Options{
-			BasePath:     *cacheDir,
-			CacheSizeMax: *cacheSize * 1024 * 1024,
-		})
-		c = diskcache.NewWithDiskv(d)
-	} else if *cacheSize != 0 {
+	if *fileCache {
+		if *cacheDir != "" {
+			d := diskv.New(diskv.Options{
+				BasePath:     *cacheDir,
+				CacheSizeMax: *cacheSize * 1024 * 1024,
+			})
+			c = diskcache.NewWithDiskv(d)
+		} else {
+			log.Fatalf("cacheDir option is mandatory for fileCache use")
+		}
+	} else if *memCache {
 		c = httpcache.NewMemoryCache()
+	} else {
+		c = nil
 	}
 
 	p := imageproxy.NewProxy(nil, c)
+
 	if *whitelist != "" {
 		p.Whitelist = strings.Split(*whitelist, ",")
 	}
+
+	if *filetypes != "" {
+		p.Filetypes = strings.Split(*filetypes, ",")
+	}
+
 	if *referrers != "" {
 		p.Referrers = strings.Split(*referrers, ",")
 	}
+
 	if *signatureKey != "" {
 		key := []byte(*signatureKey)
 		if strings.HasPrefix(*signatureKey, "@") {
@@ -87,6 +119,7 @@ func main() {
 		}
 		p.SignatureKey = key
 	}
+
 	if *baseURL != "" {
 		var err error
 		p.DefaultBaseURL, err = url.Parse(*baseURL)

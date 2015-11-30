@@ -30,7 +30,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/golang/glog"
+	"github.com/sitano/glog"
 	"github.com/gregjones/httpcache"
 )
 
@@ -46,6 +46,10 @@ type Proxy struct {
 	// Whitelist specifies a list of remote hosts that images can be
 	// proxied from.  An empty list means all hosts are allowed.
 	Whitelist []string
+
+	// Filetypes specifies a list of file types that images can be
+	// proxied from.  An empty list means all file types are allowed.
+	Filetypes []string
 
 	// Referrers, when given, requires that requests to the image
 	// proxy come from a referring host. An empty list means all
@@ -150,6 +154,12 @@ func copyHeader(w http.ResponseWriter, r *http.Response, header string) {
 // allowed returns whether the specified request is allowed because it matches
 // a host in the proxy whitelist or it has a valid signature.
 func (p *Proxy) allowed(r *Request) bool {
+
+	if len(p.Filetypes) > 0 && !validUrl(p.Filetypes, r.URL) {
+		glog.Infof("filetype not allowed: %v", r)
+		return false
+	}
+
 	if len(p.Referrers) > 0 && !validReferrer(p.Referrers, r.Original) {
 		glog.Infof("request not coming from allowed referrer: %v", r)
 		return false
@@ -171,6 +181,17 @@ func (p *Proxy) allowed(r *Request) bool {
 			return true
 		}
 		glog.Infof("request contains invalid signature: %v", r)
+	}
+
+	return false
+}
+
+// validUrl returns whether the url in u matches one of filetype.
+func validUrl(filetypes []string, u *url.URL) bool {
+	for _, filetype := range filetypes {
+		if strings.HasSuffix(u.Path, filetype) {
+			return true
+		}
 	}
 
 	return false

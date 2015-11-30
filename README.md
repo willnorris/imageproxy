@@ -168,6 +168,14 @@ Reload the [codercat URL][], and you should now get an error message.  You can
 specify multiple hosts as a comma separated list, or prefix a host value with
 `*.` to allow all sub-domains as well.
 
+### Filetype whitelist ###
+
+You can limit the urls to some file types only:
+
+	imageproxy -filetypes "png,jpg"
+
+The list is case sensitive.
+
 ### Host whitelist ###
 
 You can limit the remote hosts that the proxy will fetch images from using the
