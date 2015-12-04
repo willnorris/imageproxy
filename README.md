@@ -140,22 +140,25 @@ whitelist (meaning any remote URL can be proxied).  Test this by navigating to
 <http://localhost:8080/500/https://octodex.github.com/images/codercat.jpg> and
 you should see a 500px square coder octocat.
 
-### Disk cache ###
+### Cache ###
 
-By default, the imageproxy command uses an in-memory cache that will grow
-unbounded.  To cache images on disk instead, include the `cacheDir` flag:
+By default, the imageproxy command does not cache responses, but caching can be
+enabled using the `-cache` flag.  It supports the following values:
 
-    imageproxy -cacheDir /tmp/imageproxy
+ - `memory` - uses an in-memory cache.  (This can exhaust your system's
+   available memory and is not recommended for production systems)
+ - directory on local disk (e.g. `/tmp/imageproxy`) - will cache images
+   on disk, limited to the size specified in the `-cacheSize` flag.
+
+For example, to cache files on disk, allowing up to 100MB of space:
+
+    imageproxy -cache /tmp/imageproxy -cacheSize 100
 
 Reload the [codercat URL][], and then inspect the contents of
 `/tmp/imageproxy`.  There should be two files there, one for the original
 full-size codercat image, and one for the resized 500px version.
 
 [codercat URL]: http://localhost:8080/500/https://octodex.github.com/images/codercat.jpg
-
-By default the disk cache will grow to 100MB. You can change this size by using the `-cacheSize` flag. The following example will allow the cache to take up 500MB of space.
-
-    imageproxy -cacheDir /tmp/imageproxy -cacheSize 500
 
 ### Referrer Whitelist ###
 
