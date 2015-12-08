@@ -12,8 +12,6 @@ import (
 	"net/url"
 	"strings"
 	"testing"
-
-	"github.com/gregjones/httpcache"
 )
 
 func TestAllowed(t *testing.T) {
@@ -203,15 +201,6 @@ func TestCheck304(t *testing.T) {
 		if got, want := check304(req, resp), tt.is304; got != want {
 			t.Errorf("check304(%q, %q) returned: %v, want %v", tt.req, tt.resp, got, want)
 		}
-	}
-}
-
-// make sure that the proxy is passed to transport in order
-// to access the command line flags.
-func TestProxyPointer(t *testing.T) {
-	p := NewProxy(nil, nil)
-	if p.Client.Transport.(*httpcache.Transport).Transport.(*TransformingTransport).Proxy != p {
-		t.Errorf("Transport doesnt have proxy pointer")
 	}
 }
 

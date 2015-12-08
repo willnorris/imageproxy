@@ -81,7 +81,7 @@ func NewProxy(transport http.RoundTripper, cache Cache) *Proxy {
 
 	client := new(http.Client)
 	client.Transport = &httpcache.Transport{
-		Transport:           &TransformingTransport{transport, client, &proxy},
+		Transport:           &TransformingTransport{transport, client},
 		Cache:               cache,
 		MarkCachedResponses: true,
 	}
@@ -104,6 +104,9 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
+
+	// assign static settings from proxy to req.Options
+	req.Options.ScaleUp = p.ScaleUp
 
 	if !p.allowed(req) {
 		msg := fmt.Sprintf("request does not contain an allowed host or valid signature")
@@ -259,9 +262,6 @@ type TransformingTransport struct {
 	// used rather than Transport directly in order to ensure that
 	// responses are properly cached.
 	CachingClient *http.Client
-
-	// Proxy is used to access command line flag settings during roundtripping.
-	Proxy *Proxy
 }
 
 // RoundTrip implements the http.RoundTripper interface.
@@ -286,11 +286,6 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 	}
 
 	opt := ParseOptions(req.URL.Fragment)
-
-	// assign static settings from proxy to options
-	if t.Proxy != nil {
-		opt.ScaleUp = t.Proxy.ScaleUp
-	}
 
 	img, err := Transform(b, opt)
 	if err != nil {

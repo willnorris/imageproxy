@@ -31,6 +31,7 @@ const (
 	optQualityPrefix   = "q"
 	optSignaturePrefix = "s"
 	optSizeDelimiter   = "x"
+	optScaleUp         = "scaleUp"
 )
 
 // URLError reports a malformed URL error.
@@ -66,7 +67,8 @@ type Options struct {
 	// HMAC Signature for signed requests.
 	Signature string
 
-	// Allow images to scale beyond their original dimensions.
+	// Allow image to scale beyond its original dimensions.  This value
+	// will always be overwritten by the value of Proxy.ScaleUp.
 	ScaleUp bool
 }
 
@@ -92,6 +94,9 @@ func (o Options) String() string {
 	}
 	if o.Signature != "" {
 		fmt.Fprintf(buf, ",%s%s", string(optSignaturePrefix), o.Signature)
+	}
+	if o.ScaleUp {
+		fmt.Fprintf(buf, ",%s", optScaleUp)
 	}
 	return buf.String()
 }
@@ -166,6 +171,8 @@ func ParseOptions(str string) Options {
 			options.FlipVertical = true
 		case opt == optFlipHorizontal:
 			options.FlipHorizontal = true
+		case opt == optScaleUp: // this option is intentionally not documented above
+			options.ScaleUp = true
 		case strings.HasPrefix(opt, optRotatePrefix):
 			value := strings.TrimPrefix(opt, optRotatePrefix)
 			options.Rotate, _ = strconv.Atoi(value)
