@@ -3,6 +3,8 @@ language: go
 go:
   - 1.5
 
+sudo: false
+
 env:
   - GO15VENDOREXPERIMENT=1
 
