@@ -149,19 +149,20 @@ enabled using the `-cache` flag.  It supports the following values:
  - `memory` - uses an in-memory cache.  (This can exhaust your system's
    available memory and is not recommended for production systems)
  - directory on local disk (e.g. `/tmp/imageproxy`) - will cache images
-   on disk, limited to the size specified in the `-cacheSize` flag.
+   on disk
  - s3 URL (e.g. `s3://s3-us-west-2.amazonaws.com/my-bucket`) - will cache
    images on Amazon S3.  This requires either an IAM role and instance profile
    with access to your your bucket or `AWS_ACCESS_KEY_ID` and `AWS_SECRET_KEY`
    environmental parameters set.
 
-For example, to cache files on disk, allowing up to 100MB of space:
+For example, to cache files on disk in the `/tmp/imageproxy` directory:
 
-    imageproxy -cache /tmp/imageproxy -cacheSize 100
+    imageproxy -cache /tmp/imageproxy
 
 Reload the [codercat URL][], and then inspect the contents of
-`/tmp/imageproxy`.  There should be two files there, one for the original
-full-size codercat image, and one for the resized 500px version.
+`/tmp/imageproxy`.  Within the subdirectories, there should be two files, one
+for the original full-size codercat image, and one for the resized 500px
+version.
 
 [codercat URL]: http://localhost:8080/500/https://octodex.github.com/images/codercat.jpg
 
@@ -169,7 +170,7 @@ full-size codercat image, and one for the resized 500px version.
 
 You can limit images to only be accessible for certain hosts in the HTTP
 referrer header, which can help prevent others from hotlinking to images. It can
-be enabled be running:
+be enabled by running:
 
     imageproxy  -referrers example.com
 

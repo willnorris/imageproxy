@@ -46,7 +46,7 @@ var referrers = flag.String("referrers", "", "comma separated list of allowed re
 var baseURL = flag.String("baseURL", "", "default base URL for relative remote URLs")
 var cache = flag.String("cache", "", "location to cache images (see https://github.com/willnorris/imageproxy#cache)")
 var cacheDir = flag.String("cacheDir", "", "(Deprecated; use 'cache' instead) directory to use for file cache")
-var cacheSize = flag.Uint64("cacheSize", 100, "maximum size of file cache (in MB)")
+var cacheSize = flag.Uint64("cacheSize", 0, "Deprecated: this flag does nothing")
 var signatureKey = flag.String("signatureKey", "", "HMAC key used in calculating request signatures")
 var scaleUp = flag.Bool("scaleUp", false, "allow images to scale beyond their original dimensions")
 var version = flag.Bool("version", false, "print version information")
@@ -133,8 +133,7 @@ func parseCache() (imageproxy.Cache, error) {
 
 func diskCache(path string) *diskcache.Cache {
 	d := diskv.New(diskv.Options{
-		BasePath:     path,
-		CacheSizeMax: *cacheSize * 1024 * 1024,
+		BasePath: path,
 
 		// For file "c0ffee", store file as "c0/ff/c0ffee"
 		Transform: func(s string) []string { return []string{s[0:2], s[2:4]} },

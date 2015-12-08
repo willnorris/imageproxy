@@ -27,8 +27,7 @@ case "$1" in
 		. /etc/default/imageproxy
 
 		test -n "$ADDR" && DAEMON_OPTS+=" -addr=$ADDR"
-		test -n "$CACHE_DIR" && DAEMON_OPTS+=" -cacheDir=$CACHE_DIR"
-		test -n "$CACHE_SIZE" && DAEMON_OPTS+=" -cacheSize=$CACHE_SIZE"
+		test -n "$CACHE" && DAEMON_OPTS+=" -cache=$CACHE"
 		test -n "$LOG_DIR" && DAEMON_OPTS+=" -log_dir=$LOG_DIR"
 		test -n "$ALLOWED_REMOTE_HOSTS" && DAEMON_OPTS+=" -whitelist=$ALLOWED_REMOTE_HOSTS"
 
