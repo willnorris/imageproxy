@@ -131,7 +131,8 @@ Install the package using:
 (Note that go1.2 and earlier may have trouble fetching the package with `go
 get`).
 
-Once installed, ensure `$GOPATH/bin` is in your `$PATH`, then run the proxy using:
+Once installed, ensure `$GOPATH/bin` is in your `$PATH`, then run the proxy
+using:
 
     imageproxy
 
@@ -162,7 +163,9 @@ full-size codercat image, and one for the resized 500px version.
 
 ### Referrer Whitelist ###
 
-You can limit images to only be accessible for certain hosts in the HTTP referrer header. This may be useful to prevent others from hotlinking to images, and using your valuable bandwidth! It can be enabled be running:
+You can limit images to only be accessible for certain hosts in the HTTP
+referrer header, which can help prevent others from hotlinking to images. It can
+be enabled be running:
 
     imageproxy  -referrers example.com
 
@@ -224,7 +227,8 @@ needs... it's a very simple command.
 
 Typically, remote images to be proxied are specified as absolute URLs.
 However, if you commonly proxy images from a single source, you can provide a
-base URL and then specify remote images relative to that base.  Try it out by running:
+base URL and then specify remote images relative to that base.  Try it out by
+running:
 
     imageproxy -baseURL https://octodex.github.com/
 
@@ -236,7 +240,8 @@ specified, you can always provide the absolute URL of the image to be proxied.
 
 ### Scaling beyond original size ###
 
-By default, the imageproxy won't scale images beyond their original size. However, you can use the `scaleUp` command-line flag to allow this to happen:
+By default, the imageproxy won't scale images beyond their original size.
+However, you can use the `scaleUp` command-line flag to allow this to happen:
 
     imageproxy -scaleUp true
 
@@ -269,7 +274,8 @@ configuration.
 
 ## Deploying to Heroku ##
 
-It's easy to vendorize the dependencies with `Godep` and deploy to Heroku. Take a look at [this GitHub repo](https://github.com/oreillymedia/prototype-imageproxy)
+It's easy to vendorize the dependencies with `Godep` and deploy to Heroku. Take
+a look at [this GitHub repo](https://github.com/oreillymedia/prototype-imageproxy)
 
 ## Docker ##
 
