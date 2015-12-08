@@ -59,6 +59,10 @@ func Process(w io.Writer, r io.Reader, transform TransformFunc) error {
 		im.Image[index] = imageToPaletted(transform(img), frame.Palette)
 	}
 
+	// Set image.Config to new height and width
+	im.Config.Width = im.Image[0].Bounds().Max.X
+	im.Config.Height = im.Image[0].Bounds().Max.Y
+
 	return gif.EncodeAll(w, im)
 }
 
