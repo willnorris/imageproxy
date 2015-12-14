@@ -225,7 +225,7 @@ func (t testTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		img := new(bytes.Buffer)
 		png.Encode(img, m)
 
-		raw = fmt.Sprintf("HTTP/1.1 200 OK\nContent-Length: %d\n\n%v", len(img.Bytes()), img.Bytes())
+		raw = fmt.Sprintf("HTTP/1.1 200 OK\nContent-Length: %d\n\n%s", len(img.Bytes()), img.Bytes())
 	default:
 		raw = "HTTP/1.1 404 Not Found\n\n"
 	}
