@@ -70,7 +70,7 @@ func TestAllowed(t *testing.T) {
 			t.Errorf("error parsing url %q: %v", tt.url, err)
 		}
 		req := &Request{u, tt.options, tt.request}
-		if got, want := p.allowed(req), tt.allowed; got != want {
+		if got, want := p.allowed(req), tt.allowed; (got == nil) != want {
 			t.Errorf("allowed(%q) returned %v, want %v.\nTest struct: %#v", req, got, want, tt)
 		}
 	}
