@@ -68,9 +68,11 @@
 			"revisionTime": "2014-12-02T11:37:49-08:00"
 		},
 		{
+			"checksumSHA1": "cBdDkft9ir+lyLbeRQ4zCAoR0AY=",
 			"path": "willnorris.com/go/gifresize",
-			"revision": "104a7cd64b08d0ebbf2b5c81fa9c99858ba9ee46",
-			"revisionTime": "2015-12-07T22:25:22-08:00"
+			"revision": "6a222229fa0697e6da06ec80f8ffd0ada346669d",
+			"revisionTime": "2016-04-28T23:14:23Z"
 		}
-	]
+	],
+	"rootPath": "willnorris.com/go/imageproxy"
 }

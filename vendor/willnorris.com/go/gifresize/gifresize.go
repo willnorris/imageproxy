@@ -55,8 +55,19 @@ func Process(w io.Writer, r io.Reader, transform TransformFunc) error {
 	// Resize each frame.
 	for index, frame := range im.Image {
 		bounds := frame.Bounds()
+		previous := img
 		draw.Draw(img, bounds, frame, bounds.Min, draw.Over)
 		im.Image[index] = imageToPaletted(transform(img), frame.Palette)
+
+		switch im.Disposal[index] {
+		case gif.DisposalBackground:
+			// I'm just assuming that the gif package will apply the appropriate
+			// background here, since there doesn't seem to be an easy way to
+			// access the global color table
+			img = image.NewRGBA(b)
+		case gif.DisposalPrevious:
+			img = previous
+		}
 	}
 
 	// Set image.Config to new height and width
