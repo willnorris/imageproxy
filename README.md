@@ -291,6 +291,28 @@ You can run it by
 docker run -p 8080:8080 willnorris/imageproxy -addr 0.0.0.0:8080
 ```
 
+Or in your Dockerfile:
+
+```
+ENTRYPOINT ["/go/bin/imageproxy", "-addr 0.0.0.0:8080"]
+```
+
+## nginx
+
+You can use follow config to prevent URL overwritting:
+
+```
+  location ~ ^/api/imageproxy/ {
+    # pattern match to capture the original URL to prevent URL
+    # canonicalization, which would strip double slashes
+    if ($request_uri ~ "/api/imageproxy/(.+)") {
+      set $path $1;
+      rewrite .* /$path break;
+    }
+    proxy_pass http://localhost:8080;
+  }
+```
+
 ## License ##
 
 imageproxy is copyright Google, but is not an official Google product.  It is
