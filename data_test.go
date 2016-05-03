@@ -19,6 +19,8 @@ import (
 	"testing"
 )
 
+var emptyOptions = Options{}
+
 func TestOptions_String(t *testing.T) {
 	tests := []struct {
 		Options Options

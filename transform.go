@@ -35,7 +35,7 @@ var resampleFilter = imaging.Lanczos
 // encoded image in one of the supported formats (gif, jpeg, or png).  The
 // bytes of a similarly encoded image is returned.
 func Transform(img []byte, opt Options) ([]byte, error) {
-	if opt == emptyOptions {
+	if !opt.transform() {
 		// bail if no transformation was requested
 		return img, nil
 	}

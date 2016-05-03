@@ -72,8 +72,6 @@ type Options struct {
 	ScaleUp bool
 }
 
-var emptyOptions = Options{}
-
 func (o Options) String() string {
 	buf := new(bytes.Buffer)
 	fmt.Fprintf(buf, "%v%s%v", o.Width, optSizeDelimiter, o.Height)
@@ -99,6 +97,13 @@ func (o Options) String() string {
 		fmt.Fprintf(buf, ",%s", optScaleUp)
 	}
 	return buf.String()
+}
+
+// transform returns whether o includes transformation options.  Some fields
+// are not transform related at all (like Signature), and others only apply in
+// the presence of other fields (like Fit and Quality).
+func (o Options) transform() bool {
+	return o.Width != 0 || o.Height != 0 || o.Rotate != 0 || o.FlipHorizontal || o.FlipVertical
 }
 
 // ParseOptions parses str as a list of comma separated transformation options.
