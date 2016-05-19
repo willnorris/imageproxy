@@ -50,6 +50,7 @@ var cacheSize = flag.Uint64("cacheSize", 0, "Deprecated: this flag does nothing"
 var signatureKey = flag.String("signatureKey", "", "HMAC key used in calculating request signatures")
 var scaleUp = flag.Bool("scaleUp", false, "allow images to scale beyond their original dimensions")
 var version = flag.Bool("version", false, "print version information")
+var ioptsMode = flag.Bool("ioptsMode", false, "specify transformation options using the query string ?iopts=[options] instead of specifying options in the path")
 
 func main() {
 	flag.Parse()
@@ -92,6 +93,7 @@ func main() {
 	}
 
 	p.ScaleUp = *scaleUp
+	p.IoptsMode = *ioptsMode
 
 	server := &http.Server{
 		Addr:    *addr,

@@ -62,6 +62,9 @@ type Proxy struct {
 
 	// Allow images to scale beyond their original dimensions.
 	ScaleUp bool
+
+	// Use ?iopts=[options] instead of the first element in the path
+	IoptsMode bool
 }
 
 // NewProxy constructs a new proxy.  The provided http RoundTripper will be
@@ -102,7 +105,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req, err := NewRequest(r, p.DefaultBaseURL)
+	req, err := NewRequest(r, p.DefaultBaseURL, p.IoptsMode)
 	if err != nil {
 		msg := fmt.Sprintf("invalid request URL: %v", err)
 		glog.Error(msg)

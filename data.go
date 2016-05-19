@@ -234,27 +234,45 @@ func (r Request) String() string {
 // 	http://localhost/100x200,r90/http://example.com/image.jpg?foo=bar
 // 	http://localhost//http://example.com/image.jpg
 // 	http://localhost/http://example.com/image.jpg
-func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
+func NewRequest(r *http.Request, baseURL *url.URL, ioptsMode bool) (*Request, error) {
 	var err error
 	req := &Request{Original: r}
 
 	path := r.URL.Path[1:] // strip leading slash
 	req.URL, err = url.Parse(path)
-	if err != nil || !req.URL.IsAbs() {
-		// first segment should be options
-		parts := strings.SplitN(path, "/", 2)
-		if len(parts) != 2 {
-			return nil, URLError{"too few path segments", r.URL}
-		}
 
-		var err error
-		req.URL, err = url.Parse(parts[1])
-		if err != nil {
-			return nil, URLError{fmt.Sprintf("unable to parse remote URL: %v", err), r.URL}
-		}
+	var options string
 
-		req.Options = ParseOptions(parts[0])
+	iopts := r.URL.Query().Get("iopts")
+	if len(iopts) > 0 {
+		req.URL.Query().Del("iopts")
 	}
+
+	if err != nil || !req.URL.IsAbs() {
+		if len(iopts) > 0 && ioptsMode {
+			options = iopts
+		} else if !ioptsMode {
+			// first segment should be options
+			parts := strings.SplitN(path, "/", 2)
+			if len(parts) != 2 {
+				return nil, URLError{"too few path segments", r.URL}
+			}
+
+			var err error
+			req.URL, err = url.Parse(parts[1])
+			if err != nil {
+				return nil, URLError{fmt.Sprintf("unable to parse remote URL: %v", err), r.URL}
+			}
+
+			options = parts[0]
+		}
+	}
+
+	if req.URL.IsAbs() && len(iopts) > 0 {
+		options = iopts
+	}
+
+	req.Options = ParseOptions(options)
 
 	if baseURL != nil {
 		req.URL = baseURL.ResolveReference(req.URL)
