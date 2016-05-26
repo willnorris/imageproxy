@@ -35,10 +35,6 @@ import (
 )
 
 // Proxy serves image requests.
-//
-// Note that a Proxy should not be run behind a http.ServeMux, since the
-// ServeMux aggressively cleans URLs and removes the double slash in the
-// embedded request URL.
 type Proxy struct {
 	Client *http.Client // client used to fetch remote URLs
 	Cache  Cache        // cache used to cache responses

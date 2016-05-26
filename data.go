@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -221,6 +222,10 @@ func (r Request) String() string {
 	return u.String()
 }
 
+// reCleanedURL matches an absolute HTTP URL that has been munged by path.Clean
+// or a webserver that collapses multiple slashes.
+var reCleanedURL = regexp.MustCompile(`^(https?):/([^/])`)
+
 // NewRequest parses an http.Request into an imageproxy Request.  Options and
 // the remote image URL are specified in the request path, formatted as:
 // /{options}/{remote_url}.  Options may be omitted, so a request path may
@@ -239,6 +244,7 @@ func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 	req := &Request{Original: r}
 
 	path := r.URL.Path[1:] // strip leading slash
+	path = reCleanedURL.ReplaceAllString(path, "$1://$2")
 	req.URL, err = url.Parse(path)
 	if err != nil || !req.URL.IsAbs() {
 		// first segment should be options
