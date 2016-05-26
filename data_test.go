@@ -147,6 +147,10 @@ func TestNewRequest(t *testing.T) {
 			"http://localhost/http:/example.com/foo",
 			"http://example.com/foo", emptyOptions, false,
 		},
+		{
+			"http://localhost/http:///example.com/foo",
+			"http://example.com/foo", emptyOptions, false,
+		},
 	}
 
 	for _, tt := range tests {

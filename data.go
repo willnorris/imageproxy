@@ -222,10 +222,6 @@ func (r Request) String() string {
 	return u.String()
 }
 
-// reCleanedURL matches an absolute HTTP URL that has been munged by path.Clean
-// or a webserver that collapses multiple slashes.
-var reCleanedURL = regexp.MustCompile(`^(https?):/([^/])`)
-
 // NewRequest parses an http.Request into an imageproxy Request.  Options and
 // the remote image URL are specified in the request path, formatted as:
 // /{options}/{remote_url}.  Options may be omitted, so a request path may
@@ -244,8 +240,7 @@ func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 	req := &Request{Original: r}
 
 	path := r.URL.Path[1:] // strip leading slash
-	path = reCleanedURL.ReplaceAllString(path, "$1://$2")
-	req.URL, err = url.Parse(path)
+	req.URL, err = parseURL(path)
 	if err != nil || !req.URL.IsAbs() {
 		// first segment should be options
 		parts := strings.SplitN(path, "/", 2)
@@ -254,7 +249,7 @@ func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 		}
 
 		var err error
-		req.URL, err = url.Parse(parts[1])
+		req.URL, err = parseURL(parts[1])
 		if err != nil {
 			return nil, URLError{fmt.Sprintf("unable to parse remote URL: %v", err), r.URL}
 		}
@@ -277,4 +272,13 @@ func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 	// query string is always part of the remote URL
 	req.URL.RawQuery = r.URL.RawQuery
 	return req, nil
+}
+
+var reCleanedURL = regexp.MustCompile(`^(https?):/+([^/])`)
+
+// parseURL parses s as a URL, handling URLs that have been munged by
+// path.Clean or a webserver that collapses multiple slashes.
+func parseURL(s string) (*url.URL, error) {
+	s = reCleanedURL.ReplaceAllString(s, "$1://$2")
+	return url.Parse(s)
 }
