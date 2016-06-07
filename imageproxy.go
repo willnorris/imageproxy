@@ -131,6 +131,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	copyHeader(w, resp, "Last-Modified")
 	copyHeader(w, resp, "Expires")
 	copyHeader(w, resp, "Etag")
+	copyHeader(w, resp, "Link")
 
 	if is304 := check304(r, resp); is304 {
 		w.WriteHeader(http.StatusNotModified)
