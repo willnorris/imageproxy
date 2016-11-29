@@ -32,6 +32,7 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/gregjones/httpcache"
+	tphttp "willnorris.com/go/imageproxy/third_party/http"
 )
 
 // Proxy serves image requests.
@@ -105,7 +106,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	var h http.Handler = http.HandlerFunc(p.serveImage)
 	if p.Timeout > 0 {
-		h = http.TimeoutHandler(h, p.Timeout, "")
+		h = tphttp.TimeoutHandler(h, p.Timeout, "Gateway timeout waiting for remote resource.")
 	}
 	h.ServeHTTP(w, r)
 }

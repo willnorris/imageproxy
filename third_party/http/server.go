@@ -18,7 +18,7 @@ import (
 //
 // The new Handler calls h.ServeHTTP to handle each request, but if a
 // call runs for longer than its time limit, the handler responds with
-// a 503 Service Unavailable error and the given message in its body.
+// a 504 Gateway Timeout error and the given message in its body.
 // (If msg is empty, a suitable default message will be sent.)
 // After such a timeout, writes by h to its ResponseWriter will return
 // ErrHandlerTimeout.
@@ -89,7 +89,7 @@ func (h *timeoutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case <-timeout:
 		tw.mu.Lock()
 		defer tw.mu.Unlock()
-		w.WriteHeader(http.StatusServiceUnavailable)
+		w.WriteHeader(http.StatusGatewayTimeout)
 		io.WriteString(w, h.errorBody())
 		tw.timedOut = true
 		return
