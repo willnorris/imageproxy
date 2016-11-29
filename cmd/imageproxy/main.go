@@ -49,6 +49,7 @@ var cacheDir = flag.String("cacheDir", "", "(Deprecated; use 'cache' instead) di
 var cacheSize = flag.Uint64("cacheSize", 0, "Deprecated: this flag does nothing")
 var signatureKey = flag.String("signatureKey", "", "HMAC key used in calculating request signatures")
 var scaleUp = flag.Bool("scaleUp", false, "allow images to scale beyond their original dimensions")
+var timeout = flag.Duration("timeout", 0, "time limit for requests served by this proxy")
 var version = flag.Bool("version", false, "print version information")
 
 func main() {
@@ -91,6 +92,7 @@ func main() {
 		}
 	}
 
+	p.Timeout = *timeout
 	p.ScaleUp = *scaleUp
 
 	server := &http.Server{

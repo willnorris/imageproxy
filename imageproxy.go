@@ -58,6 +58,11 @@ type Proxy struct {
 
 	// Allow images to scale beyond their original dimensions.
 	ScaleUp bool
+
+	// Timeout specifies a time limit for requests served by this Proxy.
+	// If a call runs for longer than its time limit, a 504 Gateway Timeout
+	// response is returned.  A Timeout of zero means no timeout.
+	Timeout time.Duration
 }
 
 // NewProxy constructs a new proxy.  The provided http RoundTripper will be
@@ -87,7 +92,7 @@ func NewProxy(transport http.RoundTripper, cache Cache) *Proxy {
 	return &proxy
 }
 
-// ServeHTTP handles image requests.
+// ServeHTTP handles incoming requests.
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "/favicon.ico" {
 		return // ignore favicon requests
@@ -98,6 +103,15 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var h http.Handler = http.HandlerFunc(p.serveImage)
+	if p.Timeout > 0 {
+		h = http.TimeoutHandler(h, p.Timeout, "")
+	}
+	h.ServeHTTP(w, r)
+}
+
+// serveImage handles incoming requests for proxied images.
+func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	req, err := NewRequest(r, p.DefaultBaseURL)
 	if err != nil {
 		msg := fmt.Sprintf("invalid request URL: %v", err)
