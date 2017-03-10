@@ -27,6 +27,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -276,6 +277,11 @@ type TransformingTransport struct {
 
 // RoundTrip implements the http.RoundTripper interface.
 func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	userAgent := os.Getenv("IMAGEPROXY_USER_AGENT")
+	if userAgent != "" {
+		req.Header.Set("User-Agent", userAgent)
+	}
+
 	if req.URL.Fragment == "" {
 		// normal requests pass through
 		glog.Infof("fetching remote URL: %v", req.URL)
