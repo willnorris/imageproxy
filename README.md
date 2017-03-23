@@ -183,19 +183,28 @@ Reload the [codercat URL][], and you should now get an error message.  You can
 specify multiple hosts as a comma separated list, or prefix a host value with
 `*.` to allow all sub-domains as well.
 
-### Allowed Hosts List ###
+### Allowed and Denied Hosts List ###
 
 You can limit the remote hosts that the proxy will fetch images from using the
-`allowHosts` flag.  This is useful, for example, for locking the proxy down to
-your own hosts to prevent others from abusing it.  Of course if you want to
-support fetching from any host, leave off the allowHosts flag.  Try it out by
-running:
+`allowHosts` and `denyHosts` flags.  This is useful, for example, for locking
+the proxy down to your own hosts to prevent others from abusing it.  Of course
+if you want to support fetching from any host, leave off these flags.
+
+Try it out by running:
 
     imageproxy -allowHosts example.com
 
-Reload the [codercat URL][], and you should now get an error message.  You can
-specify multiple hosts as a comma separated list, or prefix a host value with
-`*.` to allow all sub-domains as well.
+Reload the [codercat URL][], and you should now get an error message.
+Alternately, try running:
+
+    imageproxy -denyHosts octodex.github.com
+
+Reloading the [codercat URL][] will still return an error message.
+
+You can specify multiple hosts as a comma separated list to either flag, or
+prefix a host value with `*.` to allow or deny all sub-domains as well.
+
+If a host matches both an allowed an a denied host, the request will be denied.
 
 ### Allowed Content-Type List ###
 

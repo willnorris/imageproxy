@@ -44,6 +44,7 @@ const defaultMemorySize = 100
 var addr = flag.String("addr", "localhost:8080", "TCP address to listen on")
 var allowHosts = flag.String("allowHosts", "", "comma separated list of allowed remote hosts")
 var whitelist = flag.String("whitelist", "", "deprecated. use 'allowHosts' instead")
+var denyHosts = flag.String("denyHosts", "", "comma separated list of denied remote hosts")
 var referrers = flag.String("referrers", "", "comma separated list of allowed referring hosts")
 var baseURL = flag.String("baseURL", "", "default base URL for relative remote URLs")
 var cache tieredCache
@@ -69,6 +70,9 @@ func main() {
 	p := imageproxy.NewProxy(nil, cache.Cache)
 	if *allowHosts != "" {
 		p.AllowHosts = strings.Split(*allowHosts, ",")
+	}
+	if *denyHosts != "" {
+		p.DenyHosts = strings.Split(*denyHosts, ",")
 	}
 	if *referrers != "" {
 		p.Referrers = strings.Split(*referrers, ",")

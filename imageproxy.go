@@ -49,6 +49,10 @@ type Proxy struct {
 	// Whitelist should no longer be used. Use "AllowHosts" instead.
 	Whitelist []string
 
+	// DenyHosts specifies a list of remote hosts that images cannot be
+	// proxied from.
+	DenyHosts []string
+
 	// Referrers, when given, requires that requests to the image
 	// proxy come from a referring host. An empty list means all
 	// hosts are allowed.
@@ -223,6 +227,10 @@ func (p *Proxy) allowed(r *Request) error {
 	}
 	if len(p.Referrers) > 0 && !validReferrer(p.Referrers, r.Original) {
 		return fmt.Errorf("request does not contain an allowed referrer: %v", r)
+	}
+
+	if validHost(p.DenyHosts, r.URL) {
+		return fmt.Errorf("request contains a denied host %v", r)
 	}
 
 	if len(p.AllowHosts) == 0 && len(p.SignatureKey) == 0 {
