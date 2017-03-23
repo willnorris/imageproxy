@@ -174,6 +174,10 @@ func (p *Proxy) allowed(r *Request) error {
 		return fmt.Errorf("request does not contain an allowed referrer: %v", r)
 	}
 
+	if(blacklistedHost(p.Blacklist, r.URL)) {
+		return fmt.Errorf("request does not contain an allowed host %v", r)
+	}
+
 	if len(p.Whitelist) == 0 && len(p.SignatureKey) == 0 {
 		return nil // no whitelist or signature key, all requests accepted
 	}
@@ -191,6 +195,20 @@ func (p *Proxy) allowed(r *Request) error {
 
 // validHost returns whether the host in u matches one of hosts.
 func validHost(hosts []string, u *url.URL) bool {
+	for _, host := range hosts {
+		if u.Host == host {
+			return true
+		}
+		if strings.HasPrefix(host, "*.") && strings.HasSuffix(u.Host, host[2:]) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// blacklistedHost returns true if the host is in our blacklist
+func blacklistedHost(hosts []string, u *url.URL) bool {
 	for _, host := range hosts {
 		if u.Host == host {
 			return true
