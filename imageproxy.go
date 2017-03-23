@@ -44,6 +44,10 @@ type Proxy struct {
 	// proxied from.  An empty list means all hosts are allowed.
 	Whitelist []string
 
+	// Blacklist specifies a list of domains that should not be possible
+	// to proxy from. An empty list means all domains are allowed.
+	Blacklist []string
+
 	// Referrers, when given, requires that requests to the image
 	// proxy come from a referring host. An empty list means all
 	// hosts are allowed.
