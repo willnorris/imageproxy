@@ -193,6 +193,20 @@ Reload the [codercat URL][], and you should now get an error message.  You can
 specify multiple hosts as a comma separated list, or prefix a host value with
 `*.` to allow all sub-domains as well.
 
+### Host blacklist ###
+
+You can also blacklist certain hosts from the proxy by using the `blacklist`
+flag. This is useful in situations where the proxy is running on an internal
+network, for example under a docker swarm / weave setup, and you want to prevent
+it from having access to internal services. It can be prefixed with `*.` to
+blacklist all subdomains also. For a default docker swarm / weave setup you
+can prevent access to internal services by running:
+
+    imageproxy -blacklist *.weave.local
+
+You should now get an error message if you try to ask the proxy for a image
+located on some internal weave.local url.
+
 ### Signed Requests ###
 
 Instead of a host whitelist, you can require that requests be signed.  This is
