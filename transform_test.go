@@ -74,6 +74,29 @@ func TestResizeParams(t *testing.T) {
 	}
 }
 
+func TestCropParams(t *testing.T) {
+	src := image.NewNRGBA(image.Rect(0, 0, 64, 128))
+	tests := []struct {
+		opt            Options
+		x0, y0, x1, y1 int
+		crop           bool
+	}{
+		{Options{CropHeight: 0, CropWidth: 10}, 0, 0, 0, 0, false},
+		{Options{CropHeight: 10, CropWidth: 0}, 0, 0, 0, 0, false},
+		{Options{CropHeight: -1, CropWidth: -1}, 0, 0, 0, 0, false},
+		{Options{CropWidth: 50, CropHeight: 100}, 0, 0, 50, 100, true},
+		{Options{CropWidth: 100, CropHeight: 100}, 0, 0, 64, 100, true},
+		{Options{CropX: 50, CropY: 100, CropWidth: 50, CropHeight: 100}, 14, 28, 64, 128, true},
+		{Options{CropX: 50, CropY: 100, CropWidth: 100, CropHeight: 150}, 0, 0, 64, 128, true},
+	}
+	for _, tt := range tests {
+		x0, y0, x1, y1, crop := cropParams(src, tt.opt)
+		if x0 != tt.x0 || y0 != tt.y0 || x1 != tt.x1 || y1 != tt.y1 || crop != tt.crop {
+			t.Errorf("cropParams(%v) returned (%d,%d,%d,%d,%t), want (%d,%d,%d,%d,%t)", tt.opt, x0, y0, x1, y1, crop, tt.x0, tt.y0, tt.x1, tt.y1, tt.crop)
+		}
+	}
+}
+
 func TestTransform(t *testing.T) {
 	src := newImage(2, 2, red, green, blue, yellow)
 
@@ -123,6 +146,9 @@ func TestTransform(t *testing.T) {
 func TestTransformImage(t *testing.T) {
 	// ref is a 2x2 reference image containing four colors
 	ref := newImage(2, 2, red, green, blue, yellow)
+
+	// cropRef is a 4x4 image with four colors, each in 2x2 quarter
+	cropRef := newImage(4, 4, red, red, green, green, red, red, green, green, blue, blue, yellow, yellow, blue, blue, yellow, yellow)
 
 	// use simpler filter while testing that won't skew colors
 	resampleFilter = imaging.Box
@@ -221,11 +247,33 @@ func TestTransformImage(t *testing.T) {
 			Options{Width: 2, Height: 1, Fit: true, FlipHorizontal: true, Rotate: 90},
 			newImage(1, 2, red, blue),
 		},
+
+		// crop
+		{ // quarter ((0, 0), (2, 2)) -> red
+			cropRef,
+			Options{CropHeight: 2, CropWidth: 2},
+			newImage(2, 2, red, red, red, red),
+		},
+		{ // quarter ((2, 0), (4, 2)) -> green
+			cropRef,
+			Options{CropHeight: 2, CropWidth: 2, CropX: 2},
+			newImage(2, 2, green, green, green, green),
+		},
+		{ // quarter ((0, 2), (2, 4)) -> blue
+			cropRef,
+			Options{CropHeight: 2, CropWidth: 2, CropX: 0, CropY: 2},
+			newImage(2, 2, blue, blue, blue, blue),
+		},
+		{ // quarter ((2, 2), (4, 4)) -> yellow
+			cropRef,
+			Options{CropHeight: 2, CropWidth: 2, CropX: 2, CropY: 2},
+			newImage(2, 2, yellow, yellow, yellow, yellow),
+		},
 	}
 
 	for _, tt := range tests {
 		if got := transformImage(tt.src, tt.opt); !reflect.DeepEqual(got, tt.want) {
-			t.Errorf("trasformImage(%v, %v) returned image %#v, want %#v", tt.src, tt.opt, got, tt.want)
+			t.Errorf("transformImage(%v, %v) returned image %#v, want %#v", tt.src, tt.opt, got, tt.want)
 		}
 	}
 }

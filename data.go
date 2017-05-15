@@ -34,6 +34,10 @@ const (
 	optSignaturePrefix = "s"
 	optSizeDelimiter   = "x"
 	optScaleUp         = "scaleUp"
+	optCropWidth       = "cw"
+	optCropHeight      = "ch"
+	optCropX           = "cx"
+	optCropY           = "cy"
 )
 
 // URLError reports a malformed URL error.
@@ -75,6 +79,12 @@ type Options struct {
 
 	// Desired image format. Valid values are "jpeg", "png".
 	Format string
+
+	// Crop rectangle params
+	CropWidth  int
+	CropHeight int
+	CropX      int
+	CropY      int
 }
 
 func (o Options) String() string {
@@ -103,6 +113,18 @@ func (o Options) String() string {
 	if o.Format != "" {
 		opts = append(opts, o.Format)
 	}
+	if o.CropWidth != 0 {
+		opts = append(opts, fmt.Sprintf("%s%d", string(optCropWidth), o.CropWidth))
+	}
+	if o.CropHeight != 0 {
+		opts = append(opts, fmt.Sprintf("%s%d", string(optCropHeight), o.CropHeight))
+	}
+	if o.CropX != 0 {
+		opts = append(opts, fmt.Sprintf("%s%d", string(optCropX), o.CropX))
+	}
+	if o.CropY != 0 {
+		opts = append(opts, fmt.Sprintf("%s%d", string(optCropY), o.CropY))
+	}
 	return strings.Join(opts, ",")
 }
 
@@ -111,12 +133,28 @@ func (o Options) String() string {
 // the presence of other fields (like Fit).  A non-empty Format value is
 // assumed to involve a transformation.
 func (o Options) transform() bool {
-	return o.Width != 0 || o.Height != 0 || o.Rotate != 0 || o.FlipHorizontal || o.FlipVertical || o.Quality != 0 || o.Format != ""
+	return o.Width != 0 || o.Height != 0 || o.Rotate != 0 || o.FlipHorizontal || o.FlipVertical || o.Quality != 0 || o.Format != "" || (o.CropHeight != 0 && o.CropWidth != 0)
 }
 
 // ParseOptions parses str as a list of comma separated transformation options.
 // The options can be specified in in order, with duplicate options overwriting
 // previous values.
+//
+// Rectangle Crop
+//
+// There are four options controlling rectangle crop:
+//
+// 	cx{x}      - X coordinate of top left rectangle corner
+// 	cy{y}      - Y coordinate of top left rectangle corner
+// 	cw{width}  - rectangle width
+// 	ch{height} - rectangle height
+//
+// ch and cw are required to enable crop and they must be positive integers. If
+// the rectangle is larger than the image, crop will not be applied. If the
+// rectangle does not fit the image in any of the dimensions, it will be moved
+// to produce an image of given size. Crop is applied before any other
+// transformations. If the rectangle is smaller than the requested resize and
+// scaleUp is disabled, the image will be of the same size as the rectangle.
 //
 // Size and Cropping
 //
@@ -176,17 +214,19 @@ func (o Options) transform() bool {
 //
 // Examples
 //
-// 	0x0       - no resizing
-// 	200x      - 200 pixels wide, proportional height
-// 	0.15x     - 15% original width, proportional height
-// 	x100      - 100 pixels tall, proportional width
-// 	100x150   - 100 by 150 pixels, cropping as needed
-// 	100       - 100 pixels square, cropping as needed
-// 	150,fit   - scale to fit 150 pixels square, no cropping
-// 	100,r90   - 100 pixels square, rotated 90 degrees
-// 	100,fv,fh - 100 pixels square, flipped horizontal and vertical
-// 	200x,q80  - 200 pixels wide, proportional height, 80% quality
-// 	200x,png  - 200 pixels wide, converted to PNG format
+// 	0x0         - no resizing
+// 	200x        - 200 pixels wide, proportional height
+// 	0.15x       - 15% original width, proportional height
+// 	x100        - 100 pixels tall, proportional width
+// 	100x150     - 100 by 150 pixels, cropping as needed
+// 	100         - 100 pixels square, cropping as needed
+// 	150,fit     - scale to fit 150 pixels square, no cropping
+// 	100,r90     - 100 pixels square, rotated 90 degrees
+// 	100,fv,fh   - 100 pixels square, flipped horizontal and vertical
+// 	200x,q80    - 200 pixels wide, proportional height, 80% quality
+// 	200x,png    - 200 pixels wide, converted to PNG format
+// 	cw100,ch200 - crop fragment that starts at (0,0), is 100px wide and 200px tall
+// 	cw100,ch200,cx10,cy20 - crop fragment that start at (10,20) is 100px wide and 200px tall
 func ParseOptions(str string) Options {
 	var options Options
 
@@ -212,6 +252,18 @@ func ParseOptions(str string) Options {
 			options.Quality, _ = strconv.Atoi(value)
 		case strings.HasPrefix(opt, optSignaturePrefix):
 			options.Signature = strings.TrimPrefix(opt, optSignaturePrefix)
+		case strings.HasPrefix(opt, optCropHeight):
+			value := strings.TrimPrefix(opt, optCropHeight)
+			options.CropHeight, _ = strconv.Atoi(value)
+		case strings.HasPrefix(opt, optCropWidth):
+			value := strings.TrimPrefix(opt, optCropWidth)
+			options.CropWidth, _ = strconv.Atoi(value)
+		case strings.HasPrefix(opt, optCropX):
+			value := strings.TrimPrefix(opt, optCropX)
+			options.CropX, _ = strconv.Atoi(value)
+		case strings.HasPrefix(opt, optCropY):
+			value := strings.TrimPrefix(opt, optCropY)
+			options.CropY, _ = strconv.Atoi(value)
 		case strings.Contains(opt, optSizeDelimiter):
 			size := strings.SplitN(opt, optSizeDelimiter, 2)
 			if w := size[0]; w != "" {
@@ -250,7 +302,7 @@ func (r Request) String() string {
 // NewRequest parses an http.Request into an imageproxy Request.  Options and
 // the remote image URL are specified in the request path, formatted as:
 // /{options}/{remote_url}.  Options may be omitted, so a request path may
-// simply contian /{remote_url}.  The remote URL must be an absolute "http" or
+// simply contain /{remote_url}.  The remote URL must be an absolute "http" or
 // "https" URL, should not be URL encoded, and may contain a query string.
 //
 // Assuming an imageproxy server running on localhost, the following are all

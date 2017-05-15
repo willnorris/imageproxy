@@ -21,6 +21,7 @@ import (
 	_ "image/gif" // register gif format
 	"image/jpeg"
 	"image/png"
+	"math"
 
 	"github.com/disintegration/imaging"
 	_ "golang.org/x/image/webp" // register webp format
@@ -126,9 +127,44 @@ func resizeParams(m image.Image, opt Options) (w, h int, resize bool) {
 	return w, h, true
 }
 
+// cropParams calculates crop rectangle parameters to keep it in image bounds
+func cropParams(m image.Image, opt Options) (x0, y0, x1, y1 int, crop bool) {
+	// crop params not set
+	if opt.CropHeight <= 0 || opt.CropWidth <= 0 {
+		return 0, 0, 0, 0, false
+	}
+
+	imgW := m.Bounds().Max.X - m.Bounds().Min.X
+	imgH := m.Bounds().Max.Y - m.Bounds().Min.Y
+
+	x0 = opt.CropX
+	y0 = opt.CropY
+
+	// crop rectangle out of image bounds horizontally
+	// -> moved to point (image_width - rectangle_width) or 0, whichever is larger
+	if opt.CropX > imgW || opt.CropX+opt.CropWidth > imgW {
+		x0 = int(math.Max(0, float64(imgW-opt.CropWidth)))
+	}
+	// crop rectangle out of image bounds vertically
+	// -> moved to point (image_height - rectangle_height) or 0, whichever is larger
+	if opt.CropY > imgH || opt.CropY+opt.CropHeight > imgH {
+		y0 = int(math.Max(0, float64(imgH-opt.CropHeight)))
+	}
+
+	// make rectangle fit the image
+	x1 = int(math.Min(float64(imgW), float64(opt.CropX+opt.CropWidth)))
+	y1 = int(math.Min(float64(imgH), float64(opt.CropY+opt.CropHeight)))
+
+	return x0, y0, x1, y1, true
+}
+
 // transformImage modifies the image m based on the transformations specified
 // in opt.
 func transformImage(m image.Image, opt Options) image.Image {
+	// crop if needed
+	if x0, y0, x1, y1, crop := cropParams(m, opt); crop {
+		m = imaging.Crop(m, image.Rect(x0, y0, x1, y1))
+	}
 	// resize if needed
 	if w, h, resize := resizeParams(m, opt); resize {
 		if opt.Fit {
