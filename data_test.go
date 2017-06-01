@@ -31,12 +31,12 @@ func TestOptions_String(t *testing.T) {
 			"0x0",
 		},
 		{
-			Options{1, 2, true, 90, true, true, 80, "", false},
+			Options{1, 2, true, 90, true, true, 80, "", false, ""},
 			"1x2,fit,r90,fv,fh,q80",
 		},
 		{
-			Options{0.15, 1.3, false, 45, false, false, 95, "c0ffee", false},
-			"0.15x1.3,r45,q95,sc0ffee",
+			Options{0.15, 1.3, false, 45, false, false, 95, "c0ffee", false, "png"},
+			"0.15x1.3,r45,q95,sc0ffee,png",
 		},
 	}
 
@@ -72,6 +72,7 @@ func TestParseOptions(t *testing.T) {
 		{"r90", Options{Rotate: 90}},
 		{"fv", Options{FlipVertical: true}},
 		{"fh", Options{FlipHorizontal: true}},
+		{"jpeg", Options{Format: "jpeg"}},
 
 		// duplicate flags (last one wins)
 		{"1x2,3x4", Options{Width: 3, Height: 4}},
@@ -79,13 +80,14 @@ func TestParseOptions(t *testing.T) {
 		{"1x2,0x3", Options{Width: 0, Height: 3}},
 		{"1x,x2", Options{Width: 1, Height: 2}},
 		{"r90,r270", Options{Rotate: 270}},
+		{"jpeg,png", Options{Format: "png"}},
 
 		// mix of valid and invalid flags
 		{"FOO,1,BAR,r90,BAZ", Options{Width: 1, Height: 1, Rotate: 90}},
 
 		// all flags, in different orders
-		{"q70,1x2,fit,r90,fv,fh,sc0ffee", Options{1, 2, true, 90, true, true, 70, "c0ffee", false}},
-		{"r90,fh,sc0ffee,q90,1x2,fv,fit", Options{1, 2, true, 90, true, true, 90, "c0ffee", false}},
+		{"q70,1x2,fit,r90,fv,fh,sc0ffee,png", Options{1, 2, true, 90, true, true, 70, "c0ffee", false, "png"}},
+		{"r90,fh,sc0ffee,png,q90,1x2,fv,fit", Options{1, 2, true, 90, true, true, 90, "c0ffee", false, "png"}},
 	}
 
 	for _, tt := range tests {

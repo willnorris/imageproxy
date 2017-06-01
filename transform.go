@@ -16,6 +16,7 @@ package imageproxy
 
 import (
 	"bytes"
+	"fmt"
 	"image"
 	_ "image/gif" // register gif format
 	"image/jpeg"
@@ -46,6 +47,10 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 		return nil, err
 	}
 
+	if opt.Format != "" {
+		format = opt.Format
+	}
+
 	// transform and encode image
 	buf := new(bytes.Buffer)
 	switch format {
@@ -74,6 +79,8 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
+	default:
+		return nil, fmt.Errorf("unsupported format: %v", format)
 	}
 
 	return buf.Bytes(), nil

@@ -28,6 +28,8 @@ const (
 	optFit             = "fit"
 	optFlipVertical    = "fv"
 	optFlipHorizontal  = "fh"
+	optFormatJPEG      = "jpeg"
+	optFormatPNG       = "png"
 	optRotatePrefix    = "r"
 	optQualityPrefix   = "q"
 	optSignaturePrefix = "s"
@@ -71,6 +73,9 @@ type Options struct {
 	// Allow image to scale beyond its original dimensions.  This value
 	// will always be overwritten by the value of Proxy.ScaleUp.
 	ScaleUp bool
+
+	// Desired image format. Valid values are "jpeg", "png".
+	Format string
 }
 
 func (o Options) String() string {
@@ -97,14 +102,18 @@ func (o Options) String() string {
 	if o.ScaleUp {
 		fmt.Fprintf(buf, ",%s", optScaleUp)
 	}
+	if o.Format != "" {
+		fmt.Fprintf(buf, ",%s", o.Format)
+	}
 	return buf.String()
 }
 
 // transform returns whether o includes transformation options.  Some fields
 // are not transform related at all (like Signature), and others only apply in
-// the presence of other fields (like Fit and Quality).
+// the presence of other fields (like Fit and Quality).  A non-empty Format
+// value is assumed to involve a transformation.
 func (o Options) transform() bool {
-	return o.Width != 0 || o.Height != 0 || o.Rotate != 0 || o.FlipHorizontal || o.FlipVertical
+	return o.Width != 0 || o.Height != 0 || o.Rotate != 0 || o.FlipHorizontal || o.FlipVertical || o.Format != ""
 }
 
 // ParseOptions parses str as a list of comma separated transformation options.
@@ -153,6 +162,11 @@ func (o Options) transform() bool {
 // The "q{qualityPercentage}" option can be used to specify the quality of the
 // output file (JPEG only). If not specified, the default value of "95" is used.
 //
+// Format
+//
+// The "jpeg" and "png" options can be used to specify the desired image format
+// of the proxied image.
+//
 // Signature
 //
 // The "s{signature}" option specifies an optional base64 encoded HMAC used to
@@ -174,6 +188,7 @@ func (o Options) transform() bool {
 // 	100,r90   - 100 pixels square, rotated 90 degrees
 // 	100,fv,fh - 100 pixels square, flipped horizontal and vertical
 // 	200x,q80  - 200 pixels wide, proportional height, 80% quality
+// 	200x,png  - 200 pixels wide, converted to PNG format
 func ParseOptions(str string) Options {
 	var options Options
 
@@ -189,6 +204,8 @@ func ParseOptions(str string) Options {
 			options.FlipHorizontal = true
 		case opt == optScaleUp: // this option is intentionally not documented above
 			options.ScaleUp = true
+		case opt == optFormatJPEG, opt == optFormatPNG:
+			options.Format = opt
 		case strings.HasPrefix(opt, optRotatePrefix):
 			value := strings.TrimPrefix(opt, optRotatePrefix)
 			options.Rotate, _ = strconv.Atoi(value)

@@ -306,7 +306,10 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 	// replay response with transformed image and updated content length
 	buf := new(bytes.Buffer)
 	fmt.Fprintf(buf, "%s %s\n", resp.Proto, resp.Status)
-	resp.Header.WriteSubset(buf, map[string]bool{"Content-Length": true})
+	resp.Header.WriteSubset(buf, map[string]bool{
+		"Content-Length": true,
+		"Content-Type":   opt.Format != "",
+	})
 	fmt.Fprintf(buf, "Content-Length: %d\n\n", len(img))
 	buf.Write(img)
 
