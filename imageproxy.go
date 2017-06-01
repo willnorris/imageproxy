@@ -308,7 +308,8 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 	fmt.Fprintf(buf, "%s %s\n", resp.Proto, resp.Status)
 	resp.Header.WriteSubset(buf, map[string]bool{
 		"Content-Length": true,
-		"Content-Type":   opt.Format != "",
+		// exclude Content-Type header if the format may have changed during transformation
+		"Content-Type": opt.Format != "" || resp.Header.Get("Content-Type") == "image/webp",
 	})
 	fmt.Fprintf(buf, "Content-Length: %d\n\n", len(img))
 	buf.Write(img)

@@ -23,6 +23,7 @@ import (
 	"image/png"
 
 	"github.com/disintegration/imaging"
+	_ "golang.org/x/image/webp" // register webp format
 	"willnorris.com/go/gifresize"
 )
 
@@ -62,7 +63,7 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-	case "jpeg":
+	case "jpeg", "webp": // default to encoding webp as jpeg
 		quality := opt.Quality
 		if quality == 0 {
 			quality = defaultQuality
