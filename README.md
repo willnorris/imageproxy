@@ -233,12 +233,12 @@ my server and start it using `sudo service imageproxy start`.  You will
 certainly want to modify that upstart script to suit your desired
 configuration.
 
-## Deploying to Heroku ##
+### Heroku ###
 
 It's easy to vendorize the dependencies with `Godep` and deploy to Heroku. Take
 a look at [this GitHub repo](https://github.com/oreillymedia/prototype-imageproxy)
 
-## Docker ##
+### Docker ###
 
 A docker image is available at [`willnorris/imageproxy`](https://registry.hub.docker.com/u/willnorris/imageproxy/dockerfile/).
 
@@ -253,7 +253,7 @@ Or in your Dockerfile:
 ENTRYPOINT ["/go/bin/imageproxy", "-addr 0.0.0.0:8080"]
 ```
 
-## nginx
+### nginx ###
 
 You can use follow config to prevent URL overwritting:
 
