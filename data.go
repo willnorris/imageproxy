@@ -15,7 +15,6 @@
 package imageproxy
 
 import (
-	"bytes"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -79,33 +78,32 @@ type Options struct {
 }
 
 func (o Options) String() string {
-	buf := new(bytes.Buffer)
-	fmt.Fprintf(buf, "%v%s%v", o.Width, optSizeDelimiter, o.Height)
+	opts := []string{fmt.Sprintf("%v%s%v", o.Width, optSizeDelimiter, o.Height)}
 	if o.Fit {
-		fmt.Fprintf(buf, ",%s", optFit)
+		opts = append(opts, optFit)
 	}
 	if o.Rotate != 0 {
-		fmt.Fprintf(buf, ",%s%d", string(optRotatePrefix), o.Rotate)
+		opts = append(opts, fmt.Sprintf("%s%d", string(optRotatePrefix), o.Rotate))
 	}
 	if o.FlipVertical {
-		fmt.Fprintf(buf, ",%s", optFlipVertical)
+		opts = append(opts, optFlipVertical)
 	}
 	if o.FlipHorizontal {
-		fmt.Fprintf(buf, ",%s", optFlipHorizontal)
+		opts = append(opts, optFlipHorizontal)
 	}
 	if o.Quality != 0 {
-		fmt.Fprintf(buf, ",%s%d", string(optQualityPrefix), o.Quality)
+		opts = append(opts, fmt.Sprintf("%s%d", string(optQualityPrefix), o.Quality))
 	}
 	if o.Signature != "" {
-		fmt.Fprintf(buf, ",%s%s", string(optSignaturePrefix), o.Signature)
+		opts = append(opts, fmt.Sprintf("%s%s", string(optSignaturePrefix), o.Signature))
 	}
 	if o.ScaleUp {
-		fmt.Fprintf(buf, ",%s", optScaleUp)
+		opts = append(opts, optScaleUp)
 	}
 	if o.Format != "" {
-		fmt.Fprintf(buf, ",%s", o.Format)
+		opts = append(opts, o.Format)
 	}
-	return buf.String()
+	return strings.Join(opts, ",")
 }
 
 // transform returns whether o includes transformation options.  Some fields
