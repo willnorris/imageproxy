@@ -110,10 +110,10 @@ func (o Options) String() string {
 
 // transform returns whether o includes transformation options.  Some fields
 // are not transform related at all (like Signature), and others only apply in
-// the presence of other fields (like Fit and Quality).  A non-empty Format
-// value is assumed to involve a transformation.
+// the presence of other fields (like Fit).  A non-empty Format value is
+// assumed to involve a transformation.
 func (o Options) transform() bool {
-	return o.Width != 0 || o.Height != 0 || o.Rotate != 0 || o.FlipHorizontal || o.FlipVertical || o.Format != ""
+	return o.Width != 0 || o.Height != 0 || o.Rotate != 0 || o.FlipHorizontal || o.FlipVertical || o.Quality != 0 || o.Format != ""
 }
 
 // ParseOptions parses str as a list of comma separated transformation options.
