@@ -3,69 +3,112 @@
 	"ignore": "test",
 	"package": [
 		{
+			"checksumSHA1": "kbGwaqCVchx6lunLtdDh3mfiWuo=",
 			"path": "github.com/disintegration/imaging",
 			"revision": "546cb3c5137b3f1232e123a26aa033aade6b3066",
-			"revisionTime": "2015-10-03T04:44:24+03:00"
+			"revisionTime": "2015-10-03T01:44:24Z"
 		},
 		{
+			"checksumSHA1": "tKMSOCOue78dHOP9PY0aSI79+vw=",
 			"path": "github.com/golang/glog",
 			"revision": "fca8c8854093a154ff1eb580aae10276ad6b1b5f",
-			"revisionTime": "2015-08-01T08:52:21+10:00"
+			"revisionTime": "2015-07-31T22:52:21Z"
 		},
 		{
+			"checksumSHA1": "ZZQiLjIW+WEKXuEgyyKo5PUSBBo=",
 			"path": "github.com/gregjones/httpcache",
 			"revision": "ae1d6feaf2d3354cece07d7dcf420de6745ad7b6",
 			"revisionTime": "2015-10-25T15:48:47Z"
 		},
 		{
+			"checksumSHA1": "A+TX1jxqy7iWvcb9ZldoG1b5SsY=",
 			"path": "github.com/gregjones/httpcache/diskcache",
 			"revision": "ae1d6feaf2d3354cece07d7dcf420de6745ad7b6",
 			"revisionTime": "2015-10-25T15:48:47Z"
 		},
 		{
+			"checksumSHA1": "Th+zE6hHI4jpczGj+JNsqDJrJgI=",
 			"path": "github.com/kr/http/transport",
 			"revision": "77bd98b60462aab91988ae155ecc11a74833f5b7",
-			"revisionTime": "2015-05-05T14:27:37-07:00"
+			"revisionTime": "2015-05-05T21:27:37Z"
 		},
 		{
+			"checksumSHA1": "Hc7LMQrHR71kkSsd/P/SBdiC258=",
 			"path": "github.com/petar/GoLLRB/llrb",
 			"revision": "53be0d36a84c2a886ca057d34b6aa4468df9ccb4",
-			"revisionTime": "2013-04-27T17:51:48-04:00"
+			"revisionTime": "2013-04-27T21:51:48Z"
 		},
 		{
+			"checksumSHA1": "d7waKzi8uLYpcrJaRjK1TikDleI=",
 			"path": "github.com/peterbourgon/diskv",
 			"revision": "72aa5da9f7d1125b480b83c6dc5ad09a1f04508c",
-			"revisionTime": "2014-12-31T15:08:51+01:00"
+			"revisionTime": "2014-12-31T14:08:51Z"
 		},
 		{
+			"checksumSHA1": "keGfp7Lfr4cPUiZjLpHzZWrHEzM=",
 			"path": "github.com/sqs/s3",
 			"revision": "ee47412d98d9637046a7096f24809bc45f6bcbd5",
-			"revisionTime": "2015-02-03T03:00:30-08:00"
+			"revisionTime": "2015-02-03T11:00:30Z"
 		},
 		{
+			"checksumSHA1": "ki3xti8X7mLGmAWZoYZiBAJYQ8M=",
 			"path": "github.com/sqs/s3/s3util",
 			"revision": "ee47412d98d9637046a7096f24809bc45f6bcbd5",
-			"revisionTime": "2015-02-03T03:00:30-08:00"
+			"revisionTime": "2015-02-03T11:00:30Z"
 		},
 		{
+			"checksumSHA1": "UD/pejajPyS7WaWVXq2NU1eK4Ic=",
 			"path": "golang.org/x/image/bmp",
 			"revision": "baddd3465a05d84a6d8d3507547a91cb188c81ea",
-			"revisionTime": "2015-09-11T13:43:18+10:00"
+			"revisionTime": "2015-09-11T03:43:18Z"
 		},
 		{
+			"checksumSHA1": "yPobk1ttfzvwK1b1PxdA4BdP+Mg=",
+			"path": "golang.org/x/image/riff",
+			"revision": "baddd3465a05d84a6d8d3507547a91cb188c81ea",
+			"revisionTime": "2015-09-11T03:43:18Z"
+		},
+		{
+			"checksumSHA1": "ctyyddkXAz6xBcMGo2Brocz1iuY=",
 			"path": "golang.org/x/image/tiff",
 			"revision": "baddd3465a05d84a6d8d3507547a91cb188c81ea",
-			"revisionTime": "2015-09-11T13:43:18+10:00"
+			"revisionTime": "2015-09-11T03:43:18Z"
 		},
 		{
+			"checksumSHA1": "Xnm81x3lWS6xRxSthJuLt+fpfi0=",
 			"path": "golang.org/x/image/tiff/lzw",
 			"revision": "baddd3465a05d84a6d8d3507547a91cb188c81ea",
-			"revisionTime": "2015-09-11T13:43:18+10:00"
+			"revisionTime": "2015-09-11T03:43:18Z"
 		},
 		{
+			"checksumSHA1": "ebUbLKyTEaupuKj5KsceDfkn+UA=",
+			"path": "golang.org/x/image/vp8",
+			"revision": "baddd3465a05d84a6d8d3507547a91cb188c81ea",
+			"revisionTime": "2015-09-11T03:43:18Z"
+		},
+		{
+			"checksumSHA1": "MF/A3WDD30iVwlktK0itZ0PTJho=",
+			"path": "golang.org/x/image/vp8l",
+			"revision": "baddd3465a05d84a6d8d3507547a91cb188c81ea",
+			"revisionTime": "2015-09-11T03:43:18Z"
+		},
+		{
+			"checksumSHA1": "n8RwT4S91OC9FNx0terB4fX/ZdU=",
+			"path": "golang.org/x/image/webp",
+			"revision": "baddd3465a05d84a6d8d3507547a91cb188c81ea",
+			"revisionTime": "2015-09-11T03:43:18Z"
+		},
+		{
+			"checksumSHA1": "3to5NHHqrRXdbrGGuPLH5Qvx0/Q=",
+			"path": "golang.org/x/image/webp/nycbcra",
+			"revision": "baddd3465a05d84a6d8d3507547a91cb188c81ea",
+			"revisionTime": "2015-09-11T03:43:18Z"
+		},
+		{
+			"checksumSHA1": "Oz2aQiusOZOpefTB6nCKW+vzrWA=",
 			"path": "sourcegraph.com/sourcegraph/s3cache",
 			"revision": "4150cc6b046500fb69804e34aa4a1ca8be361bcb",
-			"revisionTime": "2014-12-02T11:37:49-08:00"
+			"revisionTime": "2014-12-02T19:37:49Z"
 		},
 		{
 			"checksumSHA1": "cBdDkft9ir+lyLbeRQ4zCAoR0AY=",
