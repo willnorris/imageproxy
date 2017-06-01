@@ -4,12 +4,20 @@
 
 // Package nycbcra provides non-alpha-premultiplied Y'CbCr-with-alpha image and
 // color types.
+//
+// Deprecated: as of Go 1.6. Use the standard image and image/color packages
+// instead.
 package nycbcra // import "golang.org/x/image/webp/nycbcra"
 
 import (
 	"image"
 	"image/color"
 )
+
+func init() {
+	println("The golang.org/x/image/webp/nycbcra package is deprecated, as of Go 1.6. " +
+		"Use the standard image and image/color packages instead.")
+}
 
 // TODO: move this to the standard image and image/color packages, so that the
 // image/draw package can have fast-path code. Moving would rename:

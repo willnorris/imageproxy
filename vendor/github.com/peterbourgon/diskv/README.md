@@ -114,11 +114,11 @@ with a RWMutex to provide safe concurrent access.
 
 diskv is a key-value store and therefore inherently unordered. An ordering
 system can be injected into the store by passing something which satisfies the
-diskv.Index interface. (A default implementation, using Petar Maymounkov's
-[LLRB tree][7], is provided.) Basically, diskv keeps an ordered (by a
+diskv.Index interface. (A default implementation, using Google's
+[btree][7] package, is provided.) Basically, diskv keeps an ordered (by a
 user-provided Less function) index of the keys, which can be queried.
 
-[7]: https://github.com/petar/GoLLRB
+[7]: https://github.com/google/btree
 
 ## Adding compression
 
