@@ -108,7 +108,8 @@ func (o Options) transform() bool {
 }
 
 // ParseOptions parses str as a list of comma separated transformation options.
-// The following options can be specified in any order:
+// The options can be specified in in order, with duplicate options overwriting
+// previous values.
 //
 // Size and Cropping
 //
@@ -150,7 +151,16 @@ func (o Options) transform() bool {
 // Quality
 //
 // The "q{qualityPercentage}" option can be used to specify the quality of the
-// output file (JPEG only)
+// output file (JPEG only). If not specified, the default value of "95" is used.
+//
+// Signature
+//
+// The "s{signature}" option specifies an optional base64 encoded HMAC used to
+// sign the remote URL in the request.  The HMAC key used to verify signatures is
+// provided to the imageproxy server on startup.
+//
+// See https://github.com/willnorris/imageproxy/wiki/URL-signing
+// for examples of generating signatures.
 //
 // Examples
 //
