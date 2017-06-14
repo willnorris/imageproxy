@@ -148,7 +148,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	copyHeader(w, resp, "Etag")
 	copyHeader(w, resp, "Link")
 
-	if is304 := check304(r, resp); is304 {
+	if should304(r, resp) {
 		w.WriteHeader(http.StatusNotModified)
 		return
 	}
@@ -233,10 +233,10 @@ func validSignature(key []byte, r *Request) bool {
 	return hmac.Equal(got, want)
 }
 
-// check304 checks whether we should send a 304 Not Modified in response to
+// should304 returns whether we should send a 304 Not Modified in response to
 // req, based on the response resp.  This is determined using the last modified
 // time and the entity tag of resp.
-func check304(req *http.Request, resp *http.Response) bool {
+func should304(req *http.Request, resp *http.Response) bool {
 	// TODO(willnorris): if-none-match header can be a comma separated list
 	// of multiple tags to be matched, or the special value "*" which
 	// matches all etags

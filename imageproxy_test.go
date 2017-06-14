@@ -145,7 +145,7 @@ func TestValidSignature(t *testing.T) {
 	}
 }
 
-func TestCheck304(t *testing.T) {
+func TestShould304(t *testing.T) {
 	tests := []struct {
 		req, resp string
 		is304     bool
@@ -212,8 +212,8 @@ func TestCheck304(t *testing.T) {
 			t.Errorf("http.ReadResponse(%q) returned error: %v", tt.resp, err)
 		}
 
-		if got, want := check304(req, resp), tt.is304; got != want {
-			t.Errorf("check304(%q, %q) returned: %v, want %v", tt.req, tt.resp, got, want)
+		if got, want := should304(req, resp), tt.is304; got != want {
+			t.Errorf("should304(%q, %q) returned: %v, want %v", tt.req, tt.resp, got, want)
 		}
 	}
 }
