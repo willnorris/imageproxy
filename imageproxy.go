@@ -142,27 +142,32 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	cached := resp.Header.Get(httpcache.XFromCache)
 	glog.Infof("request: %v (served from cache: %v)", *req, cached == "1")
 
-	copyHeader(w, resp, "Cache-Control")
-	copyHeader(w, resp, "Last-Modified")
-	copyHeader(w, resp, "Expires")
-	copyHeader(w, resp, "Etag")
-	copyHeader(w, resp, "Link")
+	copyHeader(w.Header(), resp.Header, "Cache-Control", "Last-Modified", "Expires", "Etag", "Link")
 
 	if should304(r, resp) {
 		w.WriteHeader(http.StatusNotModified)
 		return
 	}
 
-	copyHeader(w, resp, "Content-Length")
-	copyHeader(w, resp, "Content-Type")
+	copyHeader(w.Header(), resp.Header, "Content-Length", "Content-Type")
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body)
 }
 
-func copyHeader(w http.ResponseWriter, r *http.Response, header string) {
-	key := http.CanonicalHeaderKey(header)
-	if value, ok := r.Header[key]; ok {
-		w.Header()[key] = value
+// copyHeader copies header values from src to dst, adding to any existing
+// values with the same header name.  If keys is not empty, only those header
+// keys will be copied.
+func copyHeader(dst, src http.Header, keys ...string) {
+	if len(keys) == 0 {
+		for k, _ := range src {
+			keys = append(keys, k)
+		}
+	}
+	for _, key := range keys {
+		k := http.CanonicalHeaderKey(key)
+		for _, v := range src[k] {
+			dst.Add(k, v)
+		}
 	}
 }
 

@@ -24,9 +24,77 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"reflect"
 	"strings"
 	"testing"
 )
+
+func TestCopyHeader(t *testing.T) {
+	tests := []struct {
+		dst, src http.Header
+		keys     []string
+		want     http.Header
+	}{
+		// empty
+		{http.Header{}, http.Header{}, nil, http.Header{}},
+		{http.Header{}, http.Header{}, []string{}, http.Header{}},
+		{http.Header{}, http.Header{}, []string{"A"}, http.Header{}},
+
+		// nothing to copy
+		{
+			dst:  http.Header{"A": []string{"a1"}},
+			src:  http.Header{},
+			keys: nil,
+			want: http.Header{"A": []string{"a1"}},
+		},
+		{
+			dst:  http.Header{},
+			src:  http.Header{"A": []string{"a"}},
+			keys: []string{"B"},
+			want: http.Header{},
+		},
+
+		// copy headers
+		{
+			dst:  http.Header{},
+			src:  http.Header{"A": []string{"a"}},
+			keys: nil,
+			want: http.Header{"A": []string{"a"}},
+		},
+		{
+			dst:  http.Header{"A": []string{"a"}},
+			src:  http.Header{"B": []string{"b"}},
+			keys: nil,
+			want: http.Header{"A": []string{"a"}, "B": []string{"b"}},
+		},
+		{
+			dst:  http.Header{"A": []string{"a"}},
+			src:  http.Header{"B": []string{"b"}, "C": []string{"c"}},
+			keys: []string{"B"},
+			want: http.Header{"A": []string{"a"}, "B": []string{"b"}},
+		},
+		{
+			dst:  http.Header{"A": []string{"a1"}},
+			src:  http.Header{"A": []string{"a2"}},
+			keys: nil,
+			want: http.Header{"A": []string{"a1", "a2"}},
+		},
+	}
+
+	for _, tt := range tests {
+		// copy dst map
+		got := make(http.Header)
+		for k, v := range tt.dst {
+			got[k] = v
+		}
+
+		copyHeader(got, tt.src, tt.keys...)
+		if !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("copyHeader(%v, %v, %v) returned %v, want %v", tt.dst, tt.src, tt.keys, got, tt.want)
+		}
+
+	}
+}
 
 func TestAllowed(t *testing.T) {
 	whitelist := []string{"good"}
