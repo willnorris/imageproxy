@@ -12,7 +12,6 @@ import (
 	"log"
 	"net"
 	"net/http"
-	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -32,7 +31,7 @@ type ReverseProxy struct {
 	// back to the original client unmodified.
 	// Director must not access the provided Request
 	// after returning.
-	Director func(*http.Request)
+	Director func(*http.Request) error
 
 	// The transport used to perform proxy requests.
 	// If nil, http.DefaultTransport is used.
@@ -48,7 +47,9 @@ type ReverseProxy struct {
 	// that occur when attempting to proxy the request.
 	// If nil, logging goes to os.Stderr via the log package's
 	// standard logger.
-	ErrorLog *log.Logger
+	ErrorLog interface {
+		Printf(format string, v ...interface{})
+	}
 
 	// BufferPool optionally specifies a buffer pool to
 	// get byte slices for use by io.CopyBuffer when
@@ -78,32 +79,6 @@ func singleJoiningSlash(a, b string) string {
 		return a + "/" + b
 	}
 	return a + b
-}
-
-// NewSingleHostReverseProxy returns a new ReverseProxy that routes
-// URLs to the scheme, host, and base path provided in target. If the
-// target's path is "/base" and the incoming request was for "/dir",
-// the target request will be for /base/dir.
-// NewSingleHostReverseProxy does not rewrite the Host header.
-// To rewrite Host headers, use ReverseProxy directly with a custom
-// Director policy.
-func NewSingleHostReverseProxy(target *url.URL) *ReverseProxy {
-	targetQuery := target.RawQuery
-	director := func(req *http.Request) {
-		req.URL.Scheme = target.Scheme
-		req.URL.Host = target.Host
-		req.URL.Path = singleJoiningSlash(target.Path, req.URL.Path)
-		if targetQuery == "" || req.URL.RawQuery == "" {
-			req.URL.RawQuery = targetQuery + req.URL.RawQuery
-		} else {
-			req.URL.RawQuery = targetQuery + "&" + req.URL.RawQuery
-		}
-		if _, ok := req.Header["User-Agent"]; !ok {
-			// explicitly disable User-Agent so it's not set to default value
-			req.Header.Set("User-Agent", "")
-		}
-	}
-	return &ReverseProxy{Director: director}
 }
 
 func copyHeader(dst, src http.Header) {
@@ -154,7 +129,12 @@ func (p *ReverseProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		outreq.Body = nil // Issue 16036: nil Body for http.Transport retries
 	}
 
-	p.Director(outreq)
+	if err := p.Director(outreq); err != nil {
+		p.logf("http: proxy error: %v", err)
+		rw.WriteHeader(http.StatusBadGateway)
+		return
+	}
+
 	outreq.Close = false
 
 	// We are modifying the same underlying map from req (shallow
