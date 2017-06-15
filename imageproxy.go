@@ -294,6 +294,11 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 		return nil, err
 	}
 
+	if should304(req, resp) {
+		// bare 304 response, full response will be used from cache
+		return &http.Response{StatusCode: http.StatusNotModified}, nil
+	}
+
 	defer resp.Body.Close()
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
