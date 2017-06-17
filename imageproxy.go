@@ -35,6 +35,8 @@ import (
 	tphttp "willnorris.com/go/imageproxy/third_party/http"
 )
 
+var emptyBody io.ReadCloser = ioutil.NopCloser(new(bytes.Buffer))
+
 // Proxy serves image requests.
 type Proxy struct {
 	Client *http.Client // client used to fetch remote URLs
@@ -305,7 +307,7 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 
 	if should304(req, resp) {
 		// bare 304 response, full response will be used from cache
-		return &http.Response{StatusCode: http.StatusNotModified}, nil
+		return &http.Response{StatusCode: http.StatusNotModified, Body: emptyBody}, nil
 	}
 
 	defer resp.Body.Close()
