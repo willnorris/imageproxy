@@ -130,8 +130,7 @@ func (p *ReverseProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	if err := p.Director(outreq); err != nil {
-		p.logf("http: proxy error: %v", err)
-		rw.WriteHeader(http.StatusBadGateway)
+		p.writeError(rw, err)
 		return
 	}
 
@@ -182,8 +181,7 @@ func (p *ReverseProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	res, err := transport.RoundTrip(outreq)
 	if err != nil {
-		p.logf("http: proxy error: %v", err)
-		rw.WriteHeader(http.StatusBadGateway)
+		p.writeError(rw, err)
 		return
 	}
 
@@ -203,8 +201,7 @@ func (p *ReverseProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 	if p.ModifyResponse != nil {
 		if err := p.ModifyResponse(res); err != nil {
-			p.logf("http: proxy error: %v", err)
-			rw.WriteHeader(http.StatusBadGateway)
+			p.writeError(rw, err)
 			return
 		}
 	}
@@ -245,6 +242,20 @@ func (p *ReverseProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 			rw.Header().Add(k, v)
 		}
 	}
+}
+
+// writerError writes err to the http response.
+func (p *ReverseProxy) writeError(w http.ResponseWriter, err error) {
+	type statusCoder interface {
+		StatusCode() int
+	}
+
+	p.logf("http: proxy error: %v", err)
+	code := http.StatusBadGateway
+	if err, ok := err.(statusCoder); ok {
+		code = err.StatusCode()
+	}
+	http.Error(w, err.Error(), code)
 }
 
 func (p *ReverseProxy) copyResponse(dst io.Writer, src io.Reader) {
