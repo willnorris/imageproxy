@@ -36,14 +36,14 @@ const (
 	optScaleUp         = "scaleUp"
 )
 
-// URLError reports a malformed URL error.
-type URLError struct {
-	Message string
-	URL     *url.URL
+// urlError reports a malformed URL error.
+type urlError struct {
+	message string
+	url     *url.URL
 }
 
-func (e URLError) Error() string {
-	return fmt.Sprintf("malformed URL %q: %s", e.URL, e.Message)
+func (e urlError) Error() string {
+	return fmt.Sprintf("malformed URL %q: %s", e.url, e.message)
 }
 
 // Options specifies transformations to be performed on the requested image.
@@ -270,13 +270,13 @@ func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 		// first segment should be options
 		parts := strings.SplitN(path, "/", 2)
 		if len(parts) != 2 {
-			return nil, URLError{"too few path segments", r.URL}
+			return nil, urlError{"too few path segments", r.URL}
 		}
 
 		var err error
 		req.URL, err = parseURL(parts[1])
 		if err != nil {
-			return nil, URLError{fmt.Sprintf("unable to parse remote URL: %v", err), r.URL}
+			return nil, urlError{fmt.Sprintf("unable to parse remote URL: %v", err), r.URL}
 		}
 
 		req.Options = ParseOptions(parts[0])
@@ -287,11 +287,11 @@ func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 	}
 
 	if !req.URL.IsAbs() {
-		return nil, URLError{"must provide absolute remote URL", r.URL}
+		return nil, urlError{"must provide absolute remote URL", r.URL}
 	}
 
 	if req.URL.Scheme != "http" && req.URL.Scheme != "https" {
-		return nil, URLError{"remote URL must have http or https scheme", r.URL}
+		return nil, urlError{"remote URL must have http or https scheme", r.URL}
 	}
 
 	// query string is always part of the remote URL
