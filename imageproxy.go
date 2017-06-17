@@ -115,9 +115,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	req, err := NewRequest(r, p.DefaultBaseURL)
 	if err != nil {
-		msg := fmt.Sprintf("invalid request URL: %v", err)
-		glog.Error(msg)
-		http.Error(w, msg, http.StatusBadRequest)
+		p.writeError(w, err)
 		return
 	}
 
@@ -125,16 +123,13 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	req.Options.ScaleUp = p.ScaleUp
 
 	if err := p.allowed(req); err != nil {
-		glog.Error(err)
-		http.Error(w, err.Error(), http.StatusForbidden)
+		p.writeError(w, err)
 		return
 	}
 
 	resp, err := p.Client.Get(req.String())
 	if err != nil {
-		msg := fmt.Sprintf("error fetching remote image: %v", err)
-		glog.Error(msg)
-		http.Error(w, msg, http.StatusInternalServerError)
+		p.writeError(w, err)
 		return
 	}
 	defer resp.Body.Close()
@@ -152,6 +147,20 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	copyHeader(w.Header(), resp.Header, "Content-Length", "Content-Type")
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body)
+}
+
+// writerError writes err to the http response.
+func (p *Proxy) writeError(w http.ResponseWriter, err error) {
+	type statusCoder interface {
+		StatusCode() int
+	}
+
+	glog.Error(err)
+	code := http.StatusBadGateway
+	if err, ok := err.(statusCoder); ok {
+		code = err.StatusCode()
+	}
+	http.Error(w, err.Error(), code)
 }
 
 // copyHeader copies header values from src to dst, adding to any existing
@@ -176,7 +185,7 @@ func copyHeader(dst, src http.Header, keys ...string) {
 // allowed.
 func (p *Proxy) allowed(r *Request) error {
 	if len(p.Referrers) > 0 && !validReferrer(p.Referrers, r.Original) {
-		return fmt.Errorf("request does not contain an allowed referrer: %v", r)
+		return permissionError(fmt.Sprintf("request does not contain an allowed referrer: %v", r))
 	}
 
 	if len(p.Whitelist) == 0 && len(p.SignatureKey) == 0 {
@@ -191,7 +200,7 @@ func (p *Proxy) allowed(r *Request) error {
 		return nil
 	}
 
-	return fmt.Errorf("request does not contain an allowed host or valid signature: %v", r)
+	return permissionError(fmt.Sprintf("request does not contain an allowed host or valid signature: %v", r))
 }
 
 // validHost returns whether the host in u matches one of hosts.
