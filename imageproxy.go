@@ -150,6 +150,10 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	copyHeader(w.Header(), resp.Header, "Content-Length", "Content-Type")
+
+	//Enable CORS for 3rd party applications
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body)
 }
