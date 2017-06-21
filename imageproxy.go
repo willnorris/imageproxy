@@ -99,6 +99,11 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return // ignore favicon requests
 	}
 
+	if r.URL.Path == "/" {
+		fmt.Fprint(w, "OK")
+		return
+	}
+
 	if r.URL.Path == "/health-check" {
 		fmt.Fprint(w, "OK")
 		return
