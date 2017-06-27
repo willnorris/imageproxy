@@ -290,7 +290,7 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 
 	u := *req.URL
 	u.Fragment = ""
-	resp, err := t.CachingClient.Get(u.String())
+	resp, err := t.CachingClient.Get(strings.Replace(u.String(), "+", "%2b", -1))
 	if err != nil {
 		return nil, err
 	}
