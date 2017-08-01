@@ -64,6 +64,9 @@ type Proxy struct {
 	// If a call runs for longer than its time limit, a 504 Gateway Timeout
 	// response is returned.  A Timeout of zero means no timeout.
 	Timeout time.Duration
+
+	// The User-Agent used by imageproxy when requesting origin image
+	UserAgent string
 }
 
 // NewProxy constructs a new proxy.  The provided http RoundTripper will be
@@ -130,7 +133,11 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := p.Client.Get(req.String())
+	actualReq, _ := http.NewRequest("GET", req.String(), nil)
+	if p.UserAgent != "" {
+		actualReq.Header.Set("User-Agent", p.UserAgent)
+	}
+	resp, err := p.Client.Do(actualReq)
 	if err != nil {
 		msg := fmt.Sprintf("error fetching remote image: %v", err)
 		glog.Error(msg)
@@ -291,9 +298,8 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 		return t.Transport.RoundTrip(req)
 	}
 
-	u := *req.URL
-	u.Fragment = ""
-	resp, err := t.CachingClient.Get(u.String())
+	req.URL.Fragment = ""
+	resp, err := t.CachingClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
