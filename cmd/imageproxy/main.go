@@ -51,6 +51,7 @@ var signatureKey = flag.String("signatureKey", "", "HMAC key used in calculating
 var scaleUp = flag.Bool("scaleUp", false, "allow images to scale beyond their original dimensions")
 var timeout = flag.Duration("timeout", 0, "time limit for requests served by this proxy")
 var version = flag.Bool("version", false, "print version information")
+var userAgent = flag.String("userAgent", "willnorris/imageproxy", "specify the user-agent used by imageproxy when fetching images from origin website")
 
 func main() {
 	flag.Parse()
@@ -94,6 +95,7 @@ func main() {
 
 	p.Timeout = *timeout
 	p.ScaleUp = *scaleUp
+	p.UserAgent = *userAgent
 
 	server := &http.Server{
 		Addr:    *addr,
