@@ -53,6 +53,7 @@ var timeout = flag.Duration("timeout", 0, "time limit for requests served by thi
 var verbose = flag.Bool("verbose", false, "print verbose logging messages")
 var version = flag.Bool("version", false, "Deprecated: this flag does nothing")
 var contentTypes = flag.String("contentTypes", "image/*", "comma separated list of allowed content types")
+var userAgent = flag.String("userAgent", "willnorris/imageproxy", "specify the user-agent used by imageproxy when fetching images from origin website")
 
 func init() {
 	flag.Var(&cache, "cache", "location to cache images (see https://github.com/willnorris/imageproxy#cache)")
@@ -98,6 +99,7 @@ func main() {
 	p.Timeout = *timeout
 	p.ScaleUp = *scaleUp
 	p.Verbose = *verbose
+	p.UserAgent = *userAgent
 
 	server := &http.Server{
 		Addr:    *addr,

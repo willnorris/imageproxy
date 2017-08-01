@@ -76,6 +76,9 @@ type Proxy struct {
 	// ContentTypes specifies a list of content types to allow. An empty
 	// list means all content types are allowed.
 	ContentTypes []string
+
+	// The User-Agent used by imageproxy when requesting origin image
+	UserAgent string
 }
 
 // NewProxy constructs a new proxy.  The provided http RoundTripper will be
@@ -150,7 +153,11 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := p.Client.Get(req.String())
+	actualReq, _ := http.NewRequest("GET", req.String(), nil)
+	if p.UserAgent != "" {
+		actualReq.Header.Set("User-Agent", p.UserAgent)
+	}
+	resp, err := p.Client.Do(actualReq)
 	if err != nil {
 		msg := fmt.Sprintf("error fetching remote image: %v", err)
 		log.Print(msg)
@@ -345,9 +352,8 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 		return t.Transport.RoundTrip(req)
 	}
 
-	u := *req.URL
-	u.Fragment = ""
-	resp, err := t.CachingClient.Get(u.String())
+	req.URL.Fragment = ""
+	resp, err := t.CachingClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -368,7 +374,7 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 
 	img, err := Transform(b, opt)
 	if err != nil {
-		log.Printf("error transforming image %s: %v", u.String(), err)
+		log.Printf("error transforming image %s: %v", req.URL.String(), err)
 		img = b
 	}
 
