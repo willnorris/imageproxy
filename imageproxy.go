@@ -105,6 +105,11 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if r.URL.Path == "/robots.txt" {
+		fmt.Fprint(w, "OK")
+		return // ignore robots requests
+	}
+
 	var h http.Handler = http.HandlerFunc(p.serveImage)
 	if p.Timeout > 0 {
 		h = tphttp.TimeoutHandler(h, p.Timeout, "Gateway timeout waiting for remote resource.")

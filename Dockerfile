@@ -1,10 +1,71 @@
-FROM google/golang
-MAINTAINER Sevki <s@sevki.org>
+# Start from a Debian image with the latest version of Go installed
+# and a workspace (GOPATH) configured at /go.
+FROM ubuntu:14.04
+MAINTAINER alan@goxip.com
 
+ENV LIBVIPS_VERSION 8.5.6
+
+# Installs libvips + required libraries
+RUN \
+
+  # Install dependencies
+  apt-get update && \
+  DEBIAN_FRONTEND=noninteractive apt-get install -y \
+  automake build-essential curl \
+  gobject-introspection gtk-doc-tools libglib2.0-dev libjpeg-turbo8-dev libpng12-dev \
+  libwebp-dev libtiff5-dev libgif-dev libexif-dev libxml2-dev libpoppler-glib-dev \
+  swig libmagickwand-dev libpango1.0-dev libmatio-dev libopenslide-dev libcfitsio3-dev \
+  libgsf-1-dev fftw3-dev liborc-0.4-dev librsvg2-dev && \
+
+  # Build libvips
+  cd /tmp && \
+  curl -OL https://github.com/jcupitt/libvips/releases/download/v${LIBVIPS_VERSION}/vips-${LIBVIPS_VERSION}.tar.gz && \
+  tar zvxf vips-${LIBVIPS_VERSION}.tar.gz && \
+  cd /tmp/vips-${LIBVIPS_VERSION} && \
+  ./configure --enable-debug=no --without-python $1 && \
+  make && \
+  make install && \
+  ldconfig && \
+
+  # Clean up
+  apt-get remove -y curl automake build-essential && \
+  apt-get autoremove -y && \
+  apt-get autoclean && \
+  apt-get clean && \
+  rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Server port to listen
+# ENV PORT 9000
+
+# Go version to use
+ENV GOLANG_VERSION 1.8.3
+
+# gcc for cgo
+RUN apt-get update && apt-get install -y \
+    gcc curl git libc6-dev make ca-certificates \
+    --no-install-recommends \
+  && rm -rf /var/lib/apt/lists/*
+
+ENV GOLANG_DOWNLOAD_URL https://golang.org/dl/go$GOLANG_VERSION.linux-amd64.tar.gz
+ENV GOLANG_DOWNLOAD_SHA256 1862f4c3d3907e59b04a757cfda0ea7aa9ef39274af99a784f5be843c80c6772
+
+RUN curl -fsSL --insecure "$GOLANG_DOWNLOAD_URL" -o golang.tar.gz \
+  && echo "$GOLANG_DOWNLOAD_SHA256 golang.tar.gz" | sha256sum -c - \
+  && tar -C /usr/local -xzf golang.tar.gz \
+  && rm golang.tar.gz
+
+ENV GOPATH /go
+ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
+
+RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
+WORKDIR $GOPATH
+
+RUN go get -u gopkg.in/h2non/bimg.v1
+RUN go get github.com/daddye/vips
 ADD . /go/src/willnorris.com/go/imageproxy
 RUN go get willnorris.com/go/imageproxy/cmd/imageproxy
 
 CMD []
-ENTRYPOINT ["/go/bin/imageproxy"]
+ENTRYPOINT ["/go/bin/imageproxy" ]
 
 EXPOSE 8080

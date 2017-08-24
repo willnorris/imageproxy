@@ -21,15 +21,16 @@ import (
 	"image/jpeg"
 	"image/png"
 
+	"github.com/daddye/vips"
 	"github.com/disintegration/imaging"
 	"willnorris.com/go/gifresize"
 )
 
 // default compression quality of resized jpegs
-const defaultQuality = 95
+const defaultQuality = 90
 
 // resample filter used when resizing images
-var resampleFilter = imaging.Lanczos
+var resampleFilter = imaging.CatmullRom
 
 // Transform the provided image.  img should contain the raw bytes of an
 // encoded image in one of the supported formats (gif, jpeg, or png).  The
@@ -68,15 +69,31 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
+		return vips_transform(buf.Bytes() ,vips.JPEG )
 	case "png":
 		m = transformImage(m, opt)
 		err = png.Encode(buf, m)
 		if err != nil {
 			return nil, err
 		}
+		return vips_transform(buf.Bytes() , vips.PNG)
 	}
-
+	
 	return buf.Bytes(), nil
+}
+
+func vips_transform(img []byte , typ vips.ImageType) ([]byte, error) {
+	new_options := vips.Options{
+		Extend: vips.EXTEND_WHITE,
+		Interpolator: vips.NOHALO,
+		Format: typ,
+		Quality: 95,
+	}
+	new_buf, err := vips.Resize(img, new_options)
+	if err != nil {
+		return nil, err
+	}
+	return new_buf, nil
 }
 
 // resizeParams determines if the image needs to be resized, and if so, the
