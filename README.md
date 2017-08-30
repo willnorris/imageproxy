@@ -102,6 +102,9 @@ enabled using the `-cache` flag.  It supports the following values:
    images on Amazon S3.  This requires either an IAM role and instance profile
    with access to your your bucket or `AWS_ACCESS_KEY_ID` and `AWS_SECRET_KEY`
    environmental parameters set.
+ - GCS URL (e.g. `gcs://bucket-name/optional-path-prefix`) - will cache
+   images on Google Cloud Storage.  This requires `GCP_PRIVATE_KEY` environmental
+   parameters set.
 
 For example, to cache files on disk in the `/tmp/imageproxy` directory:
 

@@ -24,6 +24,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/diegomarangoni/gcscache"
 	"github.com/gregjones/httpcache"
 	"github.com/gregjones/httpcache/diskcache"
 	"github.com/peterbourgon/diskv"
@@ -126,6 +127,8 @@ func parseCache() (imageproxy.Cache, error) {
 	case "s3":
 		u.Scheme = "https"
 		return s3cache.New(u.String()), nil
+	case "gcs":
+		return gcscache.New(u.String()), nil
 	case "file":
 		fallthrough
 	default:
