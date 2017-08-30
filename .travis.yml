@@ -1,12 +1,9 @@
 language: go
 
 go:
-  - 1.5
+  - 1.8
 
 sudo: false
-
-env:
-  - GO15VENDOREXPERIMENT=1
 
 install:
   - mkdir -p "$GOPATH/src/willnorris.com/go"
