@@ -44,6 +44,7 @@ var cache = flag.String("cache", "", "location to cache images (see https://gith
 var signatureKey = flag.String("signatureKey", "", "HMAC key used in calculating request signatures")
 var scaleUp = flag.Bool("scaleUp", false, "allow images to scale beyond their original dimensions")
 var timeout = flag.Duration("timeout", 0, "time limit for requests served by this proxy")
+var verbose = flag.Bool("verbose", false, "print verbose logging messages")
 var version = flag.Bool("version", false, "Deprecated: this flag does nothing")
 
 func main() {
@@ -83,6 +84,7 @@ func main() {
 
 	p.Timeout = *timeout
 	p.ScaleUp = *scaleUp
+	p.Verbose = *verbose
 
 	server := &http.Server{
 		Addr:    *addr,

@@ -25,12 +25,12 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/gregjones/httpcache"
 	tphttp "willnorris.com/go/imageproxy/third_party/http"
 )
@@ -64,6 +64,9 @@ type Proxy struct {
 	// If a call runs for longer than its time limit, a 504 Gateway Timeout
 	// response is returned.  A Timeout of zero means no timeout.
 	Timeout time.Duration
+
+	// If true, log additional debug messages
+	Verbose bool
 }
 
 // NewProxy constructs a new proxy.  The provided http RoundTripper will be
@@ -77,20 +80,28 @@ func NewProxy(transport http.RoundTripper, cache Cache) *Proxy {
 		cache = NopCache
 	}
 
-	proxy := Proxy{
+	proxy := &Proxy{
 		Cache: cache,
 	}
 
 	client := new(http.Client)
 	client.Transport = &httpcache.Transport{
-		Transport:           &TransformingTransport{transport, client},
+		Transport: &TransformingTransport{
+			Transport:     transport,
+			CachingClient: client,
+			log: func(format string, v ...interface{}) {
+				if proxy.Verbose {
+					log.Printf(format, v...)
+				}
+			},
+		},
 		Cache:               cache,
 		MarkCachedResponses: true,
 	}
 
 	proxy.Client = client
 
-	return &proxy
+	return proxy
 }
 
 // ServeHTTP handles incoming requests.
@@ -116,7 +127,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	req, err := NewRequest(r, p.DefaultBaseURL)
 	if err != nil {
 		msg := fmt.Sprintf("invalid request URL: %v", err)
-		glog.Error(msg)
+		log.Print(msg)
 		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
@@ -125,7 +136,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	req.Options.ScaleUp = p.ScaleUp
 
 	if err := p.allowed(req); err != nil {
-		glog.Error(err)
+		log.Print(err)
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
@@ -133,14 +144,16 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	resp, err := p.Client.Get(req.String())
 	if err != nil {
 		msg := fmt.Sprintf("error fetching remote image: %v", err)
-		glog.Error(msg)
+		log.Print(msg)
 		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	defer resp.Body.Close()
 
 	cached := resp.Header.Get(httpcache.XFromCache)
-	glog.Infof("request: %v (served from cache: %v)", *req, cached == "1")
+	if p.Verbose {
+		log.Printf("request: %v (served from cache: %v)", *req, cached == "1")
+	}
 
 	copyHeader(w.Header(), resp.Header, "Cache-Control", "Last-Modified", "Expires", "Etag", "Link")
 
@@ -231,7 +244,7 @@ func validSignature(key []byte, r *Request) bool {
 
 	got, err := base64.URLEncoding.DecodeString(sig)
 	if err != nil {
-		glog.Errorf("error base64 decoding signature %q", r.Options.Signature)
+		log.Printf("error base64 decoding signature %q", r.Options.Signature)
 		return false
 	}
 
@@ -281,13 +294,17 @@ type TransformingTransport struct {
 	// used rather than Transport directly in order to ensure that
 	// responses are properly cached.
 	CachingClient *http.Client
+
+	log func(format string, v ...interface{})
 }
 
 // RoundTrip implements the http.RoundTripper interface.
 func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if req.URL.Fragment == "" {
 		// normal requests pass through
-		glog.Infof("fetching remote URL: %v", req.URL)
+		if t.log != nil {
+			t.log("fetching remote URL: %v", req.URL)
+		}
 		return t.Transport.RoundTrip(req)
 	}
 
@@ -313,7 +330,7 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 
 	img, err := Transform(b, opt)
 	if err != nil {
-		glog.Errorf("error transforming image: %v", err)
+		log.Printf("error transforming image: %v", err)
 		img = b
 	}
 
