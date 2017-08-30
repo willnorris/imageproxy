@@ -1,6 +1,6 @@
 {
 	"ArtifactsDest": "build",
-	"PackageVersion": "0.5.1",
+	"PackageVersion": "0.6.0",
 	"TaskSettings": {
 		"pkg-build": {
 			"metadata": {
