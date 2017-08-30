@@ -223,8 +223,13 @@ func TestShould304(t *testing.T) {
 			"HTTP/1.1 200 OK\nEtag: \"v\"\n\n",
 			true,
 		},
-		{ // last-modified match
+		{ // last-modified before
 			"GET / HTTP/1.1\nIf-Modified-Since: Sun, 02 Jan 2000 00:00:00 GMT\n\n",
+			"HTTP/1.1 200 OK\nLast-Modified: Sat, 01 Jan 2000 00:00:00 GMT\n\n",
+			true,
+		},
+		{ // last-modified match
+			"GET / HTTP/1.1\nIf-Modified-Since: Sat, 01 Jan 2000 00:00:00 GMT\n\n",
 			"HTTP/1.1 200 OK\nLast-Modified: Sat, 01 Jan 2000 00:00:00 GMT\n\n",
 			true,
 		},

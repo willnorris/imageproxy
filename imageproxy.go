@@ -262,7 +262,7 @@ func should304(req *http.Request, resp *http.Response) bool {
 	if err != nil {
 		return false
 	}
-	if lastModified.Before(ifModSince) {
+	if lastModified.Before(ifModSince) || lastModified.Equal(ifModSince) {
 		return true
 	}
 
