@@ -81,10 +81,10 @@ type Options struct {
 	Format string
 
 	// Crop rectangle params
-	CropX      int
-	CropY      int
-	CropWidth  int
-	CropHeight int
+	CropX      float64
+	CropY      float64
+	CropWidth  float64
+	CropHeight float64
 }
 
 func (o Options) String() string {
@@ -114,16 +114,16 @@ func (o Options) String() string {
 		opts = append(opts, o.Format)
 	}
 	if o.CropX != 0 {
-		opts = append(opts, fmt.Sprintf("%s%d", string(optCropX), o.CropX))
+		opts = append(opts, fmt.Sprintf("%s%v", string(optCropX), o.CropX))
 	}
 	if o.CropY != 0 {
-		opts = append(opts, fmt.Sprintf("%s%d", string(optCropY), o.CropY))
+		opts = append(opts, fmt.Sprintf("%s%v", string(optCropY), o.CropY))
 	}
 	if o.CropWidth != 0 {
-		opts = append(opts, fmt.Sprintf("%s%d", string(optCropWidth), o.CropWidth))
+		opts = append(opts, fmt.Sprintf("%s%v", string(optCropWidth), o.CropWidth))
 	}
 	if o.CropHeight != 0 {
-		opts = append(opts, fmt.Sprintf("%s%d", string(optCropHeight), o.CropHeight))
+		opts = append(opts, fmt.Sprintf("%s%v", string(optCropHeight), o.CropHeight))
 	}
 	return strings.Join(opts, ",")
 }
@@ -133,7 +133,7 @@ func (o Options) String() string {
 // the presence of other fields (like Fit).  A non-empty Format value is
 // assumed to involve a transformation.
 func (o Options) transform() bool {
-	return o.Width != 0 || o.Height != 0 || o.Rotate != 0 || o.FlipHorizontal || o.FlipVertical || o.Quality != 0 || o.Format != "" || (o.CropWidth != 0 && o.CropHeight != 0)
+	return o.Width != 0 || o.Height != 0 || o.Rotate != 0 || o.FlipHorizontal || o.FlipVertical || o.Quality != 0 || o.Format != "" || o.CropX != 0 || o.CropY != 0 || o.CropWidth != 0 || o.CropHeight != 0
 }
 
 // ParseOptions parses str as a list of comma separated transformation options.
@@ -144,17 +144,19 @@ func (o Options) transform() bool {
 //
 // There are four options controlling rectangle crop:
 //
-// 	cx{x}      - X coordinate of top left rectangle corner
-// 	cy{y}      - Y coordinate of top left rectangle corner
-// 	cw{width}  - rectangle width
-// 	ch{height} - rectangle height
+// 	cx{x}      - X coordinate of top left rectangle corner (default: 0)
+// 	cy{y}      - Y coordinate of top left rectangle corner (default: 0)
+// 	cw{width}  - rectangle width (default: image width)
+// 	ch{height} - rectangle height (default: image height)
 //
-// ch and cw are required to enable crop and they must be positive integers. If
-// the rectangle is larger than the image, crop will not be applied. If the
-// rectangle does not fit the image in any of the dimensions, it will be moved
-// to produce an image of given size. Crop is applied before any other
-// transformations. If the rectangle is smaller than the requested resize and
-// scaleUp is disabled, the image will be of the same size as the rectangle.
+// For all options, integer values are interpreted as exact pixel values and
+// floats between 0 and 1 are interpreted as percentages of the original image
+// size. Negative values for cx and cy are measured from the right and bottom
+// edges of the image, respectively.
+//
+// If the crop width or height exceed the width or height of the image, the
+// crop width or height will be adjusted, preserving the specified cx and cy
+// values.  Rectangular crop is applied before any other transformations.
 //
 // Size and Cropping
 //
@@ -224,8 +226,8 @@ func (o Options) transform() bool {
 // 	100,fv,fh   - 100 pixels square, flipped horizontal and vertical
 // 	200x,q60    - 200 pixels wide, proportional height, 60% quality
 // 	200x,png    - 200 pixels wide, converted to PNG format
-// 	cw100,ch200 - crop fragment that starts at (0,0), is 100px wide and 200px tall
-// 	cw100,ch200,cx10,cy20 - crop fragment that start at (10,20) is 100px wide and 200px tall
+// 	cw100,ch100 - crop image to 100px square, starting at (0,0)
+// 	cx10,cy20,cw100,ch200 - crop image starting at (10,20) is 100px wide and 200px tall
 func ParseOptions(str string) Options {
 	var options Options
 
@@ -253,16 +255,16 @@ func ParseOptions(str string) Options {
 			options.Signature = strings.TrimPrefix(opt, optSignaturePrefix)
 		case strings.HasPrefix(opt, optCropX):
 			value := strings.TrimPrefix(opt, optCropX)
-			options.CropX, _ = strconv.Atoi(value)
+			options.CropX, _ = strconv.ParseFloat(value, 64)
 		case strings.HasPrefix(opt, optCropY):
 			value := strings.TrimPrefix(opt, optCropY)
-			options.CropY, _ = strconv.Atoi(value)
+			options.CropY, _ = strconv.ParseFloat(value, 64)
 		case strings.HasPrefix(opt, optCropWidth):
 			value := strings.TrimPrefix(opt, optCropWidth)
-			options.CropWidth, _ = strconv.Atoi(value)
+			options.CropWidth, _ = strconv.ParseFloat(value, 64)
 		case strings.HasPrefix(opt, optCropHeight):
 			value := strings.TrimPrefix(opt, optCropHeight)
-			options.CropHeight, _ = strconv.Atoi(value)
+			options.CropHeight, _ = strconv.ParseFloat(value, 64)
 		case strings.Contains(opt, optSizeDelimiter):
 			size := strings.SplitN(opt, optSizeDelimiter, 2)
 			if w := size[0]; w != "" {

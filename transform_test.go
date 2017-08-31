@@ -81,13 +81,15 @@ func TestCropParams(t *testing.T) {
 		x0, y0, x1, y1 int
 		crop           bool
 	}{
-		{Options{CropHeight: 0, CropWidth: 10}, 0, 0, 0, 0, false},
-		{Options{CropHeight: 10, CropWidth: 0}, 0, 0, 0, 0, false},
-		{Options{CropHeight: -1, CropWidth: -1}, 0, 0, 0, 0, false},
+		{Options{CropWidth: 10, CropHeight: 0}, 0, 0, 10, 128, true},
+		{Options{CropWidth: 0, CropHeight: 10}, 0, 0, 64, 10, true},
+		{Options{CropWidth: -1, CropHeight: -1}, 0, 0, 0, 0, false},
 		{Options{CropWidth: 50, CropHeight: 100}, 0, 0, 50, 100, true},
 		{Options{CropWidth: 100, CropHeight: 100}, 0, 0, 64, 100, true},
-		{Options{CropX: 50, CropY: 100, CropWidth: 50, CropHeight: 100}, 14, 28, 64, 128, true},
-		{Options{CropX: 50, CropY: 100, CropWidth: 100, CropHeight: 150}, 0, 0, 64, 128, true},
+		{Options{CropX: 50, CropY: 100}, 50, 100, 64, 128, true},
+		{Options{CropX: 50, CropY: 100, CropWidth: 100, CropHeight: 150}, 50, 100, 64, 128, true},
+		{Options{CropX: -50, CropY: -50}, 14, 78, 64, 128, true},
+		{Options{CropY: 0.5, CropWidth: 0.5}, 0, 64, 32, 128, true},
 	}
 	for _, tt := range tests {
 		x0, y0, x1, y1, crop := cropParams(src, tt.opt)

@@ -130,31 +130,47 @@ func resizeParams(m image.Image, opt Options) (w, h int, resize bool) {
 
 // cropParams calculates crop rectangle parameters to keep it in image bounds
 func cropParams(m image.Image, opt Options) (x0, y0, x1, y1 int, crop bool) {
-	// crop params not set
-	if opt.CropHeight <= 0 || opt.CropWidth <= 0 {
+	if opt.CropX == 0 && opt.CropY == 0 && opt.CropWidth == 0 && opt.CropHeight == 0 {
 		return 0, 0, 0, 0, false
 	}
 
+	// width and height of image
 	imgW := m.Bounds().Max.X - m.Bounds().Min.X
 	imgH := m.Bounds().Max.Y - m.Bounds().Min.Y
 
-	x0 = opt.CropX
-	y0 = opt.CropY
-
-	// crop rectangle out of image bounds horizontally
-	// -> moved to point (image_width - rectangle_width) or 0, whichever is larger
-	if opt.CropX > imgW || opt.CropX+opt.CropWidth > imgW {
-		x0 = int(math.Max(0, float64(imgW-opt.CropWidth)))
+	// top left coordinate of crop
+	x0 = evaluateFloat(math.Abs(opt.CropX), imgW)
+	if opt.CropX < 0 {
+		x0 = imgW - x0
 	}
-	// crop rectangle out of image bounds vertically
-	// -> moved to point (image_height - rectangle_height) or 0, whichever is larger
-	if opt.CropY > imgH || opt.CropY+opt.CropHeight > imgH {
-		y0 = int(math.Max(0, float64(imgH-opt.CropHeight)))
+	y0 = evaluateFloat(math.Abs(opt.CropY), imgH)
+	if opt.CropY < 0 {
+		y0 = imgH - y0
 	}
 
-	// make rectangle fit the image
-	x1 = int(math.Min(float64(imgW), float64(opt.CropX+opt.CropWidth)))
-	y1 = int(math.Min(float64(imgH), float64(opt.CropY+opt.CropHeight)))
+	// width and height of crop
+	w := evaluateFloat(opt.CropWidth, imgW)
+	if w == 0 {
+		w = imgW
+	}
+	h := evaluateFloat(opt.CropHeight, imgH)
+	if h == 0 {
+		h = imgH
+	}
+
+	if x0 == 0 && y0 == 0 && w == imgW && h == imgH {
+		return 0, 0, 0, 0, false
+	}
+
+	// bottom right coordinate of crop
+	x1 = x0 + w
+	if x1 > imgW {
+		x1 = imgW
+	}
+	y1 = y0 + h
+	if y1 > imgH {
+		y1 = imgH
+	}
 
 	return x0, y0, x1, y1, true
 }

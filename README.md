@@ -23,10 +23,10 @@ imageproxy URLs are of the form `http://localhost/{options}/{remote_url}`.
 
 ### Options ###
 
-Options are available for resizing, rotation, flipping, and digital signatures
-among a few others.  Options for are specified as a comma delimited list of
-parameters, which can be supplied in any order.  Duplicate parameters overwrite
-previous values.
+Options are available for cropping, resizing, rotation, flipping, and digital
+signatures among a few others.  Options for are specified as a comma delimited
+list of parameters, which can be supplied in any order.  Duplicate parameters
+overwrite previous values.
 
 See the full list of available options at
 <https://godoc.org/willnorris.com/go/imageproxy#ParseOptions>.
@@ -60,6 +60,7 @@ x0.15   | 15% original height, proportional width  | <a href="https://willnorris
 100,fv,fh | 100px square, flipped horizontal and vertical | <a href="https://willnorris.com/api/imageproxy/100,fv,fh/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/100,fv,fh/https://willnorris.com/2013/12/small-things.jpg" alt="100,fv,fh"></a>
 200x,q60 | 200px wide, proportional height, 60% quality | <a href="https://willnorris.com/api/imageproxy/200x,q60/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/200x,q60/https://willnorris.com/2013/12/small-things.jpg" alt="200x,q60"></a>
 200x,png | 200px wide, converted to PNG format | <a href="https://willnorris.com/api/imageproxy/200x,png/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/200x,png/https://willnorris.com/2013/12/small-things.jpg" alt="200x,png"></a>
+cx175,cw400,ch300,100x | crop to 400x300px starting at (175,0), scale to 100px wide | <a href="https://willnorris.com/api/imageproxy/cx175,cw400,ch300,100x/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/cx175,cw400,ch300,100x/https://willnorris.com/2013/12/small-things.jpg" alt="cx175,cw400,ch300,100x"></a>
 
 Transformation also works on animated gifs.  Here is [this source
 image][material-animation] resized to 200px square and rotated 270 degrees:
