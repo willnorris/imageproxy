@@ -40,11 +40,11 @@ func TestOptions_String(t *testing.T) {
 		},
 		{
 			Options{0.15, 1.3, false, 45, false, false, 95, "c0ffee", false, "", 100, 200, 0, 0},
-			"0.15x1.3,r45,q95,sc0ffee,cw100,ch200",
+			"0.15x1.3,r45,q95,sc0ffee,cx100,cy200",
 		},
 		{
 			Options{0.15, 1.3, false, 45, false, false, 95, "c0ffee", false, "png", 100, 200, 300, 400},
-			"0.15x1.3,r45,q95,sc0ffee,png,cw100,ch200,cx300,cy400",
+			"0.15x1.3,r45,q95,sc0ffee,png,cx100,cy200,cw300,ch400",
 		},
 	}
 
@@ -98,15 +98,15 @@ func TestParseOptions(t *testing.T) {
 		{"r90,fh,sc0ffee,png,q90,1x2,fv,fit", Options{1, 2, true, 90, true, true, 90, "c0ffee", false, "png", 0, 0, 0, 0}},
 
 		// all flags, in different orders with crop
-		{"q70,cw100,cx300,1x2,fit,ch200,r90,fv,cy400,fh,sc0ffee,png", Options{1, 2, true, 90, true, true, 70, "c0ffee", false, "png", 100, 200, 300, 400}},
-		{"cy400,r90,cx300,fh,sc0ffee,png,cw100,q90,ch200,1x2,fv,fit", Options{1, 2, true, 90, true, true, 90, "c0ffee", false, "png", 100, 200, 300, 400}},
+		{"q70,cx100,cw300,1x2,fit,cy200,r90,fv,ch400,fh,sc0ffee,png", Options{1, 2, true, 90, true, true, 70, "c0ffee", false, "png", 100, 200, 300, 400}},
+		{"ch400,r90,cw300,fh,sc0ffee,png,cx100,q90,cy200,1x2,fv,fit", Options{1, 2, true, 90, true, true, 90, "c0ffee", false, "png", 100, 200, 300, 400}},
 
 		// all flags, in different orders with crop & different resizes
-		{"q70,cw100,cx300,x2,fit,ch200,r90,fv,cy400,fh,sc0ffee,png", Options{0, 2, true, 90, true, true, 70, "c0ffee", false, "png", 100, 200, 300, 400}},
-		{"cy400,r90,cx300,fh,sc0ffee,png,cw100,q90,ch200,1x,fv,fit", Options{1, 0, true, 90, true, true, 90, "c0ffee", false, "png", 100, 200, 300, 400}},
-		{"cy400,r90,cx300,fh,sc0ffee,png,cw100,q90,ch200,cx,fv,fit", Options{0, 0, true, 90, true, true, 90, "c0ffee", false, "png", 100, 200, 0, 400}},
-		{"cy400,r90,cx300,fh,sc0ffee,png,cw100,q90,ch200,cx,fv,fit,123x321", Options{123, 321, true, 90, true, true, 90, "c0ffee", false, "png", 100, 200, 0, 400}},
-		{"123x321,cy400,r90,cx300,fh,sc0ffee,png,cw100,q90,ch200,cx,fv,fit", Options{123, 321, true, 90, true, true, 90, "c0ffee", false, "png", 100, 200, 0, 400}},
+		{"q70,cx100,cw300,x2,fit,cy200,r90,fv,ch400,fh,sc0ffee,png", Options{0, 2, true, 90, true, true, 70, "c0ffee", false, "png", 100, 200, 300, 400}},
+		{"ch400,r90,cw300,fh,sc0ffee,png,cx100,q90,cy200,1x,fv,fit", Options{1, 0, true, 90, true, true, 90, "c0ffee", false, "png", 100, 200, 300, 400}},
+		{"ch400,r90,cw300,fh,sc0ffee,png,cx100,q90,cy200,cw,fv,fit", Options{0, 0, true, 90, true, true, 90, "c0ffee", false, "png", 100, 200, 0, 400}},
+		{"ch400,r90,cw300,fh,sc0ffee,png,cx100,q90,cy200,cw,fv,fit,123x321", Options{123, 321, true, 90, true, true, 90, "c0ffee", false, "png", 100, 200, 0, 400}},
+		{"123x321,ch400,r90,cw300,fh,sc0ffee,png,cx100,q90,cy200,cw,fv,fit", Options{123, 321, true, 90, true, true, 90, "c0ffee", false, "png", 100, 200, 0, 400}},
 	}
 
 	for _, tt := range tests {

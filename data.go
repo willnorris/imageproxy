@@ -34,10 +34,10 @@ const (
 	optSignaturePrefix = "s"
 	optSizeDelimiter   = "x"
 	optScaleUp         = "scaleUp"
-	optCropWidth       = "cw"
-	optCropHeight      = "ch"
 	optCropX           = "cx"
 	optCropY           = "cy"
+	optCropWidth       = "cw"
+	optCropHeight      = "ch"
 )
 
 // URLError reports a malformed URL error.
@@ -81,10 +81,10 @@ type Options struct {
 	Format string
 
 	// Crop rectangle params
-	CropWidth  int
-	CropHeight int
 	CropX      int
 	CropY      int
+	CropWidth  int
+	CropHeight int
 }
 
 func (o Options) String() string {
@@ -113,17 +113,17 @@ func (o Options) String() string {
 	if o.Format != "" {
 		opts = append(opts, o.Format)
 	}
-	if o.CropWidth != 0 {
-		opts = append(opts, fmt.Sprintf("%s%d", string(optCropWidth), o.CropWidth))
-	}
-	if o.CropHeight != 0 {
-		opts = append(opts, fmt.Sprintf("%s%d", string(optCropHeight), o.CropHeight))
-	}
 	if o.CropX != 0 {
 		opts = append(opts, fmt.Sprintf("%s%d", string(optCropX), o.CropX))
 	}
 	if o.CropY != 0 {
 		opts = append(opts, fmt.Sprintf("%s%d", string(optCropY), o.CropY))
+	}
+	if o.CropWidth != 0 {
+		opts = append(opts, fmt.Sprintf("%s%d", string(optCropWidth), o.CropWidth))
+	}
+	if o.CropHeight != 0 {
+		opts = append(opts, fmt.Sprintf("%s%d", string(optCropHeight), o.CropHeight))
 	}
 	return strings.Join(opts, ",")
 }
@@ -133,7 +133,7 @@ func (o Options) String() string {
 // the presence of other fields (like Fit).  A non-empty Format value is
 // assumed to involve a transformation.
 func (o Options) transform() bool {
-	return o.Width != 0 || o.Height != 0 || o.Rotate != 0 || o.FlipHorizontal || o.FlipVertical || o.Quality != 0 || o.Format != "" || (o.CropHeight != 0 && o.CropWidth != 0)
+	return o.Width != 0 || o.Height != 0 || o.Rotate != 0 || o.FlipHorizontal || o.FlipVertical || o.Quality != 0 || o.Format != "" || (o.CropWidth != 0 && o.CropHeight != 0)
 }
 
 // ParseOptions parses str as a list of comma separated transformation options.
@@ -252,18 +252,18 @@ func ParseOptions(str string) Options {
 			options.Quality, _ = strconv.Atoi(value)
 		case strings.HasPrefix(opt, optSignaturePrefix):
 			options.Signature = strings.TrimPrefix(opt, optSignaturePrefix)
-		case strings.HasPrefix(opt, optCropHeight):
-			value := strings.TrimPrefix(opt, optCropHeight)
-			options.CropHeight, _ = strconv.Atoi(value)
-		case strings.HasPrefix(opt, optCropWidth):
-			value := strings.TrimPrefix(opt, optCropWidth)
-			options.CropWidth, _ = strconv.Atoi(value)
 		case strings.HasPrefix(opt, optCropX):
 			value := strings.TrimPrefix(opt, optCropX)
 			options.CropX, _ = strconv.Atoi(value)
 		case strings.HasPrefix(opt, optCropY):
 			value := strings.TrimPrefix(opt, optCropY)
 			options.CropY, _ = strconv.Atoi(value)
+		case strings.HasPrefix(opt, optCropWidth):
+			value := strings.TrimPrefix(opt, optCropWidth)
+			options.CropWidth, _ = strconv.Atoi(value)
+		case strings.HasPrefix(opt, optCropHeight):
+			value := strings.TrimPrefix(opt, optCropHeight)
+			options.CropHeight, _ = strconv.Atoi(value)
 		case strings.Contains(opt, optSizeDelimiter):
 			size := strings.SplitN(opt, optSizeDelimiter, 2)
 			if w := size[0]; w != "" {
