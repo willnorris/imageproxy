@@ -52,14 +52,14 @@ source image][small-things], which measures 1024 by 678 pixels.
 Options | Meaning                                  | Image
 --------|------------------------------------------|------
 200x    | 200px wide, proportional height          | <a href="https://willnorris.com/api/imageproxy/200x/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/200x/https://willnorris.com/2013/12/small-things.jpg" alt="200x"></a>
-0.15x   | 15% original width, proportional height  | <a href="https://willnorris.com/api/imageproxy/0.15x/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/0.15x/https://willnorris.com/2013/12/small-things.jpg" alt="0.15x"></a>
-x100    | 100px tall, proportional width           | <a href="https://willnorris.com/api/imageproxy/x100/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/x100/https://willnorris.com/2013/12/small-things.jpg" alt="x100"></a>
+x0.15   | 15% original height, proportional width  | <a href="https://willnorris.com/api/imageproxy/x0.15/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/x0.15/https://willnorris.com/2013/12/small-things.jpg" alt="x0.15"></a>
 100x150 | 100 by 150 pixels, cropping as needed    | <a href="https://willnorris.com/api/imageproxy/100x150/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/100x150/https://willnorris.com/2013/12/small-things.jpg" alt="100x150"></a>
 100     | 100px square, cropping as needed         | <a href="https://willnorris.com/api/imageproxy/100/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/100/https://willnorris.com/2013/12/small-things.jpg" alt="100"></a>
 150,fit | scale to fit 150px square, no cropping   | <a href="https://willnorris.com/api/imageproxy/150,fit/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/150,fit/https://willnorris.com/2013/12/small-things.jpg" alt="150,fit"></a>
 100,r90 | 100px square, rotated 90 degrees         | <a href="https://willnorris.com/api/imageproxy/100,r90/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/100,r90/https://willnorris.com/2013/12/small-things.jpg" alt="100,r90"></a>
 100,fv,fh | 100px square, flipped horizontal and vertical | <a href="https://willnorris.com/api/imageproxy/100,fv,fh/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/100,fv,fh/https://willnorris.com/2013/12/small-things.jpg" alt="100,fv,fh"></a>
 200x,q60 | 200px wide, proportional height, 60% quality | <a href="https://willnorris.com/api/imageproxy/200x,q60/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/200x,q60/https://willnorris.com/2013/12/small-things.jpg" alt="200x,q60"></a>
+200x,png | 200px wide, converted to PNG format | <a href="https://willnorris.com/api/imageproxy/200x,png/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/200x,png/https://willnorris.com/2013/12/small-things.jpg" alt="200x,png"></a>
 
 Transformation also works on animated gifs.  Here is [this source
 image][material-animation] resized to 200px square and rotated 270 degrees:
@@ -169,12 +169,6 @@ If both a whiltelist and signatureKey are specified, requests can match either.
 In other words, requests that match one of the whitelisted hosts don't
 necessarily need to be signed, though they can be.
 
-
-Run `imageproxy -help` for a complete list of flags the command accepts.  If
-you want to use a different caching implementation, it's probably easiest to
-just make a copy of `cmd/imageproxy/main.go` and customize it to fit your
-needs... it's a very simple command.
-
 ### Default Base URL ###
 
 Typically, remote images to be proxied are specified as absolute URLs.
@@ -200,11 +194,17 @@ However, you can use the `scaleUp` command-line flag to allow this to happen:
 ### WebP support ###
 
 Imageproxy can proxy remote webp images, but they will be served in either jpeg
-or png format (this is because the golang webp library only support decoding)
-if any transformation is requested.  If no format is specified, imageproxy will
-use jpeg by default.  If no transformation is requested (for example, if you
-are just using imageproxy as an SSL proxy) then the original webp image will be
-served as-is without any format conversion.
+or png format (this is because the golang webp library only supports webp
+decoding) if any transformation is requested.  If no format is specified,
+imageproxy will use jpeg by default.  If no transformation is requested (for
+example, if you are just using imageproxy as an SSL proxy) then the original
+webp image will be served as-is without any format conversion.
+
+
+Run `imageproxy -help` for a complete list of flags the command accepts.  If
+you want to use a different caching implementation, it's probably easiest to
+just make a copy of `cmd/imageproxy/main.go` and customize it to fit your
+needs... it's a very simple command.
 
 ## Deploying ##
 

@@ -216,14 +216,13 @@ func (o Options) transform() bool {
 //
 // 	0x0         - no resizing
 // 	200x        - 200 pixels wide, proportional height
-// 	0.15x       - 15% original width, proportional height
-// 	x100        - 100 pixels tall, proportional width
+// 	x0.15       - 15% original height, proportional width
 // 	100x150     - 100 by 150 pixels, cropping as needed
 // 	100         - 100 pixels square, cropping as needed
 // 	150,fit     - scale to fit 150 pixels square, no cropping
 // 	100,r90     - 100 pixels square, rotated 90 degrees
 // 	100,fv,fh   - 100 pixels square, flipped horizontal and vertical
-// 	200x,q80    - 200 pixels wide, proportional height, 80% quality
+// 	200x,q60    - 200 pixels wide, proportional height, 60% quality
 // 	200x,png    - 200 pixels wide, converted to PNG format
 // 	cw100,ch200 - crop fragment that starts at (0,0), is 100px wide and 200px tall
 // 	cw100,ch200,cx10,cy20 - crop fragment that start at (10,20) is 100px wide and 200px tall
