@@ -4,7 +4,7 @@ imageproxy is a caching image proxy server written in go.  It features:
 
  - basic image adjustments like resizing, cropping, and rotation
  - access control using host whitelists or request signing (HMAC-SHA256)
- - support for jpeg, png, webp (decode only), and gif image formats (including animated gifs)
+ - support for jpeg, png, webp & tiff (decode only), and gif image formats (including animated gifs)
  - on-disk caching, respecting the cache headers of the original images
  - easy deployment, since it's pure go
 
