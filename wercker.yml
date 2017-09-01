@@ -1,0 +1,53 @@
+build:
+    box: golang
+    steps:
+    - setup-go-workspace:
+        package-dir: willnorris.com/go/imageproxy
+
+    - golint:
+      exclude: vendor
+
+    - script:
+        name: go fmt
+        code: |
+          output=$(go fmt willnorris.com/go/imageproxy/...)
+          if [[ $(echo -n $output | wc -l) -ne 0 ]]; then
+              echo "command should not print anything to succeed:"
+              echo $output
+              exit 1
+          fi
+
+    - script:
+        name: go test
+        code: go test -v $(go list willnorris.com/go/imageproxy/... | grep -v /vendor/)
+
+    - script:
+        name: go build
+        code: |
+          GOOS=linux CGO_ENABLED=0 go build \
+            -a -ldflags '-s' \
+            -installsuffix cgo \
+            -o imageproxy \
+            willnorris.com/go/imageproxy/cmd/imageproxy
+
+    - script:
+        name: copy binary
+        code: cp imageproxy "$WERCKER_OUTPUT_DIR"
+
+deploy-docker:
+    box:
+        id: alpine
+        cmd: /bin/sh
+    steps:
+    - script:
+        name: Install packages
+        code: |
+          apk --no-cache add ca-certificates
+    - internal/docker-push:
+        disable-sync: true
+        username: $DOCKER_USERNAME
+        password: $DOCKER_PASSWORD
+        repository: $DOCKER_OWNER/$WERCKER_GIT_REPOSITORY
+        tag: $WERCKER_GIT_COMMIT, latest, $WERCKER_GIT_BRANCH
+        entrypoint: /pipeline/source/imageproxy
+
