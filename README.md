@@ -4,7 +4,7 @@ imageproxy is a caching image proxy server written in go.  It features:
 
  - basic image adjustments like resizing, cropping, and rotation
  - access control using host whitelists or request signing (HMAC-SHA256)
- - support for jpeg, png, webp & tiff (decode only), and gif image formats (including animated gifs)
+ - support for jpeg, png, webp (decode only), tiff, and gif image formats (including animated gifs)
  - on-disk caching, respecting the cache headers of the original images
  - easy deployment, since it's pure go
 
@@ -192,7 +192,7 @@ However, you can use the `scaleUp` command-line flag to allow this to happen:
 
     imageproxy -scaleUp true
 
-### WebP support ###
+### WebP and TIFF support ###
 
 Imageproxy can proxy remote webp images, but they will be served in either jpeg
 or png format (this is because the golang webp library only supports webp
@@ -200,6 +200,11 @@ decoding) if any transformation is requested.  If no format is specified,
 imageproxy will use jpeg by default.  If no transformation is requested (for
 example, if you are just using imageproxy as an SSL proxy) then the original
 webp image will be served as-is without any format conversion.
+
+Because so few browsers support tiff images, they will be converted to jpeg by
+default if any transformation is requested. To force encoding as tiff, pass the
+"tiff" option. Like webp, tiff images will be served as-is without any format
+conversion if no transformation is requested.
 
 
 Run `imageproxy -help` for a complete list of flags the command accepts.  If
