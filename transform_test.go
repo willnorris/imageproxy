@@ -165,9 +165,12 @@ func TestTransformImage(t *testing.T) {
 
 		// rotations
 		{ref, Options{Rotate: 45}, ref}, // invalid rotation is a noop
+		{ref, Options{Rotate: 360}, ref},
 		{ref, Options{Rotate: 90}, newImage(2, 2, green, yellow, red, blue)},
 		{ref, Options{Rotate: 180}, newImage(2, 2, yellow, blue, green, red)},
 		{ref, Options{Rotate: 270}, newImage(2, 2, blue, red, yellow, green)},
+		{ref, Options{Rotate: 630}, newImage(2, 2, blue, red, yellow, green)},
+		{ref, Options{Rotate: -90}, newImage(2, 2, blue, red, yellow, green)},
 
 		// flips
 		{

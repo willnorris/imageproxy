@@ -208,7 +208,8 @@ func transformImage(m image.Image, opt Options) image.Image {
 	}
 
 	// rotate
-	switch opt.Rotate {
+	rotate := float64(opt.Rotate) - math.Floor(float64(opt.Rotate)/360)*360
+	switch rotate {
 	case 90:
 		m = imaging.Rotate90(m)
 	case 180:
