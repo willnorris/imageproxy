@@ -207,14 +207,6 @@ func transformImage(m image.Image, opt Options) image.Image {
 		}
 	}
 
-	// flip
-	if opt.FlipVertical {
-		m = imaging.FlipV(m)
-	}
-	if opt.FlipHorizontal {
-		m = imaging.FlipH(m)
-	}
-
 	// rotate
 	switch opt.Rotate {
 	case 90:
@@ -223,6 +215,14 @@ func transformImage(m image.Image, opt Options) image.Image {
 		m = imaging.Rotate180(m)
 	case 270:
 		m = imaging.Rotate270(m)
+	}
+
+	// flip
+	if opt.FlipVertical {
+		m = imaging.FlipV(m)
+	}
+	if opt.FlipHorizontal {
+		m = imaging.FlipH(m)
 	}
 
 	return m

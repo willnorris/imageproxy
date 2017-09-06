@@ -185,6 +185,11 @@ func TestTransformImage(t *testing.T) {
 			Options{FlipHorizontal: true, FlipVertical: true},
 			newImage(2, 2, yellow, blue, green, red),
 		},
+		{
+			ref,
+			Options{Rotate: 90, FlipHorizontal: true},
+			newImage(2, 2, yellow, green, blue, red),
+		},
 
 		// resizing
 		{ // can't resize larger than original image
@@ -247,7 +252,7 @@ func TestTransformImage(t *testing.T) {
 		{
 			newImage(4, 2, red, red, blue, blue, red, red, blue, blue),
 			Options{Width: 2, Height: 1, Fit: true, FlipHorizontal: true, Rotate: 90},
-			newImage(1, 2, red, blue),
+			newImage(1, 2, blue, red),
 		},
 
 		// crop
