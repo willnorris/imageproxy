@@ -39,6 +39,48 @@
 			"revisionTime": "2017-08-20T12:51:33Z"
 		},
 		{
+			"checksumSHA1": "ayQzpLsnDmiaVeKWQeySiIvAjiA=",
+			"path": "github.com/Azure/azure-sdk-for-go/storage",
+			"revision": "64f1c4e0e1ec775b65b322338d62b1842570b265",
+			"revisionTime": "2017-09-01T16:42:12Z"
+		},
+		{
+			"checksumSHA1": "+4d+Y67AMKKuyR1EO33Zdt+RVx0=",
+			"path": "github.com/Azure/go-autorest/autorest",
+			"revision": "5432abe734f8d95c78340cd56712f912906e6514",
+			"revisionTime": "2017-08-29T19:03:17Z"
+		},
+		{
+			"checksumSHA1": "hebqp0dsOKrcolVlLEzz6AVW8do=",
+			"path": "github.com/Azure/go-autorest/autorest/adal",
+			"revision": "5432abe734f8d95c78340cd56712f912906e6514",
+			"revisionTime": "2017-08-29T19:03:17Z"
+		},
+		{
+			"checksumSHA1": "2KdBFgT4qY+fMOkBTa5vA9V0AiM=",
+			"path": "github.com/Azure/go-autorest/autorest/azure",
+			"revision": "5432abe734f8d95c78340cd56712f912906e6514",
+			"revisionTime": "2017-08-29T19:03:17Z"
+		},
+		{
+			"checksumSHA1": "LSF/pNrjhIxl6jiS6bKooBFCOxI=",
+			"path": "github.com/Azure/go-autorest/autorest/date",
+			"revision": "5432abe734f8d95c78340cd56712f912906e6514",
+			"revisionTime": "2017-08-29T19:03:17Z"
+		},
+		{
+			"checksumSHA1": "pim0S/Q+VMPsZJlyaEhGYzqjIlE=",
+			"path": "github.com/PaulARoy/azurestoragecache",
+			"revision": "3c249a3ba78867d6f4e2fc7f5264145ffb5dd0d9",
+			"revisionTime": "2017-09-06T08:45:34Z"
+		},
+		{
+			"checksumSHA1": "GXOurDGgsLmJs0wounpdWZZRSGw=",
+			"path": "github.com/dgrijalva/jwt-go",
+			"revision": "a539ee1a749a2b895533f979515ac7e6e0f5b650",
+			"revisionTime": "2017-06-08T00:51:49Z"
+		},
+		{
 			"checksumSHA1": "YIXBtGk4CTbbCPmIkYzEGva4ZAA=",
 			"path": "github.com/diegomarangoni/gcscache",
 			"revision": "c9cdd2b793a08802a13c60e32fb53e2dd0c44e4f",
@@ -133,6 +175,12 @@
 			"path": "github.com/peterbourgon/diskv",
 			"revision": "5dfcb07a075adbaaa4094cddfd160b1e1c77a043",
 			"revisionTime": "2016-04-04T09:36:48Z"
+		},
+		{
+			"checksumSHA1": "iqUXcP3VA+G1/gVLRpQpBUt/BuA=",
+			"path": "github.com/satori/uuid",
+			"revision": "5bf94b69c6b68ee1b541973bb8e1144db23a194b",
+			"revisionTime": "2017-03-21T23:07:31Z"
 		},
 		{
 			"checksumSHA1": "keGfp7Lfr4cPUiZjLpHzZWrHEzM=",

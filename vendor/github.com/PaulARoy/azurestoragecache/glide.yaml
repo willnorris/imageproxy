@@ -1,0 +1,4 @@
+package: .
+import:
+- package: github.com/Azure/azure-sdk-for-go
+  version: v7.0.1-beta
