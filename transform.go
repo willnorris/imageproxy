@@ -21,9 +21,11 @@ import (
 	_ "image/gif" // register gif format
 	"image/jpeg"
 	"image/png"
+	"io"
 	"math"
 
 	"github.com/disintegration/imaging"
+	"github.com/rwcarlsen/goexif/exif"
 	"golang.org/x/image/tiff"   // register tiff format
 	_ "golang.org/x/image/webp" // register webp format
 	"willnorris.com/go/gifresize"
@@ -31,6 +33,9 @@ import (
 
 // default compression quality of resized jpegs
 const defaultQuality = 95
+
+// maximum distance into image to look for EXIF tags
+const maxExifSize = 1 << 20
 
 // resample filter used when resizing images
 var resampleFilter = imaging.Lanczos
@@ -48,6 +53,15 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 	m, format, err := image.Decode(bytes.NewReader(img))
 	if err != nil {
 		return nil, err
+	}
+
+	// apply EXIF orientation for jpeg and tiff source images. Read at most
+	// up to maxExifSize looking for EXIF tags.
+	if format == "jpeg" || format == "tiff" {
+		r := io.LimitReader(bytes.NewReader(img), maxExifSize)
+		if exifOpt := exifOrientation(r); exifOpt.transform() {
+			m = transformImage(m, exifOpt)
+		}
 	}
 
 	// encode webp and tiff as jpeg by default
@@ -185,6 +199,57 @@ func cropParams(m image.Image, opt Options) (x0, y0, x1, y1 int, crop bool) {
 	}
 
 	return x0, y0, x1, y1, true
+}
+
+// read EXIF orientation tag from r and adjust opt to orient image correctly.
+func exifOrientation(r io.Reader) (opt Options) {
+	// Exif Orientation Tag values
+	// http://sylvana.net/jpegcrop/exif_orientation.html
+	const (
+		topLeftSide     = 1
+		topRightSide    = 2
+		bottomRightSide = 3
+		bottomLeftSide  = 4
+		leftSideTop     = 5
+		rightSideTop    = 6
+		rightSideBottom = 7
+		leftSideBottom  = 8
+	)
+
+	ex, err := exif.Decode(r)
+	if err != nil {
+		return opt
+	}
+	tag, err := ex.Get(exif.Orientation)
+	if err != nil {
+		return opt
+	}
+	orient, err := tag.Int(0)
+	if err != nil {
+		return opt
+	}
+
+	switch orient {
+	case topLeftSide:
+		// do nothing
+	case topRightSide:
+		opt.FlipHorizontal = true
+	case bottomRightSide:
+		opt.Rotate = 180
+	case bottomLeftSide:
+		opt.FlipVertical = true
+	case leftSideTop:
+		opt.Rotate = 90
+		opt.FlipVertical = true
+	case rightSideTop:
+		opt.Rotate = -90
+	case rightSideBottom:
+		opt.Rotate = 90
+		opt.FlipHorizontal = true
+	case leftSideBottom:
+		opt.Rotate = 90
+	}
+	return opt
 }
 
 // transformImage modifies the image m based on the transformations specified
