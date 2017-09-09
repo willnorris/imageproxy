@@ -107,7 +107,11 @@ enabled using the `-cache` flag.  It supports the following values:
    variable be set.
  - azure URL (e.g. `azure://container-name/`) - will cache images on
    Azure Storage.  This requires `AZURESTORAGE_ACCOUNT_NAME` and
-   `AZURESTORAGE_ACCESS_KEY` environmental variables set.
+ - redis URL (e.g. `redis://hostname/`) - will cache images on
+   the specified redis host. The full URL syntax is defined by the [redis URI
+   registration](https://www.iana.org/assignments/uri-schemes/prov/redis).
+   Rather than specify password in the URI, use the `REDIS_PASSWORD`
+   environment variable.
 
 For example, to cache files on disk in the `/tmp/imageproxy` directory:
 

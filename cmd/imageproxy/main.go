@@ -22,12 +22,15 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/PaulARoy/azurestoragecache"
 	"github.com/diegomarangoni/gcscache"
+	"github.com/garyburd/redigo/redis"
 	"github.com/gregjones/httpcache"
 	"github.com/gregjones/httpcache/diskcache"
+	rediscache "github.com/gregjones/httpcache/redis"
 	"github.com/peterbourgon/diskv"
 	"sourcegraph.com/sourcegraph/s3cache"
 	"willnorris.com/go/imageproxy"
@@ -132,6 +135,12 @@ func parseCache() (imageproxy.Cache, error) {
 		return gcscache.New(u.String()), nil
 	case "azure":
 		return azurestoragecache.New("", "", u.Host)
+	case "redis":
+		conn, err := redis.DialURL(u.String(), redis.DialPassword(os.Getenv("REDIS_PASSWORD")))
+		if err != nil {
+			return nil, err
+		}
+		return rediscache.NewWithClient(conn), nil
 	case "file":
 		fallthrough
 	default:
