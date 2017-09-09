@@ -36,15 +36,6 @@ import (
 	"willnorris.com/go/imageproxy"
 )
 
-// goxc values
-var (
-	// VERSION is the version string for imageproxy.
-	VERSION = "HEAD"
-
-	// BUILD_DATE is the timestamp of when imageproxy was built.
-	BUILD_DATE string
-)
-
 var addr = flag.String("addr", "localhost:8080", "TCP address to listen on")
 var whitelist = flag.String("whitelist", "", "comma separated list of allowed remote hosts")
 var referrers = flag.String("referrers", "", "comma separated list of allowed referring hosts")
@@ -55,15 +46,10 @@ var cacheSize = flag.Uint64("cacheSize", 0, "Deprecated: this flag does nothing"
 var signatureKey = flag.String("signatureKey", "", "HMAC key used in calculating request signatures")
 var scaleUp = flag.Bool("scaleUp", false, "allow images to scale beyond their original dimensions")
 var timeout = flag.Duration("timeout", 0, "time limit for requests served by this proxy")
-var version = flag.Bool("version", false, "print version information")
+var version = flag.Bool("version", false, "Deprecated: this flag does nothing")
 
 func main() {
 	flag.Parse()
-
-	if *version {
-		fmt.Printf("%v\nBuild: %v\n", VERSION, BUILD_DATE)
-		return
-	}
 
 	c, err := parseCache()
 	if err != nil {
@@ -105,7 +91,7 @@ func main() {
 		Handler: p,
 	}
 
-	fmt.Printf("imageproxy (version %v) listening on %s\n", VERSION, server.Addr)
+	fmt.Printf("imageproxy listening on %s\n", server.Addr)
 	log.Fatal(server.ListenAndServe())
 }
 

@@ -224,30 +224,17 @@ needs... it's a very simple command.
 
 ## Deploying ##
 
-You can build and deploy imageproxy using any standard go toolchain, but here's
-how I do it.
+In most cases, you can follow the normal procedure for building a deploying any
+go application.  For example, I build it directly on my production debian server
+using:
 
-I use [goxc](https://github.com/laher/goxc) to build and deploy to an Ubuntu
-server.  I have a `$GOPATH/willnorris.com/go/imageproxy/.goxc.local.json` file
-which limits builds to 64-bit linux:
+ - `go build willnorris.com/go/imageproxy/cmd/imageproxy`
+ - copy resulting binary to `/usr/local/bin`
+ - copy [`etc/imageproxy.service`](etc/imageproxy.service) to
+   `/lib/systemd/system` and enable using `systemctl`.
 
-``` json
- {
-   "ConfigVersion": "0.9",
-   "BuildConstraints": "linux,amd64"
- }
-```
-
-I then run `goxc` which compiles the static binary and creates a deb package at
-`build/0.2.1/imageproxy_0.2.1_amd64.deb` (or whatever the current version is).
-I copy this file to my server and install it using `sudo dpkg -i
-imageproxy_0.2.1_amd64.deb`, which is installed to `/usr/bin/imageproxy`.
-
-Ubuntu uses upstart to manage services, so I copy
-[`etc/imageproxy.conf`](etc/imageproxy.conf) to `/etc/init/imageproxy.conf` on
-my server and start it using `sudo service imageproxy start`.  You will
-certainly want to modify that upstart script to suit your desired
-configuration.
+Instructions have been contributed below for running on other platforms, but I
+don't have much experience with them personally.
 
 ### Heroku ###
 
