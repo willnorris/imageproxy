@@ -93,6 +93,18 @@
 			"revisionTime": "2017-03-19T14:47:19Z"
 		},
 		{
+			"checksumSHA1": "2UmMbNHc8FBr98mJFN1k8ISOIHk=",
+			"path": "github.com/garyburd/redigo/internal",
+			"revision": "b925df3cc15d8646e9b5b333ebaf3011385aba11",
+			"revisionTime": "2017-08-14T17:23:35Z"
+		},
+		{
+			"checksumSHA1": "zxm1ahSCAclqI4JIvyuRbytF2pA=",
+			"path": "github.com/garyburd/redigo/redis",
+			"revision": "b925df3cc15d8646e9b5b333ebaf3011385aba11",
+			"revisionTime": "2017-08-14T17:23:35Z"
+		},
+		{
 			"checksumSHA1": "HmbftipkadrLlCfzzVQ+iFHbl6g=",
 			"path": "github.com/golang/glog",
 			"revision": "23def4e6c14b4da8ac2ed8007337bc5eb5007998",
@@ -147,16 +159,22 @@
 			"revisionTime": "2017-08-24T00:14:41Z"
 		},
 		{
-			"checksumSHA1": "89AgVeQ6dU0XqFSgYG+fQ5rqp/8=",
+			"checksumSHA1": "oiAXz4eNo8+dtIxI5Rw9hZ0L4h0=",
 			"path": "github.com/gregjones/httpcache",
-			"revision": "0d2297f241a3503b4d464cd434e6d1490ec76e9a",
-			"revisionTime": "2017-04-24T21:01:39Z"
+			"revision": "787624de3eb7bd915c329cba748687a3b22666a6",
+			"revisionTime": "2017-07-28T04:18:50Z"
 		},
 		{
 			"checksumSHA1": "A+TX1jxqy7iWvcb9ZldoG1b5SsY=",
 			"path": "github.com/gregjones/httpcache/diskcache",
 			"revision": "0d2297f241a3503b4d464cd434e6d1490ec76e9a",
 			"revisionTime": "2017-04-24T21:01:39Z"
+		},
+		{
+			"checksumSHA1": "wUtgc8prI1FSfPlueFHtw2EQNDo=",
+			"path": "github.com/gregjones/httpcache/redis",
+			"revision": "787624de3eb7bd915c329cba748687a3b22666a6",
+			"revisionTime": "2017-07-28T04:18:50Z"
 		},
 		{
 			"checksumSHA1": "Th+zE6hHI4jpczGj+JNsqDJrJgI=",
