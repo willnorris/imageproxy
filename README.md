@@ -98,10 +98,12 @@ enabled using the `-cache` flag.  It supports the following values:
    available memory and is not recommended for production systems)
  - directory on local disk (e.g. `/tmp/imageproxy`) - will cache images
    on disk
- - s3 URL (e.g. `s3://s3-us-west-2.amazonaws.com/my-bucket`) - will cache
+ - s3 URL (e.g. `s3://region/bucket-name/optional-path-prefix`) - will cache
    images on Amazon S3.  This requires either an IAM role and instance profile
    with access to your your bucket or `AWS_ACCESS_KEY_ID` and `AWS_SECRET_KEY`
-   environmental variables be set.
+   environmental variables be set. (Additional methods of loading credentials
+   are documented in the [aws-sdk-go session
+   package](https://docs.aws.amazon.com/sdk-for-go/api/aws/session/)).
  - gcs URL (e.g. `gcs://bucket-name/optional-path-prefix`) - will cache images
    on Google Cloud Storage.  This requires `GCP_PRIVATE_KEY` environmental
    variable be set.

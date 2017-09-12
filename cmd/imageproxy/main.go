@@ -32,8 +32,8 @@ import (
 	"github.com/gregjones/httpcache/diskcache"
 	rediscache "github.com/gregjones/httpcache/redis"
 	"github.com/peterbourgon/diskv"
-	"sourcegraph.com/sourcegraph/s3cache"
 	"willnorris.com/go/imageproxy"
+	"willnorris.com/go/imageproxy/internal/s3cache"
 )
 
 var addr = flag.String("addr", "localhost:8080", "TCP address to listen on")
@@ -110,8 +110,7 @@ func parseCache() (imageproxy.Cache, error) {
 
 	switch u.Scheme {
 	case "s3":
-		u.Scheme = "https"
-		return s3cache.New(u.String()), nil
+		return s3cache.New(u.String())
 	case "gcs":
 		return gcscache.New(u.String()), nil
 	case "azure":
