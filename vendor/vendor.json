@@ -341,18 +341,6 @@
 			"revisionTime": "2017-09-08T20:30:58Z"
 		},
 		{
-			"checksumSHA1": "Th+zE6hHI4jpczGj+JNsqDJrJgI=",
-			"path": "github.com/kr/http/transport",
-			"revision": "77bd98b60462aab91988ae155ecc11a74833f5b7",
-			"revisionTime": "2015-05-05T21:27:37Z"
-		},
-		{
-			"checksumSHA1": "Hc7LMQrHR71kkSsd/P/SBdiC258=",
-			"path": "github.com/petar/GoLLRB/llrb",
-			"revision": "53be0d36a84c2a886ca057d34b6aa4468df9ccb4",
-			"revisionTime": "2013-04-27T21:51:48Z"
-		},
-		{
 			"checksumSHA1": "GfnXm54E98jxQJMXPZz0LbPVaRc=",
 			"path": "github.com/peterbourgon/diskv",
 			"revision": "5dfcb07a075adbaaa4094cddfd160b1e1c77a043",
@@ -375,18 +363,6 @@
 			"path": "github.com/satori/uuid",
 			"revision": "5bf94b69c6b68ee1b541973bb8e1144db23a194b",
 			"revisionTime": "2017-03-21T23:07:31Z"
-		},
-		{
-			"checksumSHA1": "keGfp7Lfr4cPUiZjLpHzZWrHEzM=",
-			"path": "github.com/sqs/s3",
-			"revision": "ee47412d98d9637046a7096f24809bc45f6bcbd5",
-			"revisionTime": "2015-02-03T11:00:30Z"
-		},
-		{
-			"checksumSHA1": "ki3xti8X7mLGmAWZoYZiBAJYQ8M=",
-			"path": "github.com/sqs/s3/s3util",
-			"revision": "ee47412d98d9637046a7096f24809bc45f6bcbd5",
-			"revisionTime": "2015-02-03T11:00:30Z"
 		},
 		{
 			"checksumSHA1": "UD/pejajPyS7WaWVXq2NU1eK4Ic=",
@@ -427,12 +403,6 @@
 		{
 			"checksumSHA1": "wwirbKM4d69iWA4s9JwpXTsda3A=",
 			"path": "golang.org/x/image/webp",
-			"revision": "426cfd8eeb6e08ab1932954e09e3c2cb2bc6e36d",
-			"revisionTime": "2017-05-14T06:33:48Z"
-		},
-		{
-			"checksumSHA1": "Q+QuePyosoyKLP7tHNe3iREV+mc=",
-			"path": "golang.org/x/image/webp/nycbcra",
 			"revision": "426cfd8eeb6e08ab1932954e09e3c2cb2bc6e36d",
 			"revisionTime": "2017-05-14T06:33:48Z"
 		},
@@ -711,12 +681,6 @@
 			"path": "google.golang.org/grpc/transport",
 			"revision": "8233e124e4634a8313f2c9a1ea7d4db33546b11b",
 			"revisionTime": "2017-08-31T17:59:09Z"
-		},
-		{
-			"checksumSHA1": "Oz2aQiusOZOpefTB6nCKW+vzrWA=",
-			"path": "sourcegraph.com/sourcegraph/s3cache",
-			"revision": "4150cc6b046500fb69804e34aa4a1ca8be361bcb",
-			"revisionTime": "2014-12-02T19:37:49Z"
 		},
 		{
 			"checksumSHA1": "cBdDkft9ir+lyLbeRQ4zCAoR0AY=",
