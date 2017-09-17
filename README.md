@@ -94,8 +94,11 @@ you should see a 500px square coder octocat.
 By default, the imageproxy command does not cache responses, but caching can be
 enabled using the `-cache` flag.  It supports the following values:
 
- - `memory` - uses an in-memory cache.  (This can exhaust your system's
-   available memory and is not recommended for production systems)
+ - `memory` - uses an in-memory LRU cache.  By default, this is limited to
+   100mb. To customize the size of the cache or the max age for cached items,
+   use the format `memory:size:age` where size is measured in mb and age is a
+   duration.  For example, `memory:200:4h` will create a 200mb cache that will
+   cache items no longer than 4 hours.
  - directory on local disk (e.g. `/tmp/imageproxy`) - will cache images
    on disk
  - s3 URL (e.g. `s3://region/bucket-name/optional-path-prefix`) - will cache
