@@ -111,18 +111,18 @@ func parseCache() (imageproxy.Cache, error) {
 	}
 
 	switch u.Scheme {
-	case "s3":
-		return s3cache.New(u.String())
-	case "gcs":
-		return gcscache.New(u.String()), nil
 	case "azure":
 		return azurestoragecache.New("", "", u.Host)
+	case "gcs":
+		return gcscache.New(u.String()), nil
 	case "redis":
 		conn, err := redis.DialURL(u.String(), redis.DialPassword(os.Getenv("REDIS_PASSWORD")))
 		if err != nil {
 			return nil, err
 		}
 		return rediscache.NewWithClient(conn), nil
+	case "s3":
+		return s3cache.New(u.String())
 	case "file":
 		fallthrough
 	default:
