@@ -129,6 +129,16 @@ version.
 
 [codercat URL]: http://localhost:8080/500/https://octodex.github.com/images/codercat.jpg
 
+If the `-cache` flag is specified multiple times, multiple caches will be
+created in a [tiered fashion][]. Typically this is used to put a smaller and
+faster in-memory cache in front of a larger but slower on-disk cache.  For
+example, the following will first check an in-memory cache for an image,
+followed by a gcs bucket:
+
+    imageproxy -cache memory -cache gcs://my-bucket/
+
+[tiered fashion]: https://godoc.org/github.com/die-net/lrucache/twotier
+
 ### Referrer Whitelist ###
 
 You can limit images to only be accessible for certain hosts in the HTTP

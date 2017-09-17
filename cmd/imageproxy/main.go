@@ -29,6 +29,7 @@ import (
 
 	"github.com/PaulARoy/azurestoragecache"
 	"github.com/die-net/lrucache"
+	"github.com/die-net/lrucache/twotier"
 	"github.com/diegomarangoni/gcscache"
 	"github.com/garyburd/redigo/redis"
 	"github.com/gregjones/httpcache/diskcache"
@@ -44,22 +45,21 @@ var addr = flag.String("addr", "localhost:8080", "TCP address to listen on")
 var whitelist = flag.String("whitelist", "", "comma separated list of allowed remote hosts")
 var referrers = flag.String("referrers", "", "comma separated list of allowed referring hosts")
 var baseURL = flag.String("baseURL", "", "default base URL for relative remote URLs")
-var cache = flag.String("cache", "", "location to cache images (see https://github.com/willnorris/imageproxy#cache)")
+var cache tieredCache
 var signatureKey = flag.String("signatureKey", "", "HMAC key used in calculating request signatures")
 var scaleUp = flag.Bool("scaleUp", false, "allow images to scale beyond their original dimensions")
 var timeout = flag.Duration("timeout", 0, "time limit for requests served by this proxy")
 var verbose = flag.Bool("verbose", false, "print verbose logging messages")
 var version = flag.Bool("version", false, "Deprecated: this flag does nothing")
 
+func init() {
+	flag.Var(&cache, "cache", "location to cache images (see https://github.com/willnorris/imageproxy#cache)")
+}
+
 func main() {
 	flag.Parse()
 
-	c, err := parseCache()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	p := imageproxy.NewProxy(nil, c)
+	p := imageproxy.NewProxy(nil, cache.Cache)
 	if *whitelist != "" {
 		p.Whitelist = strings.Split(*whitelist, ",")
 	}
@@ -99,17 +99,41 @@ func main() {
 	log.Fatal(server.ListenAndServe())
 }
 
-// parseCache parses the cache-related flags and returns the specified Cache implementation.
-func parseCache() (imageproxy.Cache, error) {
-	if *cache == "" {
+// tieredCache allows specifying multiple caches via flags, which will create
+// tiered caches using the twotier package.
+type tieredCache struct {
+	imageproxy.Cache
+}
+
+func (tc *tieredCache) String() string {
+	return fmt.Sprint(*tc)
+}
+
+func (tc *tieredCache) Set(value string) error {
+	c, err := parseCache(value)
+	if err != nil {
+		return err
+	}
+
+	if tc.Cache == nil {
+		tc.Cache = c
+	} else {
+		tc.Cache = twotier.New(tc.Cache, c)
+	}
+	return nil
+}
+
+// parseCache parses c returns the specified Cache implementation.
+func parseCache(c string) (imageproxy.Cache, error) {
+	if c == "" {
 		return nil, nil
 	}
 
-	if *cache == "memory" {
-		*cache = fmt.Sprintf("memory:%d", defaultMemorySize)
+	if c == "memory" {
+		c = fmt.Sprintf("memory:%d", defaultMemorySize)
 	}
 
-	u, err := url.Parse(*cache)
+	u, err := url.Parse(c)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing cache flag: %v", err)
 	}
