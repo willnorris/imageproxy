@@ -231,6 +231,18 @@
 			"revisionTime": "2017-06-08T00:51:49Z"
 		},
 		{
+			"checksumSHA1": "ixCQL3bWowRQGeWOS0eg2JWTy4Q=",
+			"path": "github.com/die-net/lrucache",
+			"revision": "36174c11a4bb5b86413af31527b6a1469426ed06",
+			"revisionTime": "2017-05-25T23:02:08Z"
+		},
+		{
+			"checksumSHA1": "bLKUgAPC8sntHXaqNmt5h9ZwNkI=",
+			"path": "github.com/die-net/lrucache/twotier",
+			"revision": "36174c11a4bb5b86413af31527b6a1469426ed06",
+			"revisionTime": "2017-05-25T23:02:08Z"
+		},
+		{
 			"checksumSHA1": "YIXBtGk4CTbbCPmIkYzEGva4ZAA=",
 			"path": "github.com/diegomarangoni/gcscache",
 			"revision": "c9cdd2b793a08802a13c60e32fb53e2dd0c44e4f",
