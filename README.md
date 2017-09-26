@@ -4,8 +4,10 @@ imageproxy is a caching image proxy server written in go.  It features:
 
  - basic image adjustments like resizing, cropping, and rotation
  - access control using host whitelists or request signing (HMAC-SHA256)
- - support for jpeg, png, webp (decode only), tiff, and gif image formats (including animated gifs)
- - on-disk caching, respecting the cache headers of the original images
+ - support for jpeg, png, webp (decode only), tiff, and gif image formats
+   (including animated gifs)
+ - caching in-memory, on disk, or with Amazon S3, Google Cloud Storage, Azure
+   Storage, or Redis
  - easy deployment, since it's pure go
 
 Personally, I use it primarily to dynamically resize images hosted on my own
@@ -75,9 +77,6 @@ image][material-animation] resized to 200px square and rotated 270 degrees:
 Install the package using:
 
     go get willnorris.com/go/imageproxy/cmd/imageproxy
-
-(Note that go1.2 and earlier may have trouble fetching the package with `go
-get`).
 
 Once installed, ensure `$GOPATH/bin` is in your `$PATH`, then run the proxy
 using:
