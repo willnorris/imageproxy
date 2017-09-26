@@ -80,22 +80,22 @@ func TestCropParams(t *testing.T) {
 	tests := []struct {
 		opt            Options
 		x0, y0, x1, y1 int
-		crop           bool
 	}{
-		{Options{CropWidth: 10, CropHeight: 0}, 0, 0, 10, 128, true},
-		{Options{CropWidth: 0, CropHeight: 10}, 0, 0, 64, 10, true},
-		{Options{CropWidth: -1, CropHeight: -1}, 0, 0, 0, 0, false},
-		{Options{CropWidth: 50, CropHeight: 100}, 0, 0, 50, 100, true},
-		{Options{CropWidth: 100, CropHeight: 100}, 0, 0, 64, 100, true},
-		{Options{CropX: 50, CropY: 100}, 50, 100, 64, 128, true},
-		{Options{CropX: 50, CropY: 100, CropWidth: 100, CropHeight: 150}, 50, 100, 64, 128, true},
-		{Options{CropX: -50, CropY: -50}, 14, 78, 64, 128, true},
-		{Options{CropY: 0.5, CropWidth: 0.5}, 0, 64, 32, 128, true},
+		{Options{CropWidth: 10, CropHeight: 0}, 0, 0, 10, 128},
+		{Options{CropWidth: 0, CropHeight: 10}, 0, 0, 64, 10},
+		{Options{CropWidth: -1, CropHeight: -1}, 0, 0, 64, 128},
+		{Options{CropWidth: 50, CropHeight: 100}, 0, 0, 50, 100},
+		{Options{CropWidth: 100, CropHeight: 100}, 0, 0, 64, 100},
+		{Options{CropX: 50, CropY: 100}, 50, 100, 64, 128},
+		{Options{CropX: 50, CropY: 100, CropWidth: 100, CropHeight: 150}, 50, 100, 64, 128},
+		{Options{CropX: -50, CropY: -50}, 14, 78, 64, 128},
+		{Options{CropY: 0.5, CropWidth: 0.5}, 0, 64, 32, 128},
 	}
 	for _, tt := range tests {
-		x0, y0, x1, y1, crop := cropParams(src, tt.opt)
-		if x0 != tt.x0 || y0 != tt.y0 || x1 != tt.x1 || y1 != tt.y1 || crop != tt.crop {
-			t.Errorf("cropParams(%v) returned (%d,%d,%d,%d,%t), want (%d,%d,%d,%d,%t)", tt.opt, x0, y0, x1, y1, crop, tt.x0, tt.y0, tt.x1, tt.y1, tt.crop)
+		want := image.Rect(tt.x0, tt.y0, tt.x1, tt.y1)
+		got := cropParams(src, tt.opt)
+		if !got.Eq(want) {
+			t.Errorf("cropParams(%v) returned %v, want %v", tt.opt, got, want)
 		}
 	}
 }

@@ -131,8 +131,8 @@ func evaluateFloat(f float64, max int) int {
 // dimensions to resize to.
 func resizeParams(m image.Image, opt Options) (w, h int, resize bool) {
 	// convert percentage width and height values to absolute values
-	imgW := m.Bounds().Max.X - m.Bounds().Min.X
-	imgH := m.Bounds().Max.Y - m.Bounds().Min.Y
+	imgW := m.Bounds().Dx()
+	imgH := m.Bounds().Dy()
 	w = evaluateFloat(opt.Width, imgW)
 	h = evaluateFloat(opt.Height, imgH)
 
@@ -155,23 +155,23 @@ func resizeParams(m image.Image, opt Options) (w, h int, resize bool) {
 }
 
 // cropParams calculates crop rectangle parameters to keep it in image bounds
-func cropParams(m image.Image, opt Options) (x0, y0, x1, y1 int, crop bool) {
+func cropParams(m image.Image, opt Options) image.Rectangle {
 	if opt.CropX == 0 && opt.CropY == 0 && opt.CropWidth == 0 && opt.CropHeight == 0 {
-		return 0, 0, 0, 0, false
+		return m.Bounds()
 	}
 
 	// width and height of image
-	imgW := m.Bounds().Max.X - m.Bounds().Min.X
-	imgH := m.Bounds().Max.Y - m.Bounds().Min.Y
+	imgW := m.Bounds().Dx()
+	imgH := m.Bounds().Dy()
 
 	// top left coordinate of crop
-	x0 = evaluateFloat(math.Abs(opt.CropX), imgW)
+	x0 := evaluateFloat(math.Abs(opt.CropX), imgW)
 	if opt.CropX < 0 {
-		x0 = imgW - x0
+		x0 = imgW - x0 // measure from right
 	}
-	y0 = evaluateFloat(math.Abs(opt.CropY), imgH)
+	y0 := evaluateFloat(math.Abs(opt.CropY), imgH)
 	if opt.CropY < 0 {
-		y0 = imgH - y0
+		y0 = imgH - y0 // measure from bottom
 	}
 
 	// width and height of crop
@@ -184,21 +184,17 @@ func cropParams(m image.Image, opt Options) (x0, y0, x1, y1 int, crop bool) {
 		h = imgH
 	}
 
-	if x0 == 0 && y0 == 0 && w == imgW && h == imgH {
-		return 0, 0, 0, 0, false
-	}
-
 	// bottom right coordinate of crop
-	x1 = x0 + w
+	x1 := x0 + w
 	if x1 > imgW {
 		x1 = imgW
 	}
-	y1 = y0 + h
+	y1 := y0 + h
 	if y1 > imgH {
 		y1 = imgH
 	}
 
-	return x0, y0, x1, y1, true
+	return image.Rect(x0, y0, x1, y1)
 }
 
 // read EXIF orientation tag from r and adjust opt to orient image correctly.
@@ -256,11 +252,11 @@ func exifOrientation(r io.Reader) (opt Options) {
 // in opt.
 func transformImage(m image.Image, opt Options) image.Image {
 	// crop if needed
-	if x0, y0, x1, y1, crop := cropParams(m, opt); crop {
-		m = imaging.Crop(m, image.Rect(x0, y0, x1, y1))
+	if r := cropParams(m, opt); !m.Bounds().Eq(r) {
+		m = imaging.Crop(m, r)
 	}
 	// resize if needed
-	if w, h, resize := resizeParams(m, opt); resize {
+	if w, h, ok := resizeParams(m, opt); ok {
 		if opt.Fit {
 			m = imaging.Fit(m, w, h, resampleFilter)
 		} else {
