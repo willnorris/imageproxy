@@ -347,6 +347,18 @@
 			"revisionTime": "2017-09-08T20:30:58Z"
 		},
 		{
+			"checksumSHA1": "5Z44bktwBk/azl6X7I/U14GaAes=",
+			"path": "github.com/muesli/smartcrop",
+			"revision": "fe851226066d6f54f7f6ed9c0fbec82f11149618",
+			"revisionTime": "2017-09-02T21:15:18Z"
+		},
+		{
+			"checksumSHA1": "r5eQHkttko6kxroDEENXbmXKrSs=",
+			"path": "github.com/nfnt/resize",
+			"revision": "891127d8d1b52734debe1b3c3d7e747502b6c366",
+			"revisionTime": "2016-07-24T20:39:20Z"
+		},
+		{
 			"checksumSHA1": "GfnXm54E98jxQJMXPZz0LbPVaRc=",
 			"path": "github.com/peterbourgon/diskv",
 			"revision": "5dfcb07a075adbaaa4094cddfd160b1e1c77a043",
@@ -375,6 +387,18 @@
 			"path": "golang.org/x/image/bmp",
 			"revision": "426cfd8eeb6e08ab1932954e09e3c2cb2bc6e36d",
 			"revisionTime": "2017-05-14T06:33:48Z"
+		},
+		{
+			"checksumSHA1": "WZqFyWo6r8KZodsU0doRvel37F0=",
+			"path": "golang.org/x/image/draw",
+			"revision": "e20db36d77bd0cb36cea8fe49d5c37d82d21591f",
+			"revisionTime": "2017-09-04T00:25:37Z"
+		},
+		{
+			"checksumSHA1": "o7VkCGBiKM5HXzVzrIci1YDlpvc=",
+			"path": "golang.org/x/image/math/f64",
+			"revision": "e20db36d77bd0cb36cea8fe49d5c37d82d21591f",
+			"revisionTime": "2017-09-04T00:25:37Z"
 		},
 		{
 			"checksumSHA1": "zdekzNuFGSoxAZ8cURGsrhBObZs=",
