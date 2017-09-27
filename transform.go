@@ -251,12 +251,18 @@ func exifOrientation(r io.Reader) (opt Options) {
 // transformImage modifies the image m based on the transformations specified
 // in opt.
 func transformImage(m image.Image, opt Options) image.Image {
+	// Parse crop and resize parameters before applying any transforms.
+	// This is to ensure that any percentage-based values are based off the
+	// size of the original image.
+	rect := cropParams(m, opt)
+	w, h, resize := resizeParams(m, opt)
+
 	// crop if needed
-	if r := cropParams(m, opt); !m.Bounds().Eq(r) {
-		m = imaging.Crop(m, r)
+	if !m.Bounds().Eq(rect) {
+		m = imaging.Crop(m, rect)
 	}
 	// resize if needed
-	if w, h, ok := resizeParams(m, opt); ok {
+	if resize {
 		if opt.Fit {
 			m = imaging.Fit(m, w, h, resampleFilter)
 		} else {

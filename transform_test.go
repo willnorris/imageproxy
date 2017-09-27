@@ -351,6 +351,13 @@ func TestTransformImage(t *testing.T) {
 			Options{CropHeight: 2, CropWidth: 2, CropX: 2, CropY: 2},
 			newImage(2, 2, yellow, yellow, yellow, yellow),
 		},
+
+		// percentage-based resize in addition to rectangular crop
+		{
+			newImage(12, 12, red),
+			Options{Width: 0.5, Height: 0.5, CropWidth: 8, CropHeight: 8},
+			newImage(6, 6, red),
+		},
 	}
 
 	for _, tt := range tests {
