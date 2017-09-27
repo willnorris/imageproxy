@@ -39,6 +39,7 @@ const (
 	optCropY           = "cy"
 	optCropWidth       = "cw"
 	optCropHeight      = "ch"
+	optSmartCrop       = "sc"
 )
 
 // URLError reports a malformed URL error.
@@ -86,6 +87,9 @@ type Options struct {
 	CropY      float64
 	CropWidth  float64
 	CropHeight float64
+
+	// Automatically find good crop points based on image content.
+	SmartCrop bool
 }
 
 func (o Options) String() string {
@@ -126,6 +130,9 @@ func (o Options) String() string {
 	if o.CropHeight != 0 {
 		opts = append(opts, fmt.Sprintf("%s%v", string(optCropHeight), o.CropHeight))
 	}
+	if o.SmartCrop {
+		opts = append(opts, optSmartCrop)
+	}
 	return strings.Join(opts, ",")
 }
 
@@ -158,6 +165,12 @@ func (o Options) transform() bool {
 // If the crop width or height exceed the width or height of the image, the
 // crop width or height will be adjusted, preserving the specified cx and cy
 // values.  Rectangular crop is applied before any other transformations.
+//
+// Smart Crop
+//
+// The "sc" option will perform a content-aware smart crop to fit the
+// requested image width and height dimensions (see Size and Cropping below).
+// The smart crop option will override any requested rectangular crop.
 //
 // Size and Cropping
 //
@@ -246,6 +259,8 @@ func ParseOptions(str string) Options {
 			options.ScaleUp = true
 		case opt == optFormatJPEG, opt == optFormatPNG, opt == optFormatTIFF:
 			options.Format = opt
+		case opt == optSmartCrop:
+			options.SmartCrop = true
 		case strings.HasPrefix(opt, optRotatePrefix):
 			value := strings.TrimPrefix(opt, optRotatePrefix)
 			options.Rotate, _ = strconv.Atoi(value)

@@ -22,9 +22,11 @@ import (
 	"image/jpeg"
 	"image/png"
 	"io"
+	"log"
 	"math"
 
 	"github.com/disintegration/imaging"
+	"github.com/muesli/smartcrop"
 	"github.com/rwcarlsen/goexif/exif"
 	"golang.org/x/image/tiff"   // register tiff format
 	_ "golang.org/x/image/webp" // register webp format
@@ -156,13 +158,26 @@ func resizeParams(m image.Image, opt Options) (w, h int, resize bool) {
 
 // cropParams calculates crop rectangle parameters to keep it in image bounds
 func cropParams(m image.Image, opt Options) image.Rectangle {
-	if opt.CropX == 0 && opt.CropY == 0 && opt.CropWidth == 0 && opt.CropHeight == 0 {
+	if !opt.SmartCrop && opt.CropX == 0 && opt.CropY == 0 && opt.CropWidth == 0 && opt.CropHeight == 0 {
 		return m.Bounds()
 	}
 
 	// width and height of image
 	imgW := m.Bounds().Dx()
 	imgH := m.Bounds().Dy()
+
+	if opt.SmartCrop {
+		w := evaluateFloat(opt.Width, imgW)
+		h := evaluateFloat(opt.Height, imgH)
+		log.Printf("smartcrop input: %dx%d", w, h)
+		r, err := smartcrop.SmartCrop(m, w, h)
+		if err != nil {
+			log.Printf("error with smartcrop: %v", err)
+		} else {
+			log.Printf("smartcrop rectangle: %v", r)
+			return r
+		}
+	}
 
 	// top left coordinate of crop
 	x0 := evaluateFloat(math.Abs(opt.CropX), imgW)
