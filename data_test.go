@@ -172,6 +172,10 @@ func TestNewRequest(t *testing.T) {
 			"http://localhost/http:///example.com/foo",
 			"http://example.com/foo", emptyOptions, false,
 		},
+		{ // escaped path
+			"http://localhost/http://example.com/%2C",
+			"http://example.com/%2C", emptyOptions, false,
+		},
 	}
 
 	for _, tt := range tests {
