@@ -1,5 +1,5 @@
-FROM golang:1.8
-MAINTAINER Sevki <s@sevki.org>
+FROM golang:1.9 as build
+MAINTAINER Will Norris <will@willnorris.com>
 
 WORKDIR /go/src/willnorris.com/go/imageproxy
 ADD . .
@@ -12,9 +12,9 @@ FROM scratch
 
 WORKDIR /go/bin
 
-COPY --from=0 /usr/share/zoneinfo /usr/share/zoneinfo
-COPY --from=0 /etc/ssl/certs /etc/ssl/certs
-COPY --from=0 /go/bin/imageproxy .
+COPY --from=build /usr/share/zoneinfo /usr/share/zoneinfo
+COPY --from=build /etc/ssl/certs /etc/ssl/certs
+COPY --from=build /go/bin/imageproxy .
 
 CMD ["-addr", "0.0.0.0:8080"]
 ENTRYPOINT ["/go/bin/imageproxy"]
