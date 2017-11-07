@@ -299,8 +299,8 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 
 	img, err := Transform(b, opt)
 	if err != nil {
-		glog.Errorf("error transforming image: %v", err)
-		img = b
+		glog.Errorf("errors transforming image: %v", err)
+		return nil, err
 	}
 
 	// replay response with transformed image and updated content length
