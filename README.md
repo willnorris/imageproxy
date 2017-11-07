@@ -217,6 +217,15 @@ However, you can use the `scaleUp` command-line flag to allow this to happen:
 
     imageproxy -scaleUp true
 
+By default, width and heigh between 0 and 1 are considered as scale factor whereas
+those greater than 1 considered as absolute size in pixel.
+
+If you want to be able to scale up by factor (instead of by specifying an absolute size in pixel)
+you can use the option z. Here are some example :
+
+    http://localhost:8080/2,z/images/codercat.jpg => scale up by a factor of 2 (keeping proportions)
+    http://localhost:8080/2x1.5,z/images/codercat.jpg => scale up by different resize factor
+
 ### WebP and TIFF support ###
 
 Imageproxy can proxy remote webp images, but they will be served in either jpeg
