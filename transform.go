@@ -117,6 +117,22 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 // evaluateFloat interprets the option value f. If f is between 0 and 1, it is
 // interpreted as a percentage of max, otherwise it is treated as an absolute
 // value.  If f is less than 0, 0 is returned.
+func evaluateFloatUpScale(f float64, max int, factor bool) int {
+	if 0 < f && f < 1 {
+		return int(float64(max) * f)
+	}
+	if f < 0 {
+		return 0
+	}
+	if factor {
+		fmt.Print("factor\n")
+		return int(float64(max) * f)
+	} else {
+		fmt.Print("not factor\n")
+		return int(f)
+	}
+}
+
 func evaluateFloat(f float64, max int) int {
 	if 0 < f && f < 1 {
 		return int(float64(max) * f)
@@ -133,8 +149,8 @@ func resizeParams(m image.Image, opt Options) (w, h int, resize bool) {
 	// convert percentage width and height values to absolute values
 	imgW := m.Bounds().Max.X - m.Bounds().Min.X
 	imgH := m.Bounds().Max.Y - m.Bounds().Min.Y
-	w = evaluateFloat(opt.Width, imgW)
-	h = evaluateFloat(opt.Height, imgH)
+	w = evaluateFloatUpScale(opt.Width, imgW, opt.ScaleUpFactor)
+	h = evaluateFloatUpScale(opt.Height, imgH, opt.ScaleUpFactor)
 
 	// never resize larger than the original image unless specifically allowed
 	if !opt.ScaleUp {

@@ -35,6 +35,7 @@ const (
 	optSignaturePrefix = "s"
 	optSizeDelimiter   = "x"
 	optScaleUp         = "scaleUp"
+	optScaleUpFactor   = "z"
 	optCropX           = "cx"
 	optCropY           = "cy"
 	optCropWidth       = "cw"
@@ -77,6 +78,7 @@ type Options struct {
 	// Allow image to scale beyond its original dimensions.  This value
 	// will always be overwritten by the value of Proxy.ScaleUp.
 	ScaleUp bool
+	ScaleUpFactor bool
 
 	// Desired image format. Valid values are "jpeg", "png", "tiff".
 	Format string
@@ -92,6 +94,9 @@ func (o Options) String() string {
 	opts := []string{fmt.Sprintf("%v%s%v", o.Width, optSizeDelimiter, o.Height)}
 	if o.Fit {
 		opts = append(opts, optFit)
+	}
+	if o.ScaleUpFactor {
+		opts = append(opts, optScaleUpFactor)
 	}
 	if o.Rotate != 0 {
 		opts = append(opts, fmt.Sprintf("%s%d", string(optRotatePrefix), o.Rotate))
@@ -231,11 +236,14 @@ func (o Options) transform() bool {
 // 	cx10,cy20,cw100,ch200 - crop image starting at (10,20) is 100px wide and 200px tall
 func ParseOptions(str string) Options {
 	var options Options
-
+	fmt.Print(str)
 	for _, opt := range strings.Split(str, ",") {
 		switch {
 		case len(opt) == 0:
 			break
+		case opt == optScaleUpFactor:
+			fmt.Print(opt)
+			options.ScaleUpFactor = true
 		case opt == optFit:
 			options.Fit = true
 		case opt == optFlipVertical:
