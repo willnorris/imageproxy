@@ -236,13 +236,12 @@ func (o Options) transform() bool {
 // 	cx10,cy20,cw100,ch200 - crop image starting at (10,20) is 100px wide and 200px tall
 func ParseOptions(str string) Options {
 	var options Options
-	fmt.Print(str)
+	
 	for _, opt := range strings.Split(str, ",") {
 		switch {
 		case len(opt) == 0:
 			break
 		case opt == optScaleUpFactor:
-			fmt.Print(opt)
 			options.ScaleUpFactor = true
 		case opt == optFit:
 			options.Fit = true

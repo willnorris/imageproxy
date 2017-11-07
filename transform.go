@@ -125,10 +125,8 @@ func evaluateFloatUpScale(f float64, max int, factor bool) int {
 		return 0
 	}
 	if factor {
-		fmt.Print("factor\n")
 		return int(float64(max) * f)
 	} else {
-		fmt.Print("not factor\n")
 		return int(f)
 	}
 }
