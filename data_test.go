@@ -31,12 +31,20 @@ func TestOptions_String(t *testing.T) {
 			"0x0",
 		},
 		{
-			Options{1, 2, true, 90, true, true, 80, "", false},
+			Options{1, 2, true, 90, true, true, 80, "", false, "", 0, 0, 0, 0, false},
 			"1x2,fit,r90,fv,fh,q80",
 		},
 		{
-			Options{0.15, 1.3, false, 45, false, false, 95, "c0ffee", false},
-			"0.15x1.3,r45,q95,sc0ffee",
+			Options{0.15, 1.3, false, 45, false, false, 95, "c0ffee", false, "png", 0, 0, 0, 0, false},
+			"0.15x1.3,r45,q95,sc0ffee,png",
+		},
+		{
+			Options{0.15, 1.3, false, 45, false, false, 95, "c0ffee", false, "", 100, 200, 0, 0, false},
+			"0.15x1.3,r45,q95,sc0ffee,cx100,cy200",
+		},
+		{
+			Options{0.15, 1.3, false, 45, false, false, 95, "c0ffee", false, "png", 100, 200, 300, 400, false},
+			"0.15x1.3,r45,q95,sc0ffee,png,cx100,cy200,cw300,ch400",
 		},
 	}
 
@@ -72,6 +80,7 @@ func TestParseOptions(t *testing.T) {
 		{"r90", Options{Rotate: 90}},
 		{"fv", Options{FlipVertical: true}},
 		{"fh", Options{FlipHorizontal: true}},
+		{"jpeg", Options{Format: "jpeg"}},
 
 		// duplicate flags (last one wins)
 		{"1x2,3x4", Options{Width: 3, Height: 4}},
@@ -79,13 +88,25 @@ func TestParseOptions(t *testing.T) {
 		{"1x2,0x3", Options{Width: 0, Height: 3}},
 		{"1x,x2", Options{Width: 1, Height: 2}},
 		{"r90,r270", Options{Rotate: 270}},
+		{"jpeg,png", Options{Format: "png"}},
 
 		// mix of valid and invalid flags
 		{"FOO,1,BAR,r90,BAZ", Options{Width: 1, Height: 1, Rotate: 90}},
 
-		// all flags, in different orders
-		{"q70,1x2,fit,r90,fv,fh,sc0ffee", Options{1, 2, true, 90, true, true, 70, "c0ffee", false}},
-		{"r90,fh,sc0ffee,q90,1x2,fv,fit", Options{1, 2, true, 90, true, true, 90, "c0ffee", false}},
+		// flags, in different orders
+		{"q70,1x2,fit,r90,fv,fh,sc0ffee,png", Options{1, 2, true, 90, true, true, 70, "c0ffee", false, "png", 0, 0, 0, 0, false}},
+		{"r90,fh,sc0ffee,png,q90,1x2,fv,fit", Options{1, 2, true, 90, true, true, 90, "c0ffee", false, "png", 0, 0, 0, 0, false}},
+
+		// all flags, in different orders with crop
+		{"q70,cx100,cw300,1x2,fit,cy200,r90,fv,ch400,fh,sc0ffee,png", Options{1, 2, true, 90, true, true, 70, "c0ffee", false, "png", 100, 200, 300, 400, false}},
+		{"ch400,r90,cw300,fh,sc0ffee,png,cx100,q90,cy200,1x2,fv,fit", Options{1, 2, true, 90, true, true, 90, "c0ffee", false, "png", 100, 200, 300, 400, false}},
+
+		// all flags, in different orders with crop & different resizes
+		{"q70,cx100,cw300,x2,fit,cy200,r90,fv,ch400,fh,sc0ffee,png", Options{0, 2, true, 90, true, true, 70, "c0ffee", false, "png", 100, 200, 300, 400, false}},
+		{"ch400,r90,cw300,fh,sc0ffee,png,cx100,q90,cy200,1x,fv,fit", Options{1, 0, true, 90, true, true, 90, "c0ffee", false, "png", 100, 200, 300, 400, false}},
+		{"ch400,r90,cw300,fh,sc0ffee,png,cx100,q90,cy200,cw,fv,fit", Options{0, 0, true, 90, true, true, 90, "c0ffee", false, "png", 100, 200, 0, 400, false}},
+		{"ch400,r90,cw300,fh,sc0ffee,png,cx100,q90,cy200,cw,fv,fit,123x321", Options{123, 321, true, 90, true, true, 90, "c0ffee", false, "png", 100, 200, 0, 400, false}},
+		{"123x321,ch400,r90,cw300,fh,sc0ffee,png,cx100,q90,cy200,cw,fv,fit", Options{123, 321, true, 90, true, true, 90, "c0ffee", false, "png", 100, 200, 0, 400, false}},
 	}
 
 	for _, tt := range tests {
@@ -150,6 +171,10 @@ func TestNewRequest(t *testing.T) {
 		{
 			"http://localhost/http:///example.com/foo",
 			"http://example.com/foo", emptyOptions, false,
+		},
+		{ // escaped path
+			"http://localhost/http://example.com/%2C",
+			"http://example.com/%2C", emptyOptions, false,
 		},
 	}
 

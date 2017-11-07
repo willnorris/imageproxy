@@ -15,7 +15,6 @@
 package imageproxy
 
 import (
-	"bytes"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -28,11 +27,19 @@ const (
 	optFit             = "fit"
 	optFlipVertical    = "fv"
 	optFlipHorizontal  = "fh"
+	optFormatJPEG      = "jpeg"
+	optFormatPNG       = "png"
+	optFormatTIFF      = "tiff"
 	optRotatePrefix    = "r"
 	optQualityPrefix   = "q"
 	optSignaturePrefix = "s"
 	optSizeDelimiter   = "x"
 	optScaleUp         = "scaleUp"
+	optCropX           = "cx"
+	optCropY           = "cy"
+	optCropWidth       = "cw"
+	optCropHeight      = "ch"
+	optSmartCrop       = "sc"
 )
 
 // URLError reports a malformed URL error.
@@ -71,44 +78,99 @@ type Options struct {
 	// Allow image to scale beyond its original dimensions.  This value
 	// will always be overwritten by the value of Proxy.ScaleUp.
 	ScaleUp bool
+
+	// Desired image format. Valid values are "jpeg", "png", "tiff".
+	Format string
+
+	// Crop rectangle params
+	CropX      float64
+	CropY      float64
+	CropWidth  float64
+	CropHeight float64
+
+	// Automatically find good crop points based on image content.
+	SmartCrop bool
 }
 
 func (o Options) String() string {
-	buf := new(bytes.Buffer)
-	fmt.Fprintf(buf, "%v%s%v", o.Width, optSizeDelimiter, o.Height)
+	opts := []string{fmt.Sprintf("%v%s%v", o.Width, optSizeDelimiter, o.Height)}
 	if o.Fit {
-		fmt.Fprintf(buf, ",%s", optFit)
+		opts = append(opts, optFit)
 	}
 	if o.Rotate != 0 {
-		fmt.Fprintf(buf, ",%s%d", string(optRotatePrefix), o.Rotate)
+		opts = append(opts, fmt.Sprintf("%s%d", string(optRotatePrefix), o.Rotate))
 	}
 	if o.FlipVertical {
-		fmt.Fprintf(buf, ",%s", optFlipVertical)
+		opts = append(opts, optFlipVertical)
 	}
 	if o.FlipHorizontal {
-		fmt.Fprintf(buf, ",%s", optFlipHorizontal)
+		opts = append(opts, optFlipHorizontal)
 	}
 	if o.Quality != 0 {
-		fmt.Fprintf(buf, ",%s%d", string(optQualityPrefix), o.Quality)
+		opts = append(opts, fmt.Sprintf("%s%d", string(optQualityPrefix), o.Quality))
 	}
 	if o.Signature != "" {
-		fmt.Fprintf(buf, ",%s%s", string(optSignaturePrefix), o.Signature)
+		opts = append(opts, fmt.Sprintf("%s%s", string(optSignaturePrefix), o.Signature))
 	}
 	if o.ScaleUp {
-		fmt.Fprintf(buf, ",%s", optScaleUp)
+		opts = append(opts, optScaleUp)
 	}
-	return buf.String()
+	if o.Format != "" {
+		opts = append(opts, o.Format)
+	}
+	if o.CropX != 0 {
+		opts = append(opts, fmt.Sprintf("%s%v", string(optCropX), o.CropX))
+	}
+	if o.CropY != 0 {
+		opts = append(opts, fmt.Sprintf("%s%v", string(optCropY), o.CropY))
+	}
+	if o.CropWidth != 0 {
+		opts = append(opts, fmt.Sprintf("%s%v", string(optCropWidth), o.CropWidth))
+	}
+	if o.CropHeight != 0 {
+		opts = append(opts, fmt.Sprintf("%s%v", string(optCropHeight), o.CropHeight))
+	}
+	if o.SmartCrop {
+		opts = append(opts, optSmartCrop)
+	}
+	return strings.Join(opts, ",")
 }
 
 // transform returns whether o includes transformation options.  Some fields
 // are not transform related at all (like Signature), and others only apply in
-// the presence of other fields (like Fit and Quality).
+// the presence of other fields (like Fit).  A non-empty Format value is
+// assumed to involve a transformation.
 func (o Options) transform() bool {
-	return o.Width != 0 || o.Height != 0 || o.Rotate != 0 || o.FlipHorizontal || o.FlipVertical
+	return o.Width != 0 || o.Height != 0 || o.Rotate != 0 || o.FlipHorizontal || o.FlipVertical || o.Quality != 0 || o.Format != "" || o.CropX != 0 || o.CropY != 0 || o.CropWidth != 0 || o.CropHeight != 0
 }
 
 // ParseOptions parses str as a list of comma separated transformation options.
-// The following options can be specified in any order:
+// The options can be specified in in order, with duplicate options overwriting
+// previous values.
+//
+// Rectangle Crop
+//
+// There are four options controlling rectangle crop:
+//
+// 	cx{x}      - X coordinate of top left rectangle corner (default: 0)
+// 	cy{y}      - Y coordinate of top left rectangle corner (default: 0)
+// 	cw{width}  - rectangle width (default: image width)
+// 	ch{height} - rectangle height (default: image height)
+//
+// For all options, integer values are interpreted as exact pixel values and
+// floats between 0 and 1 are interpreted as percentages of the original image
+// size. Negative values for cx and cy are measured from the right and bottom
+// edges of the image, respectively.
+//
+// If the crop width or height exceed the width or height of the image, the
+// crop width or height will be adjusted, preserving the specified cx and cy
+// values.  Rectangular crop is applied before any other transformations.
+//
+// Smart Crop
+//
+// The "sc" option will perform a content-aware smart crop to fit the
+// requested image width and height dimensions (see Size and Cropping below).
+// The smart crop option will override any requested rectangular crop.
 //
 // Size and Cropping
 //
@@ -150,20 +212,36 @@ func (o Options) transform() bool {
 // Quality
 //
 // The "q{qualityPercentage}" option can be used to specify the quality of the
-// output file (JPEG only)
+// output file (JPEG only). If not specified, the default value of "95" is used.
+//
+// Format
+//
+// The "jpeg", "png", and "tiff"  options can be used to specify the desired
+// image format of the proxied image.
+//
+// Signature
+//
+// The "s{signature}" option specifies an optional base64 encoded HMAC used to
+// sign the remote URL in the request.  The HMAC key used to verify signatures is
+// provided to the imageproxy server on startup.
+//
+// See https://github.com/willnorris/imageproxy/wiki/URL-signing
+// for examples of generating signatures.
 //
 // Examples
 //
-// 	0x0       - no resizing
-// 	200x      - 200 pixels wide, proportional height
-// 	0.15x     - 15% original width, proportional height
-// 	x100      - 100 pixels tall, proportional width
-// 	100x150   - 100 by 150 pixels, cropping as needed
-// 	100       - 100 pixels square, cropping as needed
-// 	150,fit   - scale to fit 150 pixels square, no cropping
-// 	100,r90   - 100 pixels square, rotated 90 degrees
-// 	100,fv,fh - 100 pixels square, flipped horizontal and vertical
-// 	200x,q80  - 200 pixels wide, proportional height, 80% quality
+// 	0x0         - no resizing
+// 	200x        - 200 pixels wide, proportional height
+// 	x0.15       - 15% original height, proportional width
+// 	100x150     - 100 by 150 pixels, cropping as needed
+// 	100         - 100 pixels square, cropping as needed
+// 	150,fit     - scale to fit 150 pixels square, no cropping
+// 	100,r90     - 100 pixels square, rotated 90 degrees
+// 	100,fv,fh   - 100 pixels square, flipped horizontal and vertical
+// 	200x,q60    - 200 pixels wide, proportional height, 60% quality
+// 	200x,png    - 200 pixels wide, converted to PNG format
+// 	cw100,ch100 - crop image to 100px square, starting at (0,0)
+// 	cx10,cy20,cw100,ch200 - crop image starting at (10,20) is 100px wide and 200px tall
 func ParseOptions(str string) Options {
 	var options Options
 
@@ -179,6 +257,10 @@ func ParseOptions(str string) Options {
 			options.FlipHorizontal = true
 		case opt == optScaleUp: // this option is intentionally not documented above
 			options.ScaleUp = true
+		case opt == optFormatJPEG, opt == optFormatPNG, opt == optFormatTIFF:
+			options.Format = opt
+		case opt == optSmartCrop:
+			options.SmartCrop = true
 		case strings.HasPrefix(opt, optRotatePrefix):
 			value := strings.TrimPrefix(opt, optRotatePrefix)
 			options.Rotate, _ = strconv.Atoi(value)
@@ -187,6 +269,18 @@ func ParseOptions(str string) Options {
 			options.Quality, _ = strconv.Atoi(value)
 		case strings.HasPrefix(opt, optSignaturePrefix):
 			options.Signature = strings.TrimPrefix(opt, optSignaturePrefix)
+		case strings.HasPrefix(opt, optCropX):
+			value := strings.TrimPrefix(opt, optCropX)
+			options.CropX, _ = strconv.ParseFloat(value, 64)
+		case strings.HasPrefix(opt, optCropY):
+			value := strings.TrimPrefix(opt, optCropY)
+			options.CropY, _ = strconv.ParseFloat(value, 64)
+		case strings.HasPrefix(opt, optCropWidth):
+			value := strings.TrimPrefix(opt, optCropWidth)
+			options.CropWidth, _ = strconv.ParseFloat(value, 64)
+		case strings.HasPrefix(opt, optCropHeight):
+			value := strings.TrimPrefix(opt, optCropHeight)
+			options.CropHeight, _ = strconv.ParseFloat(value, 64)
 		case strings.Contains(opt, optSizeDelimiter):
 			size := strings.SplitN(opt, optSizeDelimiter, 2)
 			if w := size[0]; w != "" {
@@ -225,7 +319,7 @@ func (r Request) String() string {
 // NewRequest parses an http.Request into an imageproxy Request.  Options and
 // the remote image URL are specified in the request path, formatted as:
 // /{options}/{remote_url}.  Options may be omitted, so a request path may
-// simply contian /{remote_url}.  The remote URL must be an absolute "http" or
+// simply contain /{remote_url}.  The remote URL must be an absolute "http" or
 // "https" URL, should not be URL encoded, and may contain a query string.
 //
 // Assuming an imageproxy server running on localhost, the following are all
@@ -239,7 +333,7 @@ func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 	var err error
 	req := &Request{Original: r}
 
-	path := r.URL.Path[1:] // strip leading slash
+	path := r.URL.EscapedPath()[1:] // strip leading slash
 	req.URL, err = parseURL(path)
 	if err != nil || !req.URL.IsAbs() {
 		// first segment should be options

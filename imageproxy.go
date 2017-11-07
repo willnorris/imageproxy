@@ -25,12 +25,12 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
-	"github.com/golang/glog"
 	"github.com/gregjones/httpcache"
 	tphttp "willnorris.com/go/imageproxy/third_party/http"
 )
@@ -64,6 +64,9 @@ type Proxy struct {
 	// If a call runs for longer than its time limit, a 504 Gateway Timeout
 	// response is returned.  A Timeout of zero means no timeout.
 	Timeout time.Duration
+
+	// If true, log additional debug messages
+	Verbose bool
 }
 
 // NewProxy constructs a new proxy.  The provided http RoundTripper will be
@@ -77,20 +80,28 @@ func NewProxy(transport http.RoundTripper, cache Cache) *Proxy {
 		cache = NopCache
 	}
 
-	proxy := Proxy{
+	proxy := &Proxy{
 		Cache: cache,
 	}
 
 	client := new(http.Client)
 	client.Transport = &httpcache.Transport{
-		Transport:           &TransformingTransport{transport, client},
+		Transport: &TransformingTransport{
+			Transport:     transport,
+			CachingClient: client,
+			log: func(format string, v ...interface{}) {
+				if proxy.Verbose {
+					log.Printf(format, v...)
+				}
+			},
+		},
 		Cache:               cache,
 		MarkCachedResponses: true,
 	}
 
 	proxy.Client = client
 
-	return &proxy
+	return proxy
 }
 
 // ServeHTTP handles incoming requests.
@@ -99,7 +110,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return // ignore favicon requests
 	}
 
-	if r.URL.Path == "/health-check" {
+	if r.URL.Path == "/" || r.URL.Path == "/health-check" {
 		fmt.Fprint(w, "OK")
 		return
 	}
@@ -116,7 +127,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	req, err := NewRequest(r, p.DefaultBaseURL)
 	if err != nil {
 		msg := fmt.Sprintf("invalid request URL: %v", err)
-		glog.Error(msg)
+		log.Print(msg)
 		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
@@ -125,7 +136,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	req.Options.ScaleUp = p.ScaleUp
 
 	if err := p.allowed(req); err != nil {
-		glog.Error(err)
+		log.Print(err)
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
@@ -133,36 +144,47 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	resp, err := p.Client.Get(req.String())
 	if err != nil {
 		msg := fmt.Sprintf("error fetching remote image: %v", err)
-		glog.Error(msg)
+		log.Print(msg)
 		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
 	defer resp.Body.Close()
 
 	cached := resp.Header.Get(httpcache.XFromCache)
-	glog.Infof("request: %v (served from cache: %v)", *req, cached == "1")
+	if p.Verbose {
+		log.Printf("request: %v (served from cache: %v)", *req, cached == "1")
+	}
 
-	copyHeader(w, resp, "Cache-Control")
-	copyHeader(w, resp, "Last-Modified")
-	copyHeader(w, resp, "Expires")
-	copyHeader(w, resp, "Etag")
-	copyHeader(w, resp, "Link")
+	copyHeader(w.Header(), resp.Header, "Cache-Control", "Last-Modified", "Expires", "Etag", "Link")
 
-	if is304 := check304(r, resp); is304 {
+	if should304(r, resp) {
 		w.WriteHeader(http.StatusNotModified)
 		return
 	}
 
-	copyHeader(w, resp, "Content-Length")
-	copyHeader(w, resp, "Content-Type")
+	copyHeader(w.Header(), resp.Header, "Content-Length", "Content-Type")
+
+	//Enable CORS for 3rd party applications
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body)
 }
 
-func copyHeader(w http.ResponseWriter, r *http.Response, header string) {
-	key := http.CanonicalHeaderKey(header)
-	if value, ok := r.Header[key]; ok {
-		w.Header()[key] = value
+// copyHeader copies header values from src to dst, adding to any existing
+// values with the same header name.  If keys is not empty, only those header
+// keys will be copied.
+func copyHeader(dst, src http.Header, keys ...string) {
+	if len(keys) == 0 {
+		for k, _ := range src {
+			keys = append(keys, k)
+		}
+	}
+	for _, key := range keys {
+		k := http.CanonicalHeaderKey(key)
+		for _, v := range src[k] {
+			dst.Add(k, v)
+		}
 	}
 }
 
@@ -222,7 +244,7 @@ func validSignature(key []byte, r *Request) bool {
 
 	got, err := base64.URLEncoding.DecodeString(sig)
 	if err != nil {
-		glog.Errorf("error base64 decoding signature %q", r.Options.Signature)
+		log.Printf("error base64 decoding signature %q", r.Options.Signature)
 		return false
 	}
 
@@ -233,10 +255,10 @@ func validSignature(key []byte, r *Request) bool {
 	return hmac.Equal(got, want)
 }
 
-// check304 checks whether we should send a 304 Not Modified in response to
+// should304 returns whether we should send a 304 Not Modified in response to
 // req, based on the response resp.  This is determined using the last modified
 // time and the entity tag of resp.
-func check304(req *http.Request, resp *http.Response) bool {
+func should304(req *http.Request, resp *http.Response) bool {
 	// TODO(willnorris): if-none-match header can be a comma separated list
 	// of multiple tags to be matched, or the special value "*" which
 	// matches all etags
@@ -253,7 +275,7 @@ func check304(req *http.Request, resp *http.Response) bool {
 	if err != nil {
 		return false
 	}
-	if lastModified.Before(ifModSince) {
+	if lastModified.Before(ifModSince) || lastModified.Equal(ifModSince) {
 		return true
 	}
 
@@ -272,13 +294,17 @@ type TransformingTransport struct {
 	// used rather than Transport directly in order to ensure that
 	// responses are properly cached.
 	CachingClient *http.Client
+
+	log func(format string, v ...interface{})
 }
 
 // RoundTrip implements the http.RoundTripper interface.
 func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if req.URL.Fragment == "" {
 		// normal requests pass through
-		glog.Infof("fetching remote URL: %v", req.URL)
+		if t.log != nil {
+			t.log("fetching remote URL: %v", req.URL)
+		}
 		return t.Transport.RoundTrip(req)
 	}
 
@@ -287,6 +313,11 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 	resp, err := t.CachingClient.Get(u.String())
 	if err != nil {
 		return nil, err
+	}
+
+	if should304(req, resp) {
+		// bare 304 response, full response will be used from cache
+		return &http.Response{StatusCode: http.StatusNotModified}, nil
 	}
 
 	defer resp.Body.Close()
@@ -299,14 +330,18 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 
 	img, err := Transform(b, opt)
 	if err != nil {
-		glog.Errorf("errors transforming image: %v", err)
+		log.Printf("errors transforming image: %v", err)
 		return nil, err
 	}
 
 	// replay response with transformed image and updated content length
 	buf := new(bytes.Buffer)
 	fmt.Fprintf(buf, "%s %s\n", resp.Proto, resp.Status)
-	resp.Header.WriteSubset(buf, map[string]bool{"Content-Length": true})
+	resp.Header.WriteSubset(buf, map[string]bool{
+		"Content-Length": true,
+		// exclude Content-Type header if the format may have changed during transformation
+		"Content-Type": opt.Format != "" || resp.Header.Get("Content-Type") == "image/webp" || resp.Header.Get("Content-Type") == "image/tiff",
+	})
 	fmt.Fprintf(buf, "Content-Length: %d\n\n", len(img))
 	buf.Write(img)
 
