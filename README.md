@@ -221,7 +221,8 @@ By default, width and heigh between 0 and 1 are considered as scale factor where
 those greater than 1 considered as absolute size in pixel.
 
 If you want to be able to scale up by factor (instead of by specifying an absolute size in pixel)
-you can use the option z. Here are some example :
+you can use the option z. Note that you still need to start the proxy with the option scaleUp set to true.
+Here are some example :
 
     http://localhost:8080/2,z/images/codercat.jpg => scale up by a factor of 2 (keeping proportions)
     http://localhost:8080/2x1.5,z/images/codercat.jpg => scale up by different resize factor
