@@ -46,13 +46,19 @@ var resampleFilter = imaging.Lanczos
 // encoded image in one of the supported formats (gif, jpeg, or png).  The
 // bytes of a similarly encoded image is returned.
 func Transform(img []byte, opt Options) ([]byte, error) {
+	// - skip if FailSecure is set, as we still need to test whether this is actually an image before returning
+	if !opt.transform() && !opt.FailSecure {
+		// bail if no transformation was requested
+		return img, nil
+	}
 	// decode image
 	m, format, err := image.Decode(bytes.NewReader(img))
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if !opt.transform() {
+		// if we got here, FailSecure must be set -- so we still needed to test whether this was an image.
 		// bail if no transformation was requested
 		return img, nil
 	}

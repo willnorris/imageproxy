@@ -90,6 +90,9 @@ type Options struct {
 
 	// Automatically find good crop points based on image content.
 	SmartCrop bool
+
+	// Fail Secure -- do not continue if the object is not an images
+	FailSecure bool
 }
 
 func (o Options) String() string {
