@@ -323,6 +323,10 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 		}
 		return t.Transport.RoundTrip(req)
 	}
+	failSecure := false
+	if t.getFailSecure != nil {
+		failSecure = t.getFailSecure()
+	}
 
 	u := *req.URL
 	u.Fragment = ""
@@ -330,7 +334,7 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 	if err != nil {
 		return nil, err
 	}
-	if t.getFailSecure() && !strings.HasPrefix(resp.Header.Get("Content-Type"), "image/") {
+	if failSecure && !strings.HasPrefix(resp.Header.Get("Content-Type"), "image/") {
 		return &http.Response{StatusCode: http.StatusForbidden, Body: nopCloser{bytes.NewBufferString("Invalid target content-type")} }, nil
 	}
 
@@ -347,14 +351,14 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 
 	opt := ParseOptions(req.URL.Fragment)
 
-	if t.getFailSecure() {
+	if failSecure {
 		opt.FailSecure = true
 	}
 
 	img, err := Transform(b, opt)
 	if err != nil {
 		log.Printf("error transforming image: %v", err)
-		if t.getFailSecure() {
+		if failSecure {
 			// return a 403
 			return &http.Response{StatusCode: http.StatusForbidden, Body: nopCloser{bytes.NewBufferString("Invalid target content")} }, nil
 		} else {
