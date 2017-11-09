@@ -46,15 +46,15 @@ var resampleFilter = imaging.Lanczos
 // encoded image in one of the supported formats (gif, jpeg, or png).  The
 // bytes of a similarly encoded image is returned.
 func Transform(img []byte, opt Options) ([]byte, error) {
-	if !opt.transform() {
-		// bail if no transformation was requested
-		return img, nil
-	}
-
 	// decode image
 	m, format, err := image.Decode(bytes.NewReader(img))
 	if err != nil {
 		return nil, err
+	}
+	
+	if !opt.transform() {
+		// bail if no transformation was requested
+		return img, nil
 	}
 
 	// apply EXIF orientation for jpeg and tiff source images. Read at most
