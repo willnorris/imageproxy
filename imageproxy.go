@@ -67,6 +67,9 @@ type Proxy struct {
 
 	// If true, log additional debug messages
 	Verbose bool
+
+	// flag to fail secure if target unparseable
+	FailSecure bool
 }
 
 // NewProxy constructs a new proxy.  The provided http RoundTripper will be
@@ -93,6 +96,9 @@ func NewProxy(transport http.RoundTripper, cache Cache) *Proxy {
 				if proxy.Verbose {
 					log.Printf(format, v...)
 				}
+			},
+			getFailSecure: func() bool {
+				return proxy.FailSecure
 			},
 		},
 		Cache:               cache,
@@ -140,7 +146,9 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
-
+	if p.Timeout > 0 {
+		p.Client.Timeout = p.Timeout
+	}
 	resp, err := p.Client.Get(req.String())
 	if err != nil {
 		msg := fmt.Sprintf("error fetching remote image: %v", err)
@@ -296,7 +304,15 @@ type TransformingTransport struct {
 	CachingClient *http.Client
 
 	log func(format string, v ...interface{})
+
+	getFailSecure func() bool
 }
+
+type nopCloser struct {
+    io.Reader
+}
+
+func (nopCloser) Close() error { return nil }
 
 // RoundTrip implements the http.RoundTripper interface.
 func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -331,7 +347,13 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 	img, err := Transform(b, opt)
 	if err != nil {
 		log.Printf("error transforming image: %v", err)
-		img = b
+		if t.getFailSecure() {
+			// return a 403
+			return &http.Response{StatusCode: http.StatusForbidden, Body: nopCloser{bytes.NewBufferString("Invalid target")} }, nil
+		} else {
+			// fall back to old behaviour -- return bytes
+			img = b
+		}
 	}
 
 	// replay response with transformed image and updated content length

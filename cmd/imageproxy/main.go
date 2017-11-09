@@ -51,6 +51,7 @@ var scaleUp = flag.Bool("scaleUp", false, "allow images to scale beyond their or
 var timeout = flag.Duration("timeout", 0, "time limit for requests served by this proxy")
 var verbose = flag.Bool("verbose", false, "print verbose logging messages")
 var version = flag.Bool("version", false, "Deprecated: this flag does nothing")
+var failsecure = flag.Bool("failsecure", false, "Fail secure: if downstream response is unparseable as an image, return an error")
 
 func init() {
 	flag.Var(&cache, "cache", "location to cache images (see https://github.com/willnorris/imageproxy#cache)")
@@ -89,6 +90,7 @@ func main() {
 	p.Timeout = *timeout
 	p.ScaleUp = *scaleUp
 	p.Verbose = *verbose
+	p.FailSecure = *failsecure
 
 	server := &http.Server{
 		Addr:    *addr,
