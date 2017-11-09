@@ -330,6 +330,9 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 	if err != nil {
 		return nil, err
 	}
+	if t.getFailSecure() && !strings.HasPrefix(resp.Header.Get("Content-Type"), "image/") {
+		return &http.Response{StatusCode: http.StatusForbidden, Body: nopCloser{bytes.NewBufferString("Invalid target content-type")} }, nil
+	}
 
 	if should304(req, resp) {
 		// bare 304 response, full response will be used from cache
@@ -349,7 +352,7 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 		log.Printf("error transforming image: %v", err)
 		if t.getFailSecure() {
 			// return a 403
-			return &http.Response{StatusCode: http.StatusForbidden, Body: nopCloser{bytes.NewBufferString("Invalid target")} }, nil
+			return &http.Response{StatusCode: http.StatusForbidden, Body: nopCloser{bytes.NewBufferString("Invalid target content")} }, nil
 		} else {
 			// fall back to old behaviour -- return bytes
 			img = b
