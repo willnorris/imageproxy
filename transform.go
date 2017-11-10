@@ -24,6 +24,7 @@ import (
 	"io"
 	"log"
 	"math"
+	"time"
 
 	"github.com/disintegration/imaging"
 	"github.com/muesli/smartcrop"
@@ -269,6 +270,7 @@ func transformImage(m image.Image, opt Options) image.Image {
 	// Parse crop and resize parameters before applying any transforms.
 	// This is to ensure that any percentage-based values are based off the
 	// size of the original image.
+	start := time.Now()
 	rect := cropParams(m, opt)
 	w, h, resize := resizeParams(m, opt)
 
@@ -308,5 +310,6 @@ func transformImage(m image.Image, opt Options) image.Image {
 		m = imaging.FlipH(m)
 	}
 
+	imageTransformationSummary.Observe(float64(time.Since(start).Seconds()))
 	return m
 }
