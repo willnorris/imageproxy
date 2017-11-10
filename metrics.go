@@ -1,8 +1,6 @@
 package imageproxy
 
 import (
-	"log"
-
 	"github.com/prometheus/client_golang/prometheus"
 )
 
