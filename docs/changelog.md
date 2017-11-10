@@ -9,6 +9,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 [Unreleased]: https://github.com/willnorris/imageproxy/compare/v0.9.0...HEAD
  - added option to include referer header in remote requests
    ([#216](https://github.com/willnorris/imageproxy/issues/216))
+ - added basic support for recording prometheus metrics
+   ([#121](https://github.com/willnorris/imageproxy/pull/121)
+   [benhaan](https://github.com/benhaan))
 
 ## [0.9.0] (2019-06-10)
 [0.9.0]: https://github.com/willnorris/imageproxy/compare/v0.8.0...v0.9.0
