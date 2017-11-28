@@ -334,6 +334,15 @@ func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 	req := &Request{Original: r}
 
 	path := r.URL.EscapedPath()[1:] // strip leading slash
+
+	// Since remote urls can contain querystring parameters,
+	// the remove url must be URL encoded and passed in via a querystring
+	// parameter named, 'remoteurl'
+	if r.URL.Query().Get("remoteurl") != "" {
+		// remoteurl querystring parameter takes precedence over path
+		path = r.URL.Query().Get("remoteurl")
+	}
+
 	req.URL, err = parseURL(path)
 	if err != nil || !req.URL.IsAbs() {
 		// first segment should be options
@@ -363,8 +372,11 @@ func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 		return nil, URLError{"remote URL must have http or https scheme", r.URL}
 	}
 
-	// query string is always part of the remote URL
-	req.URL.RawQuery = r.URL.RawQuery
+	// query string is always part of the remote URL only
+	// when Remote URL is passed in via the encoded querystring value '&remoteurl='
+	if r.URL.Query().Get("remoteurl") == "" {
+		req.URL.RawQuery = r.URL.RawQuery
+	}
 	return req, nil
 }
 

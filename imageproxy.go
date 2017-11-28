@@ -110,7 +110,12 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return // ignore favicon requests
 	}
 
-	if r.URL.Path == "/" || r.URL.Path == "/health-check" {
+	if r.URL.Path == "/health-check" {
+		fmt.Fprint(w, "HEALTHY")
+		return
+	}
+
+	if r.URL.Path == "/" && r.URL.Query().Get("remoteurl") == "" {
 		fmt.Fprint(w, "OK")
 		return
 	}
