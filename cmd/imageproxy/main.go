@@ -27,6 +27,8 @@ import (
 	"strings"
 	"time"
 
+	"the-maven/imageproxy/internal/s3cache"
+
 	"github.com/PaulARoy/azurestoragecache"
 	"github.com/die-net/lrucache"
 	"github.com/die-net/lrucache/twotier"
@@ -36,7 +38,6 @@ import (
 	rediscache "github.com/gregjones/httpcache/redis"
 	"github.com/peterbourgon/diskv"
 	"willnorris.com/go/imageproxy"
-	"willnorris.com/go/imageproxy/internal/s3cache"
 )
 
 const defaultMemorySize = 100
