@@ -27,7 +27,7 @@ import (
 	"strings"
 	"time"
 
-	"the-maven/imageproxy/internal/s3cache"
+	//	"the-maven/imageproxy/internal/s3cache"
 
 	"github.com/PaulARoy/azurestoragecache"
 	"github.com/die-net/lrucache"
@@ -152,8 +152,8 @@ func parseCache(c string) (imageproxy.Cache, error) {
 			return nil, err
 		}
 		return rediscache.NewWithClient(conn), nil
-	case "s3":
-		return s3cache.New(u.String())
+		//	case "s3":
+		//		return s3cache.New(u.String())
 	case "file":
 		fallthrough
 	default:
