@@ -322,6 +322,13 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 
 	defer resp.Body.Close()
 	b, err := ioutil.ReadAll(resp.Body)
+	contentType := http.DetectContentType(b)
+	if !strings.HasPrefix(contentType, "image") {
+		msg := "Invalid Content-Type requested"
+		log.Printf(msg)
+		body := ioutil.NopCloser(bytes.NewReader([]byte(msg)))
+		return &http.Response{StatusCode: http.StatusBadRequest, Body: body}, nil
+	}
 	if err != nil {
 		return nil, err
 	}
