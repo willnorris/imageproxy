@@ -330,17 +330,17 @@ func (r Request) String() string {
 // 	http://localhost//http://example.com/image.jpg
 // 	http://localhost/http://example.com/image.jpg
 func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
+
+	var isRemoteURLEncoded = false
 	var err error
 	req := &Request{Original: r}
 
 	path := r.URL.EscapedPath()[1:] // strip leading slash
 
-	// Since remote urls can contain querystring parameters,
-	// the remove url must be URL encoded and passed in via a querystring
-	// parameter named, 'remoteurl'
-	if r.URL.Query().Get("remoteurl") != "" {
-		// remoteurl querystring parameter takes precedence over path
-		path = r.URL.Query().Get("remoteurl")
+	if strings.Contains(path, "%") {
+		isRemoteURLEncoded = true
+		// Only unescape a path known to be URL encoded
+		path, err = url.PathUnescape(path)
 	}
 
 	req.URL, err = parseURL(path)
@@ -374,9 +374,10 @@ func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 
 	// query string is always part of the remote URL only
 	// when Remote URL is passed in via the encoded querystring value '&remoteurl='
-	if r.URL.Query().Get("remoteurl") == "" {
+	if isRemoteURLEncoded == false {
 		req.URL.RawQuery = r.URL.RawQuery
 	}
+
 	return req, nil
 }
 
