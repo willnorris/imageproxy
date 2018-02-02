@@ -30,12 +30,12 @@ import (
 	"github.com/PaulARoy/azurestoragecache"
 	"github.com/die-net/lrucache"
 	"github.com/die-net/lrucache/twotier"
-	"github.com/diegomarangoni/gcscache"
 	"github.com/garyburd/redigo/redis"
 	"github.com/gregjones/httpcache/diskcache"
 	rediscache "github.com/gregjones/httpcache/redis"
 	"github.com/peterbourgon/diskv"
 	"willnorris.com/go/imageproxy"
+	"willnorris.com/go/imageproxy/internal/gcscache"
 	"willnorris.com/go/imageproxy/internal/s3cache"
 )
 
@@ -142,7 +142,7 @@ func parseCache(c string) (imageproxy.Cache, error) {
 	case "azure":
 		return azurestoragecache.New("", "", u.Host)
 	case "gcs":
-		return gcscache.New(u.String()), nil
+		return gcscache.New(u.Host, strings.TrimPrefix(u.Path, "/"))
 	case "memory":
 		return lruCache(u.Opaque)
 	case "redis":
