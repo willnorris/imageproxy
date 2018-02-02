@@ -112,7 +112,12 @@ enabled using the `-cache` flag.  It supports the following values:
    package](https://docs.aws.amazon.com/sdk-for-go/api/aws/session/)).
  - gcs URL (e.g. `gcs://bucket-name/optional-path-prefix`) - will cache images
    on Google Cloud Storage.  This requires `GCP_PRIVATE_KEY` environmental
-   variable be set.
+   variable be set. The contents of this variable can be obtained at:
+   `https://console.cloud.google.com/iam-admin/serviceaccounts/project?project=<PROJECTNAME>`
+   Click the triple-dot on the far right of a service account role and choose `Create key`.
+   This will trigger download of a `.json` file.  Suppose the file is called `x.json`.  You
+   can then run the command ``GCP_PRIVATE_KEY=`cat x.json` ``.
+
  - azure URL (e.g. `azure://container-name/`) - will cache images on
    Azure Storage.  This requires `AZURESTORAGE_ACCOUNT_NAME` and
  - redis URL (e.g. `redis://hostname/`) - will cache images on
