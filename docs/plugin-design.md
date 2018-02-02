@@ -90,8 +90,8 @@ an external store (redis, cloud providers, etc) would be pulled out.
 
 Today, imageproxy only performs transformations which can be done with pure Go
 libraries. There have been a number of requests (or at least questions) to use
-something like (vips)[https://github.com/DAddYE/vips] or
-(imagemagick)[https://github.com/gographics/imagick], which are both C
+something like [vips](https://github.com/DAddYE/vips) or
+[imagemagick](https://github.com/gographics/imagick), which are both C
 libraries. They provide more options, and (likely) better performance, at the
 cost of complexity and loss of portability in using cgo. These would likely
 replace the entire transformation engine in imageproxy, so I don't know how
@@ -139,3 +139,55 @@ non-image files [#53](https://github.com/willnorris/imageproxy/issues/53)
 is an issue for it, but an early fork of the project added request signing that
 was compatible with nginx's [secure link
 module](https://nginx.org/en/docs/http/ngx_http_secure_link_module.html).
+
+### Registering Plugins
+
+Plugins are loaded simply by importing their package.  They should have an
+`init` func that calls `imageproxy.RegisterPlugin`:
+
+``` go
+type Plugin struct {
+}
+
+func RegisterPlugin(name string, plugin Plugin)
+```
+
+Plugins hook into various extension points of imageproxy by implementing
+appropriate interfaces.  A single plugin can hook into multiple parts of
+imageproxy by implementing multiple interfaces.
+
+For example, two possible interfaces for security related plugins:
+
+``` go
+// A RequestAuthorizer determines if a request is authorized to be processed.
+// Requests are processed before the remote resource is retrieved.
+type RequestAuthorizer interface {
+    // Authorize returns an error if the request should not
+    // be processed further (for example, it doesn't have a
+    // valid signature, is not for a whitelisted host, etc).
+    AuthorizeRequest(req *http.Request) error
+}
+
+// A ResponseAuthorizer determines if a response from a remote server
+// is authorized to be returned.
+type ResponseAuthorizer interface {
+    // AuthorizeResponse returns an error if a response should not be
+    // returned to a client (for example, it is not for an image
+    // resource, etc).
+    AuthorizeResponse(res http.Response) error
+}
+```
+
+A hypothetical interface for plugins that transform images:
+
+``` go
+// An ImageTransformer transforms an image.
+type ImageTransformer interface {
+   // TransformImage based on the provided options and return the result.
+   TransformImage(m image.Image, opt Options) image.Image
+}
+```
+
+Plugins are additionally responsible for registering any additional command
+line flags they wish to expose to the user, as well as storing any global state
+that would previously have been stored on the Proxy struct.
