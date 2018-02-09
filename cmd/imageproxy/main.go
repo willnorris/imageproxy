@@ -51,6 +51,7 @@ var scaleUp = flag.Bool("scaleUp", false, "allow images to scale beyond their or
 var timeout = flag.Duration("timeout", 0, "time limit for requests served by this proxy")
 var verbose = flag.Bool("verbose", false, "print verbose logging messages")
 var version = flag.Bool("version", false, "Deprecated: this flag does nothing")
+var contentTypes = flag.String("contentTypes", "", "comma separated list of allowed content types")
 
 func init() {
 	flag.Var(&cache, "cache", "location to cache images (see https://github.com/willnorris/imageproxy#cache)")

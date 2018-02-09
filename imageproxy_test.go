@@ -299,12 +299,12 @@ func (t testTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	var raw string
 
 	switch req.URL.Path {
-	case "/ok":
+	case "/plain":
 		raw = "HTTP/1.1 200 OK\n\n"
 	case "/error":
 		return nil, errors.New("http protocol error")
 	case "/nocontent":
-		raw = "HTTP/1.1 204 No Content\n\n"
+		raw = "HTTP/1.1 204 No Content\nContent-Type: image/png\n\n"
 	case "/etag":
 		raw = "HTTP/1.1 200 OK\nEtag: \"tag\"\n\n"
 	case "/png":
@@ -312,7 +312,7 @@ func (t testTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		img := new(bytes.Buffer)
 		png.Encode(img, m)
 
-		raw = fmt.Sprintf("HTTP/1.1 200 OK\nContent-Length: %d\n\n%s", len(img.Bytes()), img.Bytes())
+		raw = fmt.Sprintf("HTTP/1.1 200 OK\nContent-Length: %d\nContent-Type: image/png\n\n%s", len(img.Bytes()), img.Bytes())
 	default:
 		raw = "HTTP/1.1 404 Not Found\n\n"
 	}
@@ -338,8 +338,8 @@ func TestProxy_ServeHTTP(t *testing.T) {
 		{"/http://bad.test/", http.StatusForbidden},                 // Disallowed host
 		{"/http://good.test/error", http.StatusInternalServerError}, // HTTP protocol error
 		{"/http://good.test/nocontent", http.StatusNoContent},       // non-OK response
-
-		{"/100/http://good.test/ok", http.StatusOK},
+		{"/100/http://good.test/png", http.StatusOK},
+		{"/100/http://good.test/plain", http.StatusForbidden}, // non-image response
 	}
 
 	for _, tt := range tests {
@@ -408,6 +408,42 @@ func TestTransformingTransport(t *testing.T) {
 		}
 		if got, want := resp.StatusCode, tt.code; got != want {
 			t.Errorf("RoundTrip(%v) returned status code %d, want %d", tt.url, got, want)
+		}
+	}
+}
+
+func TestAllowedContentType(t *testing.T) {
+	p := &Proxy{}
+
+	for contentType, expected := range map[string]string{
+		"":                   "",
+		"image/png":          "image/png",
+		"image/PNG":          "image/png",
+		"image/PNG; foo=bar": "image/png",
+		"text/html":          "",
+	} {
+		actual := p.allowedContentType(contentType)
+		if actual != expected {
+			t.Errorf("got %v, expected %v for content type: %v", actual, expected, contentType)
+		}
+	}
+}
+
+func TestAllowedContentType_Whitelist(t *testing.T) {
+	p := &Proxy{
+		ContentTypes: []string{"foo/*", "bar/baz"},
+	}
+
+	for contentType, expected := range map[string]string{
+		"":          "",
+		"image/png": "",
+		"foo/asdf":  "foo/asdf",
+		"bar/baz":   "bar/baz",
+		"bar/bazz":  "",
+	} {
+		actual := p.allowedContentType(contentType)
+		if actual != expected {
+			t.Errorf("got %v, expected %v for content type: %v", actual, expected, contentType)
 		}
 	}
 }
