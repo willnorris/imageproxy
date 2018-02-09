@@ -188,6 +188,13 @@ The HMAC key is specified using the `signatureKey` flag.  If this flag
 begins with an "@", the remainder of the value is interpreted as a file on disk
 which contains the HMAC key.
 
+To include the signature in your requests, add `,s${SIGNATURE}` to your URL.
+An example url would look something like: 
+
+```
+http://localhost:8080/500,sXyMwWKIC5JPCtlYOQ2f4yMBTqpjtUsfI67Sp7huXIYY=/https://octodex.github.com/images/codercat.jpg
+```
+
 Try it out by running:
 
     imageproxy -signatureKey "secret key"
