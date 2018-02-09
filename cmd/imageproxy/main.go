@@ -67,6 +67,9 @@ func main() {
 	if *referrers != "" {
 		p.Referrers = strings.Split(*referrers, ",")
 	}
+	if *contentTypes != "" {
+		p.ContentTypes = strings.Split(*contentTypes, ",")
+	}
 	if *signatureKey != "" {
 		key := []byte(*signatureKey)
 		if strings.HasPrefix(*signatureKey, "@") {
