@@ -228,8 +228,8 @@ func (p *Proxy) allowed(r *Request) error {
 // allowedContentType returns an allowed content type string to use in responses or "" if the
 // content type cannot be used.
 func (p *Proxy) allowedContentType(contentType string) string {
-	mediaType, _, err := mime.ParseMediaType(contentType)
-	if err != nil && err != mime.ErrInvalidMediaParameter {
+	mediaType, _, _ := mime.ParseMediaType(contentType)
+	if mediaType == "" {
 		return ""
 	}
 
