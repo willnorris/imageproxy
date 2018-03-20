@@ -36,6 +36,7 @@ import (
 	"github.com/peterbourgon/diskv"
 	"willnorris.com/go/imageproxy"
 	"willnorris.com/go/imageproxy/internal/gcscache"
+	"willnorris.com/go/imageproxy/internal/miniocache"
 	"willnorris.com/go/imageproxy/internal/s3cache"
 )
 
@@ -153,6 +154,8 @@ func parseCache(c string) (imageproxy.Cache, error) {
 		return rediscache.NewWithClient(conn), nil
 	case "s3":
 		return s3cache.New(u.String())
+	case "http":
+		return miniocache.New(u.String())
 	case "file":
 		fallthrough
 	default:

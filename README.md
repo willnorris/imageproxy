@@ -114,6 +114,11 @@ enabled using the `-cache` flag.  It supports the following values:
    environmental variables be set. (Additional methods of loading credentials
    are documented in the [aws-sdk-go session
    package](https://docs.aws.amazon.com/sdk-for-go/api/aws/session/)).
+ - http (Minio) URL (e.g. `http://endpoint/region/bucket/optional-path-prefix`) - will cache
+   images on Minio S3.  This requires `AWS_ACCESS_KEY_ID` and `AWS_SECRET_KEY`
+   environmental variables be set. (Additional methods of loading credentials
+   are documented in the [aws-sdk-go session
+   package](https://docs.aws.amazon.com/sdk-for-go/api/aws/session/)).
  - gcs URL (e.g. `gcs://bucket-name/optional-path-prefix`) - will cache images
    on Google Cloud Storage. Authentication is documented in Google's
    [Application Default Credentials
