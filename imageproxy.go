@@ -33,6 +33,7 @@ import (
 	"github.com/golang/glog"
 	"github.com/gregjones/httpcache"
 	tphttp "willnorris.com/go/imageproxy/third_party/http"
+	"willnorris.com/go/imageproxy/third_party/httputil"
 )
 
 var emptyBody io.ReadCloser = ioutil.NopCloser(new(bytes.Buffer))
@@ -66,6 +67,8 @@ type Proxy struct {
 	// If a call runs for longer than its time limit, a 504 Gateway Timeout
 	// response is returned.  A Timeout of zero means no timeout.
 	Timeout time.Duration
+
+	rp *httputil.ReverseProxy
 }
 
 // NewProxy constructs a new proxy.  The provided http RoundTripper will be
@@ -91,6 +94,11 @@ func NewProxy(transport http.RoundTripper, cache Cache) *Proxy {
 	}
 
 	proxy.Client = client
+	proxy.rp = &httputil.ReverseProxy{
+		Director:       proxy.director,
+		Transport:      client.Transport,
+		ModifyResponse: proxy.modifyResponse,
+	}
 
 	return &proxy
 }
@@ -106,80 +114,43 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var h http.Handler = http.HandlerFunc(p.serveImage)
+	var h http.Handler = p.rp
 	if p.Timeout > 0 {
 		h = tphttp.TimeoutHandler(h, p.Timeout, "Gateway timeout waiting for remote resource.")
 	}
 	h.ServeHTTP(w, r)
 }
 
-// serveImage handles incoming requests for proxied images.
-func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
-	req, err := NewRequest(r, p.DefaultBaseURL)
+func (p *Proxy) director(req *http.Request) error {
+	r, err := NewRequest(req, p.DefaultBaseURL)
 	if err != nil {
-		p.writeError(w, err)
-		return
+		return err
 	}
 
-	// assign static settings from proxy to req.Options
-	req.Options.ScaleUp = p.ScaleUp
+	// assign static settings from proxy to r.Options
+	r.Options.ScaleUp = p.ScaleUp
 
-	if err := p.allowed(req); err != nil {
-		p.writeError(w, err)
-		return
+	if err := p.allowed(r); err != nil {
+		return err
 	}
 
-	resp, err := p.Client.Get(req.String())
-	if err != nil {
-		p.writeError(w, err)
-		return
-	}
-	defer resp.Body.Close()
+	*req.URL = *r.URL
+	req.URL.Fragment = r.Options.String()
+	return nil
+}
 
+func (p *Proxy) modifyResponse(resp *http.Response) error {
 	cached := resp.Header.Get(httpcache.XFromCache)
-	glog.Infof("request: %v (served from cache: %v)", *req, cached == "1")
-
-	copyHeader(w.Header(), resp.Header, "Cache-Control", "Last-Modified", "Expires", "Etag", "Link")
-
-	if should304(r, resp) {
-		w.WriteHeader(http.StatusNotModified)
-		return
+	if resp.Request != nil && resp.Request.URL != nil {
+		glog.Infof("request: %v (served from cache: %v)", resp.Request.URL.String(), cached == "1")
 	}
 
-	copyHeader(w.Header(), resp.Header, "Content-Length", "Content-Type")
-	w.WriteHeader(resp.StatusCode)
-	io.Copy(w, resp.Body)
-}
-
-// writerError writes err to the http response.
-func (p *Proxy) writeError(w http.ResponseWriter, err error) {
-	type statusCoder interface {
-		StatusCode() int
+	if should304(resp.Request, resp) {
+		resp.StatusCode = http.StatusNotModified
+		resp.Body = emptyBody
 	}
 
-	glog.Error(err)
-	code := http.StatusBadGateway
-	if err, ok := err.(statusCoder); ok {
-		code = err.StatusCode()
-	}
-	http.Error(w, err.Error(), code)
-}
-
-// copyHeader copies header values from src to dst, adding to any existing
-// values with the same header name.  If keys is not empty, only those header
-// keys will be copied.
-func copyHeader(dst, src http.Header, keys ...string) {
-	if len(keys) == 0 {
-		for k, _ := range src {
-			keys = append(keys, k)
-		}
-	}
-	for _, key := range keys {
-		k := http.CanonicalHeaderKey(key)
-		for _, v := range src[k] {
-			dst.Add(k, v)
-		}
-	}
+	return nil
 }
 
 // allowed determines whether the specified request contains an allowed
@@ -307,7 +278,7 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 
 	if should304(req, resp) {
 		// bare 304 response, full response will be used from cache
-		return &http.Response{StatusCode: http.StatusNotModified, Body: emptyBody}, nil
+		return &http.Response{StatusCode: http.StatusNotModified, Body: emptyBody, Request: req}, nil
 	}
 
 	defer resp.Body.Close()
@@ -323,6 +294,7 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 		glog.Errorf("error transforming image: %v", err)
 		img = b
 	}
+	glog.Infof("image size after transform: %d", len(img))
 
 	// replay response with transformed image and updated content length
 	buf := new(bytes.Buffer)
