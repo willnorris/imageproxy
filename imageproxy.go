@@ -330,7 +330,7 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 
 	img, err := Transform(b, opt)
 	if err != nil {
-		log.Printf("error transforming image: %v", err)
+		log.Printf("error transforming image %s: %v", u.String(), err)
 		img = b
 	}
 
