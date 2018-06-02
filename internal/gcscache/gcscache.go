@@ -1,4 +1,4 @@
-// Package s3cache provides an httpcache.Cache implementation that stores
+// Package gcscache provides an httpcache.Cache implementation that stores
 // cached values on Google Cloud Storage.
 package gcscache
 
