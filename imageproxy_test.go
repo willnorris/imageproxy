@@ -412,36 +412,28 @@ func TestTransformingTransport(t *testing.T) {
 	}
 }
 
-func TestAllowedContentType(t *testing.T) {
-	p := &Proxy{}
-
-	for contentType, expected := range map[string]string{
-		"":                   "",
-		"image/png":          "image/png",
-		"image/PNG":          "image/png",
-		"image/PNG; foo=bar": "image/png",
-		"text/html":          "",
+func TestValidContentType(t *testing.T) {
+	for contentType, expected := range map[string]bool{
+		"":          false,
+		"image/png": true,
+		"text/html": false,
 	} {
-		actual := p.allowedContentType(contentType)
+		actual := validContentType(nil, contentType)
 		if actual != expected {
 			t.Errorf("got %v, expected %v for content type: %v", actual, expected, contentType)
 		}
 	}
 }
 
-func TestAllowedContentType_Whitelist(t *testing.T) {
-	p := &Proxy{
-		ContentTypes: []string{"foo/*", "bar/baz"},
-	}
-
-	for contentType, expected := range map[string]string{
-		"":          "",
-		"image/png": "",
-		"foo/asdf":  "foo/asdf",
-		"bar/baz":   "bar/baz",
-		"bar/bazz":  "",
+func TestValidContentType_Patterns(t *testing.T) {
+	for contentType, expected := range map[string]bool{
+		"":          false,
+		"image/png": false,
+		"foo/asdf":  true,
+		"bar/baz":   true,
+		"bar/bazz":  false,
 	} {
-		actual := p.allowedContentType(contentType)
+		actual := validContentType([]string{"foo/*", "bar/baz"}, contentType)
 		if actual != expected {
 			t.Errorf("got %v, expected %v for content type: %v", actual, expected, contentType)
 		}

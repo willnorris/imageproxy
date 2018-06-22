@@ -168,13 +168,13 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if contentType := p.allowedContentType(resp.Header.Get("Content-Type")); contentType != "" {
-		w.Header().Set("Content-Type", contentType)
-		w.Header().Set("X-Content-Type-Options", "nosniff")
-	} else {
+	contentType, _, _ := mime.ParseMediaType(resp.Header.Get("Content-Type"))
+	if !validContentType(p.ContentTypes, contentType) {
 		http.Error(w, "forbidden content-type", http.StatusForbidden)
 		return
 	}
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("X-Content-Type-Options", "nosniff")
 
 	copyHeader(w.Header(), resp.Header, "Content-Length")
 
@@ -225,16 +225,11 @@ func (p *Proxy) allowed(r *Request) error {
 	return fmt.Errorf("request does not contain an allowed host or valid signature: %v", r)
 }
 
-// allowedContentType returns an allowed content type string to use in responses or "" if the
-// content type cannot be used.
-func (p *Proxy) allowedContentType(contentType string) string {
-	mediaType, _, _ := mime.ParseMediaType(contentType)
-	if mediaType == "" {
-		return ""
-	}
-
-	if len(p.ContentTypes) == 0 {
-		switch mediaType {
+// validContentType returns whether contentType matches one of the patterns. If no patterns are
+// given, validContentType returns true if contentType matches one of the whitelisted image types.
+func validContentType(patterns []string, contentType string) bool {
+	if len(patterns) == 0 {
+		switch contentType {
 		case "image/bmp", "image/cgm", "image/g3fax", "image/gif", "image/ief", "image/jp2",
 			"image/jpeg", "image/jpg", "image/pict", "image/png", "image/prs.btif", "image/svg+xml",
 			"image/tiff", "image/vnd.adobe.photoshop", "image/vnd.djvu", "image/vnd.dwg",
@@ -246,18 +241,18 @@ func (p *Proxy) allowedContentType(contentType string) string {
 			"image/x-portable-bitmap", "image/x-portable-graymap", "image/x-portable-pixmap",
 			"image/x-quicktime", "image/x-rgb", "image/x-xbitmap", "image/x-xpixmap",
 			"image/x-xwindowdump":
-			return mediaType
+			return true
 		}
-		return ""
+		return false
 	}
 
-	for _, pattern := range p.ContentTypes {
-		if ok, err := filepath.Match(pattern, mediaType); ok && err == nil {
-			return mediaType
+	for _, pattern := range patterns {
+		if ok, err := filepath.Match(pattern, contentType); ok && err == nil {
+			return true
 		}
 	}
 
-	return ""
+	return false
 }
 
 // validHost returns whether the host in u matches one of hosts.
