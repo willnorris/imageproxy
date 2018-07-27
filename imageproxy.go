@@ -17,6 +17,7 @@
 package imageproxy // import "willnorris.com/go/imageproxy"
 
 import (
+	"bufio"
 	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
