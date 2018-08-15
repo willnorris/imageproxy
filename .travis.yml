@@ -6,7 +6,7 @@ go:
 
 sudo: false
 
-go_import_path: willnorris.com/go/imageproxy
+go_import_path: github.com/d3sw/imageproxy
 
 install:
  - # skip go get, which ensures all dependencies are vendored

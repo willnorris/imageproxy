@@ -22,6 +22,11 @@ additional image adjustment options.
 [this post]: https://willnorris.com/2014/01/a-self-hosted-alternative-to-jetpacks-photon-service
 [atmos/camo]: https://github.com/atmos/camo
 
+## Deluxe Changes
+
+As this is forked project, this section details the scope of those changes, so that merging in changes will be easier
+
+* Package structure (willnorris.com/go/imageproxy -> github.com/d3sw/imageproxy)
 
 ## URL Structure ##
 
@@ -252,7 +257,7 @@ In most cases, you can follow the normal procedure for building a deploying any
 go application.  For example, I build it directly on my production debian server
 using:
 
- - `go build willnorris.com/go/imageproxy/cmd/imageproxy`
+ - `go build github.com/d3sw/imageproxy/cmd/imageproxy`
  - copy resulting binary to `/usr/local/bin`
  - copy [`etc/imageproxy.service`](etc/imageproxy.service) to
    `/lib/systemd/system` and enable using `systemctl`.
