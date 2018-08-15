@@ -17,7 +17,7 @@ import (
 func Main() {
 	installHealthChecker(http.DefaultServeMux)
 
-	port := "8080"
+	port := "9091"
 	if s := os.Getenv("PORT"); s != "" {
 		port = s
 	}

@@ -22,7 +22,7 @@ import (
 // Main is the principal entry point for an app running in App Engine.
 //
 // On App Engine Flexible it installs a trivial health checker if one isn't
-// already registered, and starts listening on port 8080 (overridden by the
+// already registered, and starts listening on port 9091 (overridden by the
 // $PORT environment variable).
 //
 // See https://cloud.google.com/appengine/docs/flexible/custom-runtimes#health_check_requests
