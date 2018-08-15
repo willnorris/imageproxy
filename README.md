@@ -27,6 +27,11 @@ additional image adjustment options.
 As this is forked project, this section details the scope of those changes, so that merging in changes will be easier
 
 * Package structure (willnorris.com/go/imageproxy -> github.com/d3sw/imageproxy)
+* Using a makefile to build (use `make clean dist`)
+* Changed default port from 8080 -> 9091
+* mold file added
+* Revised dockerfile to be friendly to makefile output
+* added dist dir to gitignore
 
 ## URL Structure ##
 
@@ -96,9 +101,9 @@ using:
 
     imageproxy
 
-This will start the proxy on port 8080, without any caching and with no host
+This will start the proxy on port 9091, without any caching and with no host
 whitelist (meaning any remote URL can be proxied).  Test this by navigating to
-<http://localhost:8080/500/https://octodex.github.com/images/codercat.jpg> and
+<http://localhost:9091/500/https://octodex.github.com/images/codercat.jpg> and
 you should see a 500px square coder octocat.
 
 ### Cache ###
@@ -141,7 +146,7 @@ Reload the [codercat URL][], and then inspect the contents of
 for the original full-size codercat image, and one for the resized 500px
 version.
 
-[codercat URL]: http://localhost:8080/500/https://octodex.github.com/images/codercat.jpg
+[codercat URL]: http://localhost:9091/500/https://octodex.github.com/images/codercat.jpg
 
 If the `-cache` flag is specified multiple times, multiple caches will be
 created in a [tiered fashion][]. Typically this is used to put a smaller and
@@ -200,7 +205,7 @@ Try it out by running:
 Reload the [codercat URL][], and you should see an error message.  Now load a
 [signed codercat URL][] and verify that it loads properly.
 
-[signed codercat URL]: http://localhost:8080/500,sXyMwWKIC5JPCtlYOQ2f4yMBTqpjtUsfI67Sp7huXIYY=/https://octodex.github.com/images/codercat.jpg
+[signed codercat URL]: http://localhost:9091/500,sXyMwWKIC5JPCtlYOQ2f4yMBTqpjtUsfI67Sp7huXIYY=/https://octodex.github.com/images/codercat.jpg
 
 Some simple code samples for generating signatures in various languages can be
 found in [URL Signing](https://github.com/willnorris/imageproxy/wiki/URL-signing).
@@ -219,7 +224,7 @@ running:
     imageproxy -baseURL https://octodex.github.com/
 
 Then load the codercat image, specified as a URL relative to that base:
-<http://localhost:8080/500/images/codercat.jpg>.  Note that this is not an
+<http://localhost:9091/500/images/codercat.jpg>.  Note that this is not an
 effective method to mask the true source of the images being proxied; it is
 trivial to discover the base URL being used.  Even when a base URL is
 specified, you can always provide the absolute URL of the image to be proxied.
@@ -276,13 +281,13 @@ A docker image is available at [`willnorris/imageproxy`](https://registry.hub.do
 
 You can run it by
 ```
-docker run -p 8080:8080 willnorris/imageproxy -addr 0.0.0.0:8080
+docker run -p 9091:9091 willnorris/imageproxy -addr 0.0.0.0:9091
 ```
 
 Or in your Dockerfile:
 
 ```
-ENTRYPOINT ["/go/bin/imageproxy", "-addr 0.0.0.0:8080"]
+ENTRYPOINT ["/go/bin/imageproxy", "-addr 0.0.0.0:9091"]
 ```
 
 ### nginx ###
@@ -297,7 +302,7 @@ You can use follow config to prevent URL overwritting:
       set $path $1;
       rewrite .* /$path break;
     }
-    proxy_pass http://localhost:8080;
+    proxy_pass http://localhost:9091;
   }
 ```
 
