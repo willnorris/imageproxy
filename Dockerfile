@@ -1,22 +1,10 @@
-FROM golang:1.9 as build
-MAINTAINER Will Norris <will@willnorris.com>
+FROM alpine:3.7
 
-WORKDIR /go/src/github.com/d3sw/imageproxy
-ADD . .
+RUN mkdir /one
+ADD ./dist/imageproxy-linux /one/imageproxy
+# ADD ./dist/swagger.json /one/swagger.json
+# ADD ./swagger-ui /one/swagger-ui
 
-WORKDIR /go/src/github.com/d3sw/imageproxy/cmd/imageproxy
-RUN go-wrapper download
-RUN CGO_ENABLED=0 GOOS=linux go-wrapper install
+EXPOSE 9091
 
-FROM scratch
-
-WORKDIR /go/bin
-
-COPY --from=build /usr/share/zoneinfo /usr/share/zoneinfo
-COPY --from=build /etc/ssl/certs /etc/ssl/certs
-COPY --from=build /go/bin/imageproxy .
-
-CMD ["-addr", "0.0.0.0:8080"]
-ENTRYPOINT ["/go/bin/imageproxy"]
-
-EXPOSE 8080
+CMD ["/one/imageproxy"]
