@@ -13,7 +13,7 @@
 // limitations under the License.
 
 // Package imageproxy provides an image proxy server.  For typical use of
-// creating and using a Proxy, see cmd/imageproxy/main.go.
+// creating and using a Proxy, see cmd/pixie/main.go.
 package imageproxy // import "github.com/d3sw/pixie"
 
 import (

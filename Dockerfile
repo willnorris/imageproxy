@@ -8,4 +8,4 @@ COPY dist /opt
 # ADD ./swagger-ui /one/swagger-ui
 
 CMD ["-addr", "0.0.0.0:9091"]
-ENTRYPOINT [ "/opt/imageproxy-linux" ]
+ENTRYPOINT [ "/opt/pixie-linux" ]
