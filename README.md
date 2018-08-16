@@ -32,6 +32,7 @@ As this is forked project, this section details the scope of those changes, so t
 * mold file added
 * Revised dockerfile to be friendly to makefile output
 * added dist dir to gitignore
+* Added v1/status and v1/dependencies endpoints in imageproxy.go
 
 ## URL Structure ##
 
