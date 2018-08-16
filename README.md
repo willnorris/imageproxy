@@ -1,10 +1,11 @@
-# imageproxy
+# Pixie
+(Formerly imageproxy)
 
 [![GoDoc](https://godoc.org/willnorris.com/go/imageproxy?status.svg)](https://godoc.org/willnorris.com/go/imageproxy)
 [![Build Status](https://travis-ci.org/willnorris/imageproxy.svg?branch=master)](https://travis-ci.org/willnorris/imageproxy)
 [![Apache 2.0 License](https://img.shields.io/badge/license-Apache%202.0-blue.svg?style=flat)](LICENSE)
 
-imageproxy is a caching image proxy server written in go.  It features:
+Pixie is a caching image proxy server written in go.  It features:
 
  - basic image adjustments like resizing, cropping, and rotation
  - access control using host whitelists or request signing (HMAC-SHA256)
@@ -22,10 +23,21 @@ additional image adjustment options.
 [this post]: https://willnorris.com/2014/01/a-self-hosted-alternative-to-jetpacks-photon-service
 [atmos/camo]: https://github.com/atmos/camo
 
+## Deluxe Changes
+
+As this is forked project, this section details the scope of those changes, so that merging in changes will be easier
+
+* Package structure (willnorris.com/go/imageproxy -> github.com/d3sw/pixie)
+* Using a makefile to build (use `make clean dist`)
+* Changed default port from 8080 -> 9091
+* mold file added
+* Revised dockerfile to be friendly to makefile output
+* added dist dir to gitignore
+* Added v1/status and v1/dependencies endpoints in imageproxy.go
 
 ## URL Structure ##
 
-imageproxy URLs are of the form `http://localhost/{options}/{remote_url}`.
+Pixie URLs are of the form `http://localhost/{options}/{remote_url}`.
 
 ### Options ###
 
@@ -89,16 +101,16 @@ Install the package using:
 Once installed, ensure `$GOPATH/bin` is in your `$PATH`, then run the proxy
 using:
 
-    imageproxy
+    pixie
 
-This will start the proxy on port 8080, without any caching and with no host
+This will start the proxy on port 9091, without any caching and with no host
 whitelist (meaning any remote URL can be proxied).  Test this by navigating to
-<http://localhost:8080/500/https://octodex.github.com/images/codercat.jpg> and
+<http://localhost:9091/500/https://octodex.github.com/images/codercat.jpg> and
 you should see a 500px square coder octocat.
 
 ### Cache ###
 
-By default, the imageproxy command does not cache responses, but caching can be
+By default, the pixie command does not cache responses, but caching can be
 enabled using the `-cache` flag.  It supports the following values:
 
  - `memory` - uses an in-memory LRU cache.  By default, this is limited to
@@ -106,7 +118,7 @@ enabled using the `-cache` flag.  It supports the following values:
    use the format `memory:size:age` where size is measured in mb and age is a
    duration.  For example, `memory:200:4h` will create a 200mb cache that will
    cache items no longer than 4 hours.
- - directory on local disk (e.g. `/tmp/imageproxy`) - will cache images
+ - directory on local disk (e.g. `/tmp/pixie`) - will cache images
    on disk
  - s3 URL (e.g. `s3://region/bucket-name/optional-path-prefix`) - will cache
    images on Amazon S3.  This requires either an IAM role and instance profile
@@ -127,16 +139,16 @@ enabled using the `-cache` flag.  It supports the following values:
    Rather than specify password in the URI, use the `REDIS_PASSWORD`
    environment variable.
 
-For example, to cache files on disk in the `/tmp/imageproxy` directory:
+For example, to cache files on disk in the `/tmp/pixie` directory:
 
-    imageproxy -cache /tmp/imageproxy
+    pixie -cache /tmp/pixie
 
 Reload the [codercat URL][], and then inspect the contents of
-`/tmp/imageproxy`.  Within the subdirectories, there should be two files, one
+`/tmp/pixie`.  Within the subdirectories, there should be two files, one
 for the original full-size codercat image, and one for the resized 500px
 version.
 
-[codercat URL]: http://localhost:8080/500/https://octodex.github.com/images/codercat.jpg
+[codercat URL]: http://localhost:9091/500/https://octodex.github.com/images/codercat.jpg
 
 If the `-cache` flag is specified multiple times, multiple caches will be
 created in a [tiered fashion][]. Typically this is used to put a smaller and
@@ -144,7 +156,7 @@ faster in-memory cache in front of a larger but slower on-disk cache.  For
 example, the following will first check an in-memory cache for an image,
 followed by a gcs bucket:
 
-    imageproxy -cache memory -cache gcs://my-bucket/
+    pixie -cache memory -cache gcs://my-bucket/
 
 [tiered fashion]: https://godoc.org/github.com/die-net/lrucache/twotier
 
@@ -154,7 +166,7 @@ You can limit images to only be accessible for certain hosts in the HTTP
 referrer header, which can help prevent others from hotlinking to images. It can
 be enabled by running:
 
-    imageproxy  -referrers example.com
+    pixie  -referrers example.com
 
 
 Reload the [codercat URL][], and you should now get an error message.  You can
@@ -169,7 +181,7 @@ your own hosts to prevent others from abusing it.  Of course if you want to
 support fetching from any host, leave off the whitelist flag.  Try it out by
 running:
 
-    imageproxy -whitelist example.com
+    pixie -whitelist example.com
 
 Reload the [codercat URL][], and you should now get an error message.  You can
 specify multiple hosts as a comma separated list, or prefix a host value with
@@ -190,12 +202,12 @@ which contains the HMAC key.
 
 Try it out by running:
 
-    imageproxy -signatureKey "secret key"
+    pixie -signatureKey "secret key"
 
 Reload the [codercat URL][], and you should see an error message.  Now load a
 [signed codercat URL][] and verify that it loads properly.
 
-[signed codercat URL]: http://localhost:8080/500,sXyMwWKIC5JPCtlYOQ2f4yMBTqpjtUsfI67Sp7huXIYY=/https://octodex.github.com/images/codercat.jpg
+[signed codercat URL]: http://localhost:9091/500,sXyMwWKIC5JPCtlYOQ2f4yMBTqpjtUsfI67Sp7huXIYY=/https://octodex.github.com/images/codercat.jpg
 
 Some simple code samples for generating signatures in various languages can be
 found in [URL Signing](https://github.com/willnorris/imageproxy/wiki/URL-signing).
@@ -211,28 +223,28 @@ However, if you commonly proxy images from a single source, you can provide a
 base URL and then specify remote images relative to that base.  Try it out by
 running:
 
-    imageproxy -baseURL https://octodex.github.com/
+    pixie -baseURL https://octodex.github.com/
 
 Then load the codercat image, specified as a URL relative to that base:
-<http://localhost:8080/500/images/codercat.jpg>.  Note that this is not an
+<http://localhost:9091/500/images/codercat.jpg>.  Note that this is not an
 effective method to mask the true source of the images being proxied; it is
 trivial to discover the base URL being used.  Even when a base URL is
 specified, you can always provide the absolute URL of the image to be proxied.
 
 ### Scaling beyond original size ###
 
-By default, the imageproxy won't scale images beyond their original size.
+By default, the Pixie won't scale images beyond their original size.
 However, you can use the `scaleUp` command-line flag to allow this to happen:
 
-    imageproxy -scaleUp true
+    pixie -scaleUp true
 
 ### WebP and TIFF support ###
 
-Imageproxy can proxy remote webp images, but they will be served in either jpeg
+Pixie can proxy remote webp images, but they will be served in either jpeg
 or png format (this is because the golang webp library only supports webp
 decoding) if any transformation is requested.  If no format is specified,
-imageproxy will use jpeg by default.  If no transformation is requested (for
-example, if you are just using imageproxy as an SSL proxy) then the original
+Pixie will use jpeg by default.  If no transformation is requested (for
+example, if you are just using Pixie as an SSL proxy) then the original
 webp image will be served as-is without any format conversion.
 
 Because so few browsers support tiff images, they will be converted to jpeg by
@@ -241,9 +253,9 @@ default if any transformation is requested. To force encoding as tiff, pass the
 conversion if no transformation is requested.
 
 
-Run `imageproxy -help` for a complete list of flags the command accepts.  If
+Run `pixie -help` for a complete list of flags the command accepts.  If
 you want to use a different caching implementation, it's probably easiest to
-just make a copy of `cmd/imageproxy/main.go` and customize it to fit your
+just make a copy of `cmd/pixie/main.go` and customize it to fit your
 needs... it's a very simple command.
 
 ## Deploying ##
@@ -252,7 +264,7 @@ In most cases, you can follow the normal procedure for building a deploying any
 go application.  For example, I build it directly on my production debian server
 using:
 
- - `go build willnorris.com/go/imageproxy/cmd/imageproxy`
+ - `go build github.com/d3sw/pixie/cmd/pixie`
  - copy resulting binary to `/usr/local/bin`
  - copy [`etc/imageproxy.service`](etc/imageproxy.service) to
    `/lib/systemd/system` and enable using `systemctl`.
@@ -292,7 +304,7 @@ You can use follow config to prevent URL overwritting:
       set $path $1;
       rewrite .* /$path break;
     }
-    proxy_pass http://localhost:8080;
+    proxy_pass http://localhost:9091;
   }
 ```
 

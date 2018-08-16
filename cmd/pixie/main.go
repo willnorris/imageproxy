@@ -34,14 +34,14 @@ import (
 	"github.com/gregjones/httpcache/diskcache"
 	rediscache "github.com/gregjones/httpcache/redis"
 	"github.com/peterbourgon/diskv"
-	"willnorris.com/go/imageproxy"
-	"willnorris.com/go/imageproxy/internal/gcscache"
-	"willnorris.com/go/imageproxy/internal/s3cache"
+	"github.com/d3sw/pixie"
+	"github.com/d3sw/pixie/internal/gcscache"
+	"github.com/d3sw/pixie/internal/s3cache"
 )
 
 const defaultMemorySize = 100
 
-var addr = flag.String("addr", "localhost:8080", "TCP address to listen on")
+var addr = flag.String("addr", "localhost:9091", "TCP address to listen on")
 var whitelist = flag.String("whitelist", "", "comma separated list of allowed remote hosts")
 var referrers = flag.String("referrers", "", "comma separated list of allowed referring hosts")
 var baseURL = flag.String("baseURL", "", "default base URL for relative remote URLs")
@@ -95,7 +95,7 @@ func main() {
 		Handler: p,
 	}
 
-	fmt.Printf("imageproxy listening on %s\n", server.Addr)
+	fmt.Printf("pixie listening on %s\n", server.Addr)
 	log.Fatal(server.ListenAndServe())
 }
 

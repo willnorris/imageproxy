@@ -1,0 +1,18 @@
+
+build:
+  - image: golang:1.10-alpine
+    workdir: /go/src/github.com/d3sw/pixie
+    commands:
+      - apk update && apk upgrade && apk add --no-cache git openssh build-base libidn-dev curl jq
+      - make clean dist
+
+artifacts:
+  publish:
+    - master
+    - v${APP_VERSION}
+  registry: 583623634344.dkr.ecr.us-west-2.amazonaws.com
+  images:
+    - name: pixie
+      dockerfile: Dockerfile
+      tags:
+        - ${APP_VERSION}

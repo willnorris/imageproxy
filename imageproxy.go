@@ -13,8 +13,8 @@
 // limitations under the License.
 
 // Package imageproxy provides an image proxy server.  For typical use of
-// creating and using a Proxy, see cmd/imageproxy/main.go.
-package imageproxy // import "willnorris.com/go/imageproxy"
+// creating and using a Proxy, see cmd/pixie/main.go.
+package imageproxy // import "github.com/d3sw/pixie"
 
 import (
 	"bufio"
@@ -22,18 +22,39 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
+	tphttp "github.com/d3sw/pixie/third_party/http"
 	"github.com/gregjones/httpcache"
-	tphttp "willnorris.com/go/imageproxy/third_party/http"
 )
+
+type HandleFunc func() (string, error)
+type HandlerMap map[string]HandleFunc
+
+// DependencyStatus is a simple struct for communicating the status of each dependency
+type DependencyStatus struct {
+	Name   string `json:"name"`
+	Status string `json:"status"`
+}
+
+// Dependency is a simple struct for listing our dependencies, as noted from
+// https://wiki.d3nw.com/display/ENG/Service+Development+Process#ServiceDevelopmentProcess-ComplianceReview
+// (see required endpoints)
+type Dependency struct {
+	Name     string `json:"name"`
+	Version  string `json:"version"`
+	Scheme   string `json:"scheme"`
+	External bool   `json:"external"`
+}
 
 // Proxy serves image requests.
 type Proxy struct {
@@ -104,14 +125,80 @@ func NewProxy(transport http.RoundTripper, cache Cache) *Proxy {
 	return proxy
 }
 
+func handleStatusEndpoint() (string, error) {
+	var response = struct {
+		Version      string             `json:"version"`
+		Dependencies []DependencyStatus `json:"dependencies"`
+	}{
+		Version: getAppVersion(),
+	}
+
+	return marshalJSON(response)
+}
+
+func handleDependenciesEndpoint() (string, error) {
+	var response = struct {
+		Version      string       `json:"version"`
+		Endpoints    []string     `json:"endpoints"`
+		Dependencies []Dependency `json:"dependencies"`
+	}{
+		Version: getAppVersion(),
+		// TODO: Add endpoints
+		Dependencies: []Dependency{
+			// {Name: "auth", Version: "v1", Scheme: "http", External: false},
+		},
+	}
+
+	return marshalJSON(response)
+}
+
+func handleIndexEndpoint() (string, error) {
+	return "OK", nil
+}
+
+func handlerNoOp() (string, error) {
+	return "", nil
+}
+
+func (h HandlerMap) get(key string, def HandleFunc) HandleFunc {
+	result := h[key]
+	if result == nil {
+		return def
+	}
+	return result
+}
+
+func handleSpecialEndpoints(url string) (handled bool, response string, err error) {
+	var handler = HandlerMap{
+		"/":                 handleIndexEndpoint,
+		"/v1/status":        handleStatusEndpoint,
+		"/v1/status/":       handleStatusEndpoint,
+		"/v1/dependencies":  handleDependenciesEndpoint,
+		"/v1/dependencies/": handleDependenciesEndpoint,
+	}[url]
+
+	if handler == nil {
+		handled = false
+		handler = handlerNoOp
+	} else {
+		handled = true
+	}
+
+	response, err = handler()
+	return
+}
+
 // ServeHTTP handles incoming requests.
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(r.Method, r.URL.Path)
 	if r.URL.Path == "/favicon.ico" {
 		return // ignore favicon requests
 	}
 
-	if r.URL.Path == "/" || r.URL.Path == "/health-check" {
-		fmt.Fprint(w, "OK")
+	handled, resp, _ := handleSpecialEndpoints(r.URL.Path)
+
+	if handled {
+		fmt.Fprint(w, resp)
 		return
 	}
 
@@ -347,4 +434,21 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 	buf.Write(img)
 
 	return http.ReadResponse(bufio.NewReader(buf), req)
+}
+
+func getAppVersion() string {
+	v := os.Getenv("APP_VERSION")
+	if v == "" {
+		v = "0.0.0"
+	}
+	return v
+}
+
+func marshalJSON(object interface{}) (string, error) {
+	bytes, err := json.Marshal(object)
+	if err != nil {
+		return "", err
+	}
+
+	return string(bytes), nil
 }
