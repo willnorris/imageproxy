@@ -190,6 +190,7 @@ func handleSpecialEndpoints(url string) (handled bool, response string, err erro
 
 // ServeHTTP handles incoming requests.
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(r.Method, r.URL.Path)
 	if r.URL.Path == "/favicon.ico" {
 		return // ignore favicon requests
 	}
