@@ -1,4 +1,5 @@
-# imageproxy
+# pixie
+(Formerly imageproxy)
 
 [![GoDoc](https://godoc.org/willnorris.com/go/imageproxy?status.svg)](https://godoc.org/willnorris.com/go/imageproxy)
 [![Build Status](https://travis-ci.org/willnorris/imageproxy.svg?branch=master)](https://travis-ci.org/willnorris/imageproxy)
@@ -26,7 +27,7 @@ additional image adjustment options.
 
 As this is forked project, this section details the scope of those changes, so that merging in changes will be easier
 
-* Package structure (willnorris.com/go/imageproxy -> github.com/d3sw/imageproxy)
+* Package structure (willnorris.com/go/imageproxy -> github.com/d3sw/pixie)
 * Using a makefile to build (use `make clean dist`)
 * Changed default port from 8080 -> 9091
 * mold file added

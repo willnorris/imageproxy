@@ -34,9 +34,9 @@ import (
 	"github.com/gregjones/httpcache/diskcache"
 	rediscache "github.com/gregjones/httpcache/redis"
 	"github.com/peterbourgon/diskv"
-	"github.com/d3sw/imageproxy"
-	"github.com/d3sw/imageproxy/internal/gcscache"
-	"github.com/d3sw/imageproxy/internal/s3cache"
+	"github.com/d3sw/pixie"
+	"github.com/d3sw/pixie/internal/gcscache"
+	"github.com/d3sw/pixie/internal/s3cache"
 )
 
 const defaultMemorySize = 100
@@ -95,7 +95,7 @@ func main() {
 		Handler: p,
 	}
 
-	fmt.Printf("imageproxy listening on %s\n", server.Addr)
+	fmt.Printf("pixie listening on %s\n", server.Addr)
 	log.Fatal(server.ListenAndServe())
 }
 
