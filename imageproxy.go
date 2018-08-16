@@ -125,8 +125,7 @@ func NewProxy(transport http.RoundTripper, cache Cache) *Proxy {
 	return proxy
 }
 
-
-func handleStatusResponse() (string, error) {
+func handleStatusEndpoint() (string, error) {
 	var response = struct {
 		Version      string             `json:"version"`
 		Dependencies []DependencyStatus `json:"dependencies"`
@@ -153,6 +152,10 @@ func handleDependenciesEndpoint() (string, error) {
 	return marshalJSON(response)
 }
 
+func handleIndexEndpoint() (string, error) {
+	return "OK", nil
+}
+
 func handlerNoOp() (string, error) {
 	return "", nil
 }
@@ -165,11 +168,12 @@ func (h HandlerMap) get(key string, def HandleFunc) HandleFunc {
 	return result
 }
 
-func handleD3SWEndpoint(url string) (handled bool, response string, err error) {
+func handleSpecialEndpoints(url string) (handled bool, response string, err error) {
 	var handler = HandlerMap{
-		"/v1/status":       handleStatusResponse,
-		"/v1/status/":       handleStatusResponse,
-		"/v1/dependencies": handleDependenciesEndpoint,
+		"/":                 handleIndexEndpoint,
+		"/v1/status":        handleStatusEndpoint,
+		"/v1/status/":       handleStatusEndpoint,
+		"/v1/dependencies":  handleDependenciesEndpoint,
 		"/v1/dependencies/": handleDependenciesEndpoint,
 	}[url]
 
@@ -190,12 +194,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return // ignore favicon requests
 	}
 
-	if r.URL.Path == "/" || r.URL.Path == "/health-check" {
-		fmt.Fprint(w, "OK")
-		return
-	}
-
-	handled, resp, _ := handleD3SWEndpoint(r.URL.Path)
+	handled, resp, _ := handleSpecialEndpoints(r.URL.Path)
 
 	if handled {
 		fmt.Fprint(w, resp)
