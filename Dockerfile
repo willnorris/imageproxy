@@ -7,5 +7,5 @@ COPY dist /opt
 # ADD ./dist/swagger.json /one/swagger.json
 # ADD ./swagger-ui /one/swagger-ui
 
-
-CMD ["/opt/imageproxy-linux"]
+CMD ["-addr", "0.0.0.0:9091"]
+ENTRYPOINT [ "/opt/imageproxy-linux" ]
