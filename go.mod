@@ -5,14 +5,13 @@ require (
 	github.com/Azure/azure-sdk-for-go v12.3.0-beta+incompatible // indirect
 	github.com/Azure/go-autorest v9.9.0+incompatible // indirect
 	github.com/PaulARoy/azurestoragecache v0.0.0-20170906084534-3c249a3ba788
-	github.com/aws/aws-sdk-go v0.0.0-20180126231901-00cca3f093a8
+	github.com/aws/aws-sdk-go v1.15.35
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgrijalva/jwt-go v3.1.0+incompatible // indirect
 	github.com/die-net/lrucache v0.0.0-20171111232917-04b9315ab7a6
 	github.com/disintegration/imaging v1.3.0
 	github.com/dnaeon/go-vcr v0.0.0-20180814043457-aafff18a5cc2 // indirect
 	github.com/garyburd/redigo v1.5.0
-	github.com/go-ini/ini v1.25.4 // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b // indirect
 	github.com/golang/protobuf v1.0.0 // indirect
 	github.com/google/btree v0.0.0-20180124185431-e89373fe6b4a // indirect
@@ -20,7 +19,6 @@ require (
 	github.com/googleapis/gax-go v2.0.0+incompatible // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20180825215210-0210a2f0f73c // indirect
 	github.com/gregjones/httpcache v0.0.0-20171119193500-2bcd89a1743f
-	github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8 // indirect
 	github.com/jtolds/gls v4.2.1+incompatible // indirect
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/marstr/guid v0.0.0-20170427235115-8bdf7d1a087c // indirect

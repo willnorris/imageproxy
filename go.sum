@@ -6,8 +6,8 @@ github.com/Azure/go-autorest v9.9.0+incompatible h1:U3u8yuM3dZPg6vjJ/Hl2hQlaP+WN
 github.com/Azure/go-autorest v9.9.0+incompatible/go.mod h1:r+4oMnoxhatjLLJ6zxSWATqVooLgysK6ZNox3g/xq24=
 github.com/PaulARoy/azurestoragecache v0.0.0-20170906084534-3c249a3ba788 h1:OxWBmk9BZqWOHVs+hrElt/BiexDGcStcsADt0f4cUx8=
 github.com/PaulARoy/azurestoragecache v0.0.0-20170906084534-3c249a3ba788/go.mod h1:lY1dZd8HBzJ10eqKERHn3CU59tfhzcAVb2c0ZhIWSOk=
-github.com/aws/aws-sdk-go v0.0.0-20180126231901-00cca3f093a8 h1:xqzpCUtYUsmKRnKjKOmGh/kqa+zdhaCYuYAEwXzHCSY=
-github.com/aws/aws-sdk-go v0.0.0-20180126231901-00cca3f093a8/go.mod h1:ZRmQr0FajVIyZ4ZzBYKG5P3ZqPz9IHG41ZoMu1ADI3k=
+github.com/aws/aws-sdk-go v1.15.35 h1:roOTR0eOeCgYwrz3NXmrneLFBYdnK8epLedaRMm1kQg=
+github.com/aws/aws-sdk-go v1.15.35/go.mod h1:mFuSZ37Z9YOHbQEwBWztmVzqXrEkub65tZoCYDt7FT0=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dgrijalva/jwt-go v3.1.0+incompatible h1:FFziAwDQQ2dz1XClWMkwvukur3evtZx7x/wMHKM1i20=
