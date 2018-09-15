@@ -304,7 +304,7 @@ func (t testTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	case "/error":
 		return nil, errors.New("http protocol error")
 	case "/nocontent":
-		raw = "HTTP/1.1 204 No Content\nContent-Type: image/png\n\n"
+		raw = "HTTP/1.1 204 No Content\n\n"
 	case "/etag":
 		raw = "HTTP/1.1 200 OK\nEtag: \"tag\"\n\n"
 	case "/png":
@@ -326,7 +326,8 @@ func TestProxy_ServeHTTP(t *testing.T) {
 		Client: &http.Client{
 			Transport: testTransport{},
 		},
-		Whitelist: []string{"good.test"},
+		Whitelist:    []string{"good.test"},
+		ContentTypes: []string{"image/*"},
 	}
 
 	tests := []struct {
@@ -413,29 +414,49 @@ func TestTransformingTransport(t *testing.T) {
 }
 
 func TestValidContentType(t *testing.T) {
-	for contentType, expected := range map[string]bool{
-		"":          false,
-		"image/png": true,
-		"text/html": false,
-	} {
-		actual := validContentType(nil, contentType)
-		if actual != expected {
-			t.Errorf("got %v, expected %v for content type: %v", actual, expected, contentType)
-		}
-	}
-}
+	tests := []struct {
+		patterns    []string
+		contentType string
+		valid       bool
+	}{
+		// no patterns
+		{nil, "", true},
+		{nil, "text/plain", true},
+		{[]string{}, "", true},
+		{[]string{}, "text/plain", true},
 
-func TestValidContentType_Patterns(t *testing.T) {
-	for contentType, expected := range map[string]bool{
-		"":          false,
-		"image/png": false,
-		"foo/asdf":  true,
-		"bar/baz":   true,
-		"bar/bazz":  false,
-	} {
-		actual := validContentType([]string{"foo/*", "bar/baz"}, contentType)
-		if actual != expected {
-			t.Errorf("got %v, expected %v for content type: %v", actual, expected, contentType)
+		// empty pattern
+		{[]string{""}, "", true},
+		{[]string{""}, "text/plain", false},
+
+		// exact match
+		{[]string{"text/plain"}, "", false},
+		{[]string{"text/plain"}, "text", false},
+		{[]string{"text/plain"}, "text/html", false},
+		{[]string{"text/plain"}, "text/plain", true},
+		{[]string{"text/plain"}, "text/plaintext", false},
+		{[]string{"text/plain"}, "text/plain+foo", false},
+
+		// wildcard match
+		{[]string{"text/*"}, "", false},
+		{[]string{"text/*"}, "text", false},
+		{[]string{"text/*"}, "text/html", true},
+		{[]string{"text/*"}, "text/plain", true},
+		{[]string{"text/*"}, "image/jpeg", false},
+
+		{[]string{"image/svg*"}, "image/svg", true},
+		{[]string{"image/svg*"}, "image/svg+html", true},
+
+		// complete wildcard does not match
+		{[]string{"*"}, "text/foobar", false},
+
+		// multiple patterns
+		{[]string{"text/*", "image/*"}, "image/jpeg", true},
+	}
+	for _, tt := range tests {
+		got := validContentType(tt.patterns, tt.contentType)
+		if want := tt.valid; got != want {
+			t.Errorf("validContentType(%q, %q) returned %v, want %v", tt.patterns, tt.contentType, got, want)
 		}
 	}
 }

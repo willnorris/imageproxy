@@ -175,6 +175,14 @@ Reload the [codercat URL][], and you should now get an error message.  You can
 specify multiple hosts as a comma separated list, or prefix a host value with
 `*.` to allow all sub-domains as well.
 
+### Content-Type whitelist ###
+
+You can limit what content types can be proxied by using the `contentTypes`
+flag. By default, this is set to `image/*`, meaning that imageproxy will
+process any image types. You can specify multiple content types as a comma
+separated list, and suffix values with `*` to perform a wildcard match. Set the
+flag to an empty string to proxy all requests, regardless of content type.
+
 ### Signed Requests ###
 
 Instead of a host whitelist, you can require that requests be signed.  This is
