@@ -395,12 +395,6 @@
 			"revisionTime": "2018-01-03T17:44:51Z"
 		},
 		{
-			"checksumSHA1": "DZkYNX2w0P8kfM5fZcqltuA2x5Q=",
-			"path": "github.com/satori/uuid",
-			"revision": "36e9d2ebbde5e3f13ab2e25625fd453271d6522e",
-			"revisionTime": "2018-01-03T17:44:51Z"
-		},
-		{
 			"checksumSHA1": "UD/pejajPyS7WaWVXq2NU1eK4Ic=",
 			"path": "golang.org/x/image/bmp",
 			"revision": "12117c17ca67ffa1ce22e9409f3b0b0a93ac08c7",
