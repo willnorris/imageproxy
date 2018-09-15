@@ -1,3 +1,8 @@
 build
 .goxc.local.json
 *.test
+
+vendor/**/AUTHORS
+vendor/**/CONTRIBUTORS
+vendor/**/Makefile
+vendor/**/*.sh
