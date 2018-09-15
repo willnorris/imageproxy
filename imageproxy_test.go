@@ -42,7 +42,7 @@ func TestCopyHeader(t *testing.T) {
 
 		// nothing to copy
 		{
-			dst:  http.Header{"A": []string{"a1"}},
+			dst:  http.Header{"A": []string{"a"}},
 			src:  http.Header{},
 			keys: nil,
 			want: http.Header{"A": []string{"a1"}},
