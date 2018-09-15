@@ -97,7 +97,7 @@ func TestCopyHeader(t *testing.T) {
 }
 
 func TestAllowed(t *testing.T) {
-	whitelist := []string{"good"}
+	remoteHosts := []string{"good"}
 	key := []byte("c0ffee")
 
 	genRequest := func(headers map[string]string) *http.Request {
@@ -109,41 +109,41 @@ func TestAllowed(t *testing.T) {
 	}
 
 	tests := []struct {
-		url       string
-		options   Options
-		whitelist []string
-		referrers []string
-		key       []byte
-		request   *http.Request
-		allowed   bool
+		url         string
+		options     Options
+		remoteHosts []string
+		referrers   []string
+		key         []byte
+		request     *http.Request
+		allowed     bool
 	}{
-		// no whitelist or signature key
+		// no remoteHosts or signature key
 		{"http://test/image", emptyOptions, nil, nil, nil, nil, true},
 
-		// whitelist
-		{"http://good/image", emptyOptions, whitelist, nil, nil, nil, true},
-		{"http://bad/image", emptyOptions, whitelist, nil, nil, nil, false},
+		// remoteHosts
+		{"http://good/image", emptyOptions, remoteHosts, nil, nil, nil, true},
+		{"http://bad/image", emptyOptions, remoteHosts, nil, nil, nil, false},
 
 		// referrer
-		{"http://test/image", emptyOptions, nil, whitelist, nil, genRequest(map[string]string{"Referer": "http://good/foo"}), true},
-		{"http://test/image", emptyOptions, nil, whitelist, nil, genRequest(map[string]string{"Referer": "http://bad/foo"}), false},
-		{"http://test/image", emptyOptions, nil, whitelist, nil, genRequest(map[string]string{"Referer": "MALFORMED!!"}), false},
-		{"http://test/image", emptyOptions, nil, whitelist, nil, genRequest(map[string]string{}), false},
+		{"http://test/image", emptyOptions, nil, remoteHosts, nil, genRequest(map[string]string{"Referer": "http://good/foo"}), true},
+		{"http://test/image", emptyOptions, nil, remoteHosts, nil, genRequest(map[string]string{"Referer": "http://bad/foo"}), false},
+		{"http://test/image", emptyOptions, nil, remoteHosts, nil, genRequest(map[string]string{"Referer": "MALFORMED!!"}), false},
+		{"http://test/image", emptyOptions, nil, remoteHosts, nil, genRequest(map[string]string{}), false},
 
 		// signature key
 		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ="}, nil, nil, key, nil, true},
 		{"http://test/image", Options{Signature: "deadbeef"}, nil, nil, key, nil, false},
 		{"http://test/image", emptyOptions, nil, nil, key, nil, false},
 
-		// whitelist and signature
-		{"http://good/image", emptyOptions, whitelist, nil, key, nil, true},
+		// remoteHosts and signature
+		{"http://good/image", emptyOptions, remoteHosts, nil, key, nil, true},
 		{"http://bad/image", Options{Signature: "gWivrPhXBbsYEwpmWAKjbJEiAEgZwbXbltg95O2tgNI="}, nil, nil, key, nil, true},
-		{"http://bad/image", emptyOptions, whitelist, nil, key, nil, false},
+		{"http://bad/image", emptyOptions, remoteHosts, nil, key, nil, false},
 	}
 
 	for _, tt := range tests {
 		p := NewProxy(nil, nil)
-		p.Whitelist = tt.whitelist
+		p.RemoteHosts = tt.remoteHosts
 		p.SignatureKey = tt.key
 		p.Referrers = tt.referrers
 
@@ -159,7 +159,7 @@ func TestAllowed(t *testing.T) {
 }
 
 func TestValidHost(t *testing.T) {
-	whitelist := []string{"a.test", "*.b.test", "*c.test"}
+	remoteHosts := []string{"a.test", "*.b.test", "*c.test"}
 
 	tests := []struct {
 		url   string
@@ -182,8 +182,8 @@ func TestValidHost(t *testing.T) {
 		if err != nil {
 			t.Errorf("error parsing url %q: %v", tt.url, err)
 		}
-		if got, want := validHost(whitelist, u), tt.valid; got != want {
-			t.Errorf("validHost(%v, %q) returned %v, want %v", whitelist, u, got, want)
+		if got, want := validHost(remoteHosts, u), tt.valid; got != want {
+			t.Errorf("validHost(%v, %q) returned %v, want %v", remoteHosts, u, got, want)
 		}
 	}
 }
@@ -326,7 +326,7 @@ func TestProxy_ServeHTTP(t *testing.T) {
 		Client: &http.Client{
 			Transport: testTransport{},
 		},
-		Whitelist:    []string{"good.test"},
+		RemoteHosts:  []string{"good.test"},
 		ContentTypes: []string{"image/*"},
 	}
 

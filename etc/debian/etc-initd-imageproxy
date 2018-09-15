@@ -29,7 +29,7 @@ case "$1" in
 		test -n "$ADDR" && DAEMON_OPTS+=" -addr=$ADDR"
 		test -n "$CACHE" && DAEMON_OPTS+=" -cache=$CACHE"
 		test -n "$LOG_DIR" && DAEMON_OPTS+=" -log_dir=$LOG_DIR"
-		test -n "$ALLOWED_REMOTE_HOSTS" && DAEMON_OPTS+=" -whitelist=$ALLOWED_REMOTE_HOSTS"
+		test -n "$ALLOWED_REMOTE_HOSTS" && DAEMON_OPTS+=" -remoteHosts=$ALLOWED_REMOTE_HOSTS"
 
 		echo -n "Starting $NAME: "
 		start-stop-daemon --start --quiet --pidfile /var/run/$NAME.pid \
