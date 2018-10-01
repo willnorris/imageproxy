@@ -15,7 +15,7 @@ var (
 		Help: "Time taken for image transformations in seconds.",
 	})
 	compressionSummary = prometheus.NewSummary(prometheus.SummaryOpts{
-		Name: "image_comporession_seconds",
+		Name: "image_compression_seconds",
 		Help: "Time taken for image compression in seconds.",
 	})
 	remoteImageFetchErrors = prometheus.NewCounter(prometheus.CounterOpts{
