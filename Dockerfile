@@ -8,9 +8,11 @@ WORKDIR /go/src/willnorris.com/go/imageproxy/cmd/imageproxy
 RUN go-wrapper download
 RUN CGO_ENABLED=0 GOOS=linux go-wrapper install
 
-FROM scratch
+FROM alpine:3.8
+RUN apk update && apk add pngquant jpegoptim
 
 WORKDIR /go/bin
+
 
 COPY --from=build /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=build /etc/ssl/certs /etc/ssl/certs

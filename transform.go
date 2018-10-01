@@ -31,6 +31,8 @@ import (
 	"golang.org/x/image/tiff"   // register tiff format
 	_ "golang.org/x/image/webp" // register webp format
 	"willnorris.com/go/gifresize"
+	"os/exec"
+	"strings"
 )
 
 // default compression quality of resized jpegs
@@ -77,6 +79,7 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 
 	// transform and encode image
 	buf := new(bytes.Buffer)
+	var outputBytes []byte
 	switch format {
 	case "gif":
 		fn := func(img image.Image) image.Image {
@@ -86,6 +89,7 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
+		outputBytes = buf.Bytes()
 	case "jpeg":
 		quality := opt.Quality
 		if quality == 0 {
@@ -97,9 +101,19 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
+		outputBytes = buf.Bytes()
+		outputBytes, err = CompressJPG(outputBytes)
+		if err != nil {
+			return nil, err
+		}
 	case "png":
 		m = transformImage(m, opt)
 		err = png.Encode(buf, m)
+		if err != nil {
+			return nil, err
+		}
+		outputBytes = buf.Bytes()
+		outputBytes, err = CompressPNG(outputBytes)
 		if err != nil {
 			return nil, err
 		}
@@ -109,11 +123,43 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
+		outputBytes = buf.Bytes()
 	default:
 		return nil, fmt.Errorf("unsupported format: %v", format)
 	}
 
-	return buf.Bytes(), nil
+	return outputBytes, nil
+}
+
+
+func CompressPNG(input []byte) (output []byte, err error) {
+	cmd := exec.Command("pngquant", "-", "--speed", "10")
+	cmd.Stdin = strings.NewReader(string(input))
+	var o bytes.Buffer
+	cmd.Stdout = &o
+	err = cmd.Run()
+
+	if err != nil {
+		return
+	}
+
+	output = o.Bytes()
+	return
+}
+
+func CompressJPG(input []byte) (output []byte, err error) {
+	cmd := exec.Command("jpegoptim", "--stdin", "--stdout", "--strip-all")
+	cmd.Stdin = strings.NewReader(string(input))
+	var o bytes.Buffer
+	cmd.Stdout = &o
+	err = cmd.Run()
+
+	if err != nil {
+		return
+	}
+
+	output = o.Bytes()
+	return
 }
 
 // evaluateFloat interprets the option value f. If f is between 0 and 1, it is
