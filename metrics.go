@@ -14,6 +14,10 @@ var (
 		Name: "image_transformation_seconds",
 		Help: "Time taken for image transformations in seconds.",
 	})
+	compressionSummary = prometheus.NewSummary(prometheus.SummaryOpts{
+		Name: "image_comporession_seconds",
+		Help: "Time taken for image compression in seconds.",
+	})
 	remoteImageFetchErrors = prometheus.NewCounter(prometheus.CounterOpts{
 		Name: "remote_image_fetch_errors",
 		Help: "Total image fetch failures",
@@ -26,6 +30,7 @@ var (
 )
 
 func init() {
+	prometheus.MustRegister(compressionSummary)
 	prometheus.MustRegister(imageTransformationSummary)
 	prometheus.MustRegister(requestServedFromCacheCount)
 	prometheus.MustRegister(remoteImageFetchErrors)

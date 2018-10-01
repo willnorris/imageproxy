@@ -103,10 +103,11 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		outputBytes = buf.Bytes()
-		outputBytes, err = CompressJPG(outputBytes)
+		fileBytes := buf.Bytes()
+		outputBytes, err = CompressJPG(fileBytes)
 		if err != nil {
-			return nil, err
+			fmt.Println(err)
+			return fileBytes, nil
 		}
 	case "png":
 		m = transformImage(m, opt)
@@ -114,10 +115,11 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-		outputBytes = buf.Bytes()
-		outputBytes, err = CompressPNG(outputBytes)
+		fileBytes := buf.Bytes()
+		outputBytes, err = CompressPNG(fileBytes)
 		if err != nil {
-			return nil, err
+			fmt.Println(err)
+			return fileBytes, nil
 		}
 	case "tiff":
 		m = transformImage(m, opt)
@@ -134,6 +136,7 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 }
 
 func CompressPNG(input []byte) (output []byte, err error) {
+	start := time.Now()
 	cmd := exec.Command("pngquant", "-", "--speed", "10")
 	cmd.Stdin = strings.NewReader(string(input))
 	var o bytes.Buffer
@@ -145,10 +148,12 @@ func CompressPNG(input []byte) (output []byte, err error) {
 	}
 
 	output = o.Bytes()
+	compressionSummary.Observe(float64(time.Since(start).Seconds()))
 	return
 }
 
 func CompressJPG(input []byte) (output []byte, err error) {
+	start := time.Now()
 	cmd := exec.Command("jpegoptim", "--stdin", "--stdout", "--strip-all")
 	cmd.Stdin = strings.NewReader(string(input))
 	var o bytes.Buffer
@@ -160,6 +165,7 @@ func CompressJPG(input []byte) (output []byte, err error) {
 	}
 
 	output = o.Bytes()
+	compressionSummary.Observe(float64(time.Since(start).Seconds()))
 	return
 }
 
