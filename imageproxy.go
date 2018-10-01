@@ -34,6 +34,7 @@ import (
 	"time"
 
 	"github.com/gregjones/httpcache"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	tphttp "willnorris.com/go/imageproxy/third_party/http"
 )
 
@@ -124,11 +125,19 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if r.URL.Path == "/metrics" {
+		var h http.Handler = promhttp.Handler()
+		h.ServeHTTP(w, r)
+		return
+	}
+
 	var h http.Handler = http.HandlerFunc(p.serveImage)
 	if p.Timeout > 0 {
 		h = tphttp.TimeoutHandler(h, p.Timeout, "Gateway timeout waiting for remote resource.")
 	}
+	start := time.Now()
 	h.ServeHTTP(w, r)
+	httpRequestsResponseTime.Observe(float64(time.Since(start).Seconds()))
 }
 
 // serveImage handles incoming requests for proxied images.
@@ -155,6 +164,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 		msg := fmt.Sprintf("error fetching remote image: %v", err)
 		log.Print(msg)
 		http.Error(w, msg, http.StatusInternalServerError)
+		remoteImageFetchErrors.Inc()
 		return
 	}
 	defer resp.Body.Close()
@@ -162,6 +172,10 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	cached := resp.Header.Get(httpcache.XFromCache)
 	if p.Verbose {
 		log.Printf("request: %v (served from cache: %v)", *req, cached == "1")
+	}
+
+	if cached == "1" {
+		requestServedFromCacheCount.Inc()
 	}
 
 	copyHeader(w.Header(), resp.Header, "Cache-Control", "Last-Modified", "Expires", "Etag", "Link")

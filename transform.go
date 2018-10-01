@@ -25,14 +25,16 @@ import (
 	"log"
 	"math"
 
+	"os/exec"
+	"strings"
+	"time"
+
 	"github.com/disintegration/imaging"
 	"github.com/muesli/smartcrop"
 	"github.com/rwcarlsen/goexif/exif"
 	"golang.org/x/image/tiff"   // register tiff format
 	_ "golang.org/x/image/webp" // register webp format
 	"willnorris.com/go/gifresize"
-	"os/exec"
-	"strings"
 )
 
 // default compression quality of resized jpegs
@@ -130,7 +132,6 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 
 	return outputBytes, nil
 }
-
 
 func CompressPNG(input []byte) (output []byte, err error) {
 	cmd := exec.Command("pngquant", "-", "--speed", "10")
@@ -315,6 +316,7 @@ func transformImage(m image.Image, opt Options) image.Image {
 	// Parse crop and resize parameters before applying any transforms.
 	// This is to ensure that any percentage-based values are based off the
 	// size of the original image.
+	start := time.Now()
 	rect := cropParams(m, opt)
 	w, h, resize := resizeParams(m, opt)
 
@@ -353,6 +355,8 @@ func transformImage(m image.Image, opt Options) image.Image {
 	if opt.FlipHorizontal {
 		m = imaging.FlipH(m)
 	}
+
+	imageTransformationSummary.Observe(float64(time.Since(start).Seconds()))
 
 	return m
 }
