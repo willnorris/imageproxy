@@ -87,8 +87,6 @@ const (
 	Sharpness                            = "Sharpness"
 	DeviceSettingDescription             = "DeviceSettingDescription"
 	SubjectDistanceRange                 = "SubjectDistanceRange"
-	LensMake                             = "LensMake"
-	LensModel                            = "LensModel"
 )
 
 // thumbnail fields
@@ -239,8 +237,6 @@ var exifFields = map[uint16]FieldName{
 	0xA40A: Sharpness,
 	0xA40B: DeviceSettingDescription,
 	0xA40C: SubjectDistanceRange,
-	0xA433: LensMake,
-	0xA434: LensModel,
 }
 
 var gpsFields = map[uint16]FieldName{

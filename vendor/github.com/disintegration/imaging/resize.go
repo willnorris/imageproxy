@@ -19,6 +19,7 @@ func precomputeWeights(dstSize, srcSize int, filter ResampleFilter) [][]indexWei
 	ru := math.Ceil(scale * filter.Support)
 
 	out := make([][]indexWeight, dstSize)
+	tmp := make([]indexWeight, 0, dstSize*int(ru+2)*2)
 
 	for v := 0; v < dstSize; v++ {
 		fu := (float64(v)+0.5)*du - 0.5
@@ -37,14 +38,17 @@ func precomputeWeights(dstSize, srcSize int, filter ResampleFilter) [][]indexWei
 			w := filter.Kernel((float64(u) - fu) / scale)
 			if w != 0 {
 				sum += w
-				out[v] = append(out[v], indexWeight{index: u, weight: w})
+				tmp = append(tmp, indexWeight{index: u, weight: w})
 			}
 		}
 		if sum != 0 {
-			for i := range out[v] {
-				out[v][i].weight /= sum
+			for i := range tmp {
+				tmp[i].weight /= sum
 			}
 		}
+
+		out[v] = tmp
+		tmp = tmp[len(tmp):]
 	}
 
 	return out
@@ -59,7 +63,7 @@ func precomputeWeights(dstSize, srcSize int, filter ResampleFilter) [][]indexWei
 //
 // Usage example:
 //
-//		dstImage := imaging.Resize(srcImage, 800, 600, imaging.Lanczos)
+//	dstImage := imaging.Resize(srcImage, 800, 600, imaging.Lanczos)
 //
 func Resize(img image.Image, width, height int, filter ResampleFilter) *image.NRGBA {
 	dstW, dstH := width, height
@@ -239,7 +243,7 @@ func resizeNearest(src *image.NRGBA, width, height int) *image.NRGBA {
 //
 // Usage example:
 //
-//		dstImage := imaging.Fit(srcImage, 800, 600, imaging.Lanczos)
+//	dstImage := imaging.Fit(srcImage, 800, 600, imaging.Lanczos)
 //
 func Fit(img image.Image, width, height int, filter ResampleFilter) *image.NRGBA {
 	maxW, maxH := width, height
@@ -284,7 +288,7 @@ func Fit(img image.Image, width, height int, filter ResampleFilter) *image.NRGBA
 //
 // Usage example:
 //
-//		dstImage := imaging.Fill(srcImage, 800, 600, imaging.Center, imaging.Lanczos)
+//	dstImage := imaging.Fill(srcImage, 800, 600, imaging.Center, imaging.Lanczos)
 //
 func Fill(img image.Image, width, height int, anchor Anchor, filter ResampleFilter) *image.NRGBA {
 	minW, minH := width, height
@@ -326,7 +330,7 @@ func Fill(img image.Image, width, height int, anchor Anchor, filter ResampleFilt
 //
 // Usage example:
 //
-//		dstImage := imaging.Thumbnail(srcImage, 100, 100, imaging.Lanczos)
+//	dstImage := imaging.Thumbnail(srcImage, 100, 100, imaging.Lanczos)
 //
 func Thumbnail(img image.Image, width, height int, filter ResampleFilter) *image.NRGBA {
 	return Fill(img, width, height, Center, filter)

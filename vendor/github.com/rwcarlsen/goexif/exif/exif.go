@@ -27,24 +27,6 @@ const (
 	interopPointer = 0xA005
 )
 
-// A decodeError is returned when the image cannot be decoded as a tiff image.
-type decodeError struct {
-	cause error
-}
-
-func (de decodeError) Error() string {
-	return fmt.Sprintf("exif: decode failed (%v) ", de.cause.Error())
-}
-
-// IsShortReadTagValueError identifies a ErrShortReadTagValue error.
-func IsShortReadTagValueError(err error) bool {
-	de, ok := err.(decodeError)
-	if ok {
-		return de.cause == tiff.ErrShortReadTagValue
-	}
-	return false
-}
-
 // A TagNotPresentError is returned when the requested field is not
 // present in the EXIF.
 type TagNotPresentError FieldName
@@ -267,13 +249,13 @@ func Decode(r io.Reader) (*Exif, error) {
 	}
 
 	if err != nil {
-		return nil, decodeError{cause: err}
+		return nil, fmt.Errorf("exif: decode failed (%v) ", err)
 	}
 
 	er.Seek(0, 0)
 	raw, err := ioutil.ReadAll(er)
 	if err != nil {
-		return nil, decodeError{cause: err}
+		return nil, fmt.Errorf("exif: decode failed (%v) ", err)
 	}
 
 	// build an exif structure from the tiff
@@ -573,15 +555,11 @@ func newAppSec(marker byte, r io.Reader) (*appSec, error) {
 			continue
 		}
 
-		dataLenBytes := make([]byte, 2)
-		for k,_ := range dataLenBytes {
-			c, err := br.ReadByte()
-			if err != nil {
-				return nil, err
-			}
-			dataLenBytes[k] = c
+		dataLenBytes, err := br.Peek(2)
+		if err != nil {
+			return nil, err
 		}
-		dataLen = int(binary.BigEndian.Uint16(dataLenBytes)) - 2
+		dataLen = int(binary.BigEndian.Uint16(dataLenBytes))
 	}
 
 	// read section data
@@ -595,6 +573,7 @@ func newAppSec(marker byte, r io.Reader) (*appSec, error) {
 		}
 		app.data = append(app.data, s[:n]...)
 	}
+	app.data = app.data[2:] // exclude dataLenBytes
 	return app, nil
 }
 
