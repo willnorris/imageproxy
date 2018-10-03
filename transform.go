@@ -50,17 +50,12 @@ var resampleFilter = imaging.Lanczos
 // encoded image in one of the supported formats (gif, jpeg, or png).  The
 // bytes of a similarly encoded image is returned.
 func Transform(img []byte, opt Options) ([]byte, error) {
-	if !opt.transform() {
-		// bail if no transformation was requested
-		return img, nil
-	}
 
 	// decode image
 	m, format, err := image.Decode(bytes.NewReader(img))
 	if err != nil {
 		return nil, err
 	}
-
 	// apply EXIF orientation for jpeg and tiff source images. Read at most
 	// up to maxExifSize looking for EXIF tags.
 	if format == "jpeg" || format == "tiff" {
@@ -148,13 +143,16 @@ func CompressPNG(input []byte) (output []byte, err error) {
 	}
 
 	output = o.Bytes()
+	if len(output) > len(input) {
+		output = input
+	}
 	compressionSummary.Observe(float64(time.Since(start).Seconds()))
 	return
 }
 
 func CompressJPG(input []byte) (output []byte, err error) {
 	start := time.Now()
-	cmd := exec.Command("jpegoptim", "--stdin", "--stdout", "--strip-all")
+	cmd := exec.Command("jpegoptim", "--stdin", "--stdout", "--strip-all", "--max=85")
 	cmd.Stdin = strings.NewReader(string(input))
 	var o bytes.Buffer
 	cmd.Stdout = &o
@@ -165,6 +163,9 @@ func CompressJPG(input []byte) (output []byte, err error) {
 	}
 
 	output = o.Bytes()
+	if len(output) > len(input) {
+		output = input
+	}
 	compressionSummary.Observe(float64(time.Since(start).Seconds()))
 	return
 }
