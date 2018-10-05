@@ -127,6 +127,12 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 		return nil, fmt.Errorf("unsupported format: %v", format)
 	}
 
+	if !opt.transform() {
+		if len(outputBytes) > len(img) {
+			outputBytes = img
+		}
+	}
+
 	return outputBytes, nil
 }
 
@@ -143,9 +149,6 @@ func CompressPNG(input []byte) (output []byte, err error) {
 	}
 
 	output = o.Bytes()
-	if len(output) > len(input) {
-		output = input
-	}
 	compressionSummary.Observe(float64(time.Since(start).Seconds()))
 	return
 }
@@ -163,9 +166,6 @@ func CompressJPG(input []byte) (output []byte, err error) {
 	}
 
 	output = o.Bytes()
-	if len(output) > len(input) {
-		output = input
-	}
 	compressionSummary.Observe(float64(time.Since(start).Seconds()))
 	return
 }
