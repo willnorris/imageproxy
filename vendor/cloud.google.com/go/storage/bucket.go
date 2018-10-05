@@ -35,7 +35,7 @@ type BucketHandle struct {
 	acl              ACLHandle
 	defaultObjectACL ACLHandle
 	conds            *BucketConditions
-	userProject      string // project for requester-pays buckets
+	userProject      string // project for Requester Pays buckets
 }
 
 // Bucket returns a BucketHandle, which provides operations on the named bucket.
@@ -197,8 +197,10 @@ func (b *BucketHandle) newPatchCall(uattrs *BucketAttrsToUpdate) (*raw.BucketsPa
 }
 
 // BucketAttrs represents the metadata for a Google Cloud Storage bucket.
+// Read-only fields are ignored by BucketHandle.Create.
 type BucketAttrs struct {
 	// Name is the name of the bucket.
+	// This field is read-only.
 	Name string
 
 	// ACL is the list of access control rules on the bucket.
@@ -212,6 +214,7 @@ type BucketAttrs struct {
 	Location string
 
 	// MetaGeneration is the metadata generation of the bucket.
+	// This field is read-only.
 	MetaGeneration int64
 
 	// StorageClass is the default storage class of the bucket. This defines
@@ -224,16 +227,19 @@ type BucketAttrs struct {
 	StorageClass string
 
 	// Created is the creation time of the bucket.
+	// This field is read-only.
 	Created time.Time
 
 	// VersioningEnabled reports whether this bucket has versioning enabled.
-	// This field is read-only.
 	VersioningEnabled bool
 
 	// Labels are the bucket's labels.
 	Labels map[string]string
 
 	// RequesterPays reports whether the bucket is a Requester Pays bucket.
+	// Clients performing operations on Requester Pays buckets must provide
+	// a user project (see BucketHandle.UserProject), which will be billed
+	// for the operations.
 	RequesterPays bool
 	// Lifecycle is the lifecycle configuration for objects in the bucket.
 	Lifecycle Lifecycle
@@ -503,8 +509,10 @@ func (c *BucketConditions) validate(method string) error {
 }
 
 // UserProject returns a new BucketHandle that passes the project ID as the user
-// project for all subsequent calls. A user project is required for all operations
-// on requester-pays buckets.
+// project for all subsequent calls. Calls with a user project will be billed to that
+// project rather than to the bucket's owning project.
+//
+// A user project is required for all operations on Requester Pays buckets.
 func (b *BucketHandle) UserProject(projectID string) *BucketHandle {
 	b2 := *b
 	b2.userProject = projectID
@@ -601,6 +609,7 @@ func toLifecycle(rl *raw.BucketLifecycle) Lifecycle {
 		if rr.Condition.CreatedBefore != "" {
 			r.Condition.CreatedBefore, _ = time.Parse(rfc3339Date, rr.Condition.CreatedBefore)
 		}
+		l.Rules = append(l.Rules, r)
 	}
 	return l
 }

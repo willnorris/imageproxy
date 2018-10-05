@@ -30,19 +30,20 @@ import (
 	"github.com/PaulARoy/azurestoragecache"
 	"github.com/die-net/lrucache"
 	"github.com/die-net/lrucache/twotier"
-	"github.com/diegomarangoni/gcscache"
 	"github.com/garyburd/redigo/redis"
 	"github.com/gregjones/httpcache/diskcache"
 	rediscache "github.com/gregjones/httpcache/redis"
 	"github.com/peterbourgon/diskv"
 	"willnorris.com/go/imageproxy"
+	"willnorris.com/go/imageproxy/internal/gcscache"
 	"willnorris.com/go/imageproxy/internal/s3cache"
 )
 
 const defaultMemorySize = 100
 
 var addr = flag.String("addr", "localhost:8080", "TCP address to listen on")
-var whitelist = flag.String("whitelist", "", "comma separated list of allowed remote hosts")
+var remoteHosts = flag.String("remoteHosts", "", "comma separated list of allowed remote hosts")
+var whitelist = flag.String("whitelist", "", "deprecated. use 'remoteHosts' instead")
 var referrers = flag.String("referrers", "", "comma separated list of allowed referring hosts")
 var baseURL = flag.String("baseURL", "", "default base URL for relative remote URLs")
 var cache tieredCache
@@ -51,6 +52,7 @@ var scaleUp = flag.Bool("scaleUp", false, "allow images to scale beyond their or
 var timeout = flag.Duration("timeout", 0, "time limit for requests served by this proxy")
 var verbose = flag.Bool("verbose", false, "print verbose logging messages")
 var version = flag.Bool("version", false, "Deprecated: this flag does nothing")
+var contentTypes = flag.String("contentTypes", "image/*", "comma separated list of allowed content types")
 
 func init() {
 	flag.Var(&cache, "cache", "location to cache images (see https://github.com/willnorris/imageproxy#cache)")
@@ -58,13 +60,20 @@ func init() {
 
 func main() {
 	flag.Parse()
+	if *remoteHosts == "" {
+		// backwards compatible with old naming of the flag
+		*remoteHosts = *whitelist
+	}
 
 	p := imageproxy.NewProxy(nil, cache.Cache)
-	if *whitelist != "" {
-		p.Whitelist = strings.Split(*whitelist, ",")
+	if *remoteHosts != "" {
+		p.RemoteHosts = strings.Split(*remoteHosts, ",")
 	}
 	if *referrers != "" {
 		p.Referrers = strings.Split(*referrers, ",")
+	}
+	if *contentTypes != "" {
+		p.ContentTypes = strings.Split(*contentTypes, ",")
 	}
 	if *signatureKey != "" {
 		key := []byte(*signatureKey)
@@ -142,7 +151,7 @@ func parseCache(c string) (imageproxy.Cache, error) {
 	case "azure":
 		return azurestoragecache.New("", "", u.Host)
 	case "gcs":
-		return gcscache.New(u.String()), nil
+		return gcscache.New(u.Host, strings.TrimPrefix(u.Path, "/"))
 	case "memory":
 		return lruCache(u.Opaque)
 	case "redis":
