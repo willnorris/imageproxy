@@ -1,4 +1,0 @@
-name: image-resizer-dev
-namespace: dev
-replicaCount: 1
-track: staging
