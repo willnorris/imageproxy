@@ -1,0 +1,9 @@
+namespace: dev
+deploymentUrl: "safeimage.dev.buffer.com"
+track: staging
+replicaCount: 1
+ingress:
+  enabled: true
+  path: /
+  annotations:
+    kubernetes.io/ingress.class: nginx
