@@ -356,6 +356,7 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 		if t.log != nil {
 			t.log("fetching remote URL: %v", req.URL)
 		}
+		req.Header.Set("Accept", "image/*")
 		return t.Transport.RoundTrip(req)
 	}
 
