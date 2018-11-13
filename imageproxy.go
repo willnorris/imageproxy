@@ -74,8 +74,8 @@ type Proxy struct {
 	// If true, log additional debug messages
 	Verbose bool
 
-	// ContentTypes specifies a list of content types to allow. An empty list means only image types
-	// are allowed.
+	// ContentTypes specifies a list of content types to allow. An empty
+	// list means all content types are allowed.
 	ContentTypes []string
 }
 
