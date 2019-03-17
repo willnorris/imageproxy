@@ -68,17 +68,23 @@ x0.15   | 15% original height, proportional width  | <a href="https://willnorris
 200x,png | 200px wide, converted to PNG format | <a href="https://willnorris.com/api/imageproxy/200x,png/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/200x,png/https://willnorris.com/2013/12/small-things.jpg" alt="200x,png"></a>
 cx175,cw400,ch300,100x | crop to 400x300px starting at (175,0), scale to 100px wide | <a href="https://willnorris.com/api/imageproxy/cx175,cw400,ch300,100x/https://willnorris.com/2013/12/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/cx175,cw400,ch300,100x/https://willnorris.com/2013/12/small-things.jpg" alt="cx175,cw400,ch300,100x"></a>
 
+The [smart crop feature](https://godoc.org/willnorris.com/go/imageproxy#hdr-Smart_Crop)
+can best be seen by comparing crops of [this source image][judah-sheets], with
+and without smart crop enabled.
+
+Options | Meaning                                  | Image
+--------|------------------------------------------|------
+150x300 | 150x300px, standard crop | <a href="https://willnorris.com/api/imageproxy/150x300/https://judahnorris.com/images/judah-sheets.jpg"><img src="https://willnorris.com/api/imageproxy/150x300/https://judahnorris.com/images/judah-sheets.jpg" alt="200x400,sc"></a>
+150x300,sc | 150x300px, smart crop          | <a href="https://willnorris.com/api/imageproxy/150x300,sc/https://judahnorris.com/images/judah-sheets.jpg"><img src="https://willnorris.com/api/imageproxy/150x300,sc/https://judahnorris.com/images/judah-sheets.jpg" alt="200x400"></a>
+
+[judah-sheets]: https://judahnorris.com/images/judah-sheets.jpg
+
 Transformation also works on animated gifs.  Here is [this source
 image][material-animation] resized to 200px square and rotated 270 degrees:
 
 [material-animation]: https://willnorris.com/2015/05/material-animations.gif
 
 <a href="https://willnorris.com/api/imageproxy/200,r270/https://willnorris.com/2015/05/material-animations.gif"><img src="https://willnorris.com/api/imageproxy/200,r270/https://willnorris.com/2015/05/material-animations.gif" alt="200,r270"></a>
-
-The smart crop feature can best be seen by comparing the following images, with and without smart crop.
-
-<a href="https://willnorris.com/api/imageproxy/150x300,sc/https://judahnorris.com/images/judah-sheets.jpg"><img src="https://willnorris.com/api/imageproxy/150x300,sc/https://judahnorris.com/images/judah-sheets.jpg" alt="200x400,sc"></a>
-<a href="https://willnorris.com/api/imageproxy/150x300/https://judahnorris.com/images/judah-sheets.jpg"><img src="https://willnorris.com/api/imageproxy/150x300/https://judahnorris.com/images/judah-sheets.jpg" alt="200x400"></a>
 
 ## Getting Started ##
 
