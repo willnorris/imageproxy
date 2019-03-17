@@ -42,11 +42,11 @@ type Proxy struct {
 	Client *http.Client // client used to fetch remote URLs
 	Cache  Cache        // cache used to cache responses
 
-	// RemoteHosts specifies a list of remote hosts that images can be
+	// AllowHosts specifies a list of remote hosts that images can be
 	// proxied from.  An empty list means all hosts are allowed.
-	RemoteHosts []string
+	AllowHosts []string
 
-	// Whitelist should no longer be used. Use "RemoteHosts" instead.
+	// Whitelist should no longer be used. Use "AllowHosts" instead.
 	Whitelist []string
 
 	// Referrers, when given, requires that requests to the image
@@ -217,19 +217,19 @@ func copyHeader(dst, src http.Header, keys ...string) {
 // referrer, host, and signature.  It returns an error if the request is not
 // allowed.
 func (p *Proxy) allowed(r *Request) error {
-	if p.RemoteHosts == nil {
+	if p.AllowHosts == nil {
 		// backwards compatible with old naming of the field
-		p.RemoteHosts = p.Whitelist
+		p.AllowHosts = p.Whitelist
 	}
 	if len(p.Referrers) > 0 && !validReferrer(p.Referrers, r.Original) {
 		return fmt.Errorf("request does not contain an allowed referrer: %v", r)
 	}
 
-	if len(p.RemoteHosts) == 0 && len(p.SignatureKey) == 0 {
+	if len(p.AllowHosts) == 0 && len(p.SignatureKey) == 0 {
 		return nil // no allowed hosts or signature key, all requests accepted
 	}
 
-	if len(p.RemoteHosts) > 0 && validHost(p.RemoteHosts, r.URL) {
+	if len(p.AllowHosts) > 0 && validHost(p.AllowHosts, r.URL) {
 		return nil
 	}
 

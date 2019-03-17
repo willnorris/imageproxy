@@ -42,8 +42,8 @@ import (
 const defaultMemorySize = 100
 
 var addr = flag.String("addr", "localhost:8080", "TCP address to listen on")
-var remoteHosts = flag.String("remoteHosts", "", "comma separated list of allowed remote hosts")
-var whitelist = flag.String("whitelist", "", "deprecated. use 'remoteHosts' instead")
+var allowHosts = flag.String("allowHosts", "", "comma separated list of allowed remote hosts")
+var whitelist = flag.String("whitelist", "", "deprecated. use 'allowHosts' instead")
 var referrers = flag.String("referrers", "", "comma separated list of allowed referring hosts")
 var baseURL = flag.String("baseURL", "", "default base URL for relative remote URLs")
 var cache tieredCache
@@ -61,14 +61,14 @@ func init() {
 
 func main() {
 	flag.Parse()
-	if *remoteHosts == "" {
+	if *allowHosts == "" {
 		// backwards compatible with old naming of the flag
-		*remoteHosts = *whitelist
+		*allowHosts = *whitelist
 	}
 
 	p := imageproxy.NewProxy(nil, cache.Cache)
-	if *remoteHosts != "" {
-		p.RemoteHosts = strings.Split(*remoteHosts, ",")
+	if *allowHosts != "" {
+		p.AllowHosts = strings.Split(*allowHosts, ",")
 	}
 	if *referrers != "" {
 		p.Referrers = strings.Split(*referrers, ",")
