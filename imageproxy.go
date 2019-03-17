@@ -352,8 +352,10 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 		return t.Transport.RoundTrip(req)
 	}
 
+	f := req.URL.Fragment
 	req.URL.Fragment = ""
 	resp, err := t.CachingClient.Do(req)
+	req.URL.Fragment = f
 	if err != nil {
 		return nil, err
 	}
