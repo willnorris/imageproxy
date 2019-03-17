@@ -223,9 +223,11 @@ Try it out by running:
     imageproxy -signatureKey "secret key"
 
 Reload the [codercat URL][], and you should see an error message.  Now load a
-[signed codercat URL][] and verify that it loads properly.
+[signed codercat URL][] (which contains the [signature option][]) and verify
+that it loads properly.
 
 [signed codercat URL]: http://localhost:8080/500,sXyMwWKIC5JPCtlYOQ2f4yMBTqpjtUsfI67Sp7huXIYY=/https://octodex.github.com/images/codercat.jpg
+[signature option]: https://godoc.org/willnorris.com/go/imageproxy#hdr-Signature
 
 Some simple code samples for generating signatures in various languages can be
 found in [URL Signing](https://github.com/willnorris/imageproxy/wiki/URL-signing).
