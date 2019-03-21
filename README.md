@@ -230,7 +230,7 @@ that it loads properly.
 [signature option]: https://godoc.org/willnorris.com/go/imageproxy#hdr-Signature
 
 Some simple code samples for generating signatures in various languages can be
-found in [URL Signing](https://github.com/willnorris/imageproxy/wiki/URL-signing).
+found in [docs/url-signing.md](/docs/url-signing.md).
 
 If both a whiltelist and signatureKey are specified, requests can match either.
 In other words, requests that match one of the allowed hosts don't necessarily
