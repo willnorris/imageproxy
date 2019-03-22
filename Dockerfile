@@ -16,7 +16,7 @@ WORKDIR /go/bin
 
 COPY --from=build /etc/passwd /etc/passwd
 COPY --from=build /usr/share/zoneinfo /usr/share/zoneinfo
-COPY --from=build /etc/ssl/certs /etc/ssl/certs
+COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=build /go/bin/imageproxy .
 
 USER go
