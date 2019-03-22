@@ -10,6 +10,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
  - updated docker image to use go1.12 compiler and build imageproxy as a go module.
 
+### Removed
+ - removed deprecated `whitelist` flag and `Proxy.Whitelist` struct field. Use
+   `allowHosts` and `Proxy.AllowHosts` instead.
+
 ## [0.8.0] (2019-03-21)
 
 ### Added

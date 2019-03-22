@@ -47,9 +47,6 @@ type Proxy struct {
 	// proxied from.  An empty list means all hosts are allowed.
 	AllowHosts []string
 
-	// Whitelist should no longer be used. Use "AllowHosts" instead.
-	Whitelist []string
-
 	// DenyHosts specifies a list of remote hosts that images cannot be
 	// proxied from.
 	DenyHosts []string
@@ -229,10 +226,6 @@ var (
 // referrer, host, and signature.  It returns an error if the request is not
 // allowed.
 func (p *Proxy) allowed(r *Request) error {
-	if p.AllowHosts == nil {
-		// backwards compatible with old naming of the field
-		p.AllowHosts = p.Whitelist
-	}
 	if len(p.Referrers) > 0 && !referrerMatches(p.Referrers, r.Original) {
 		return errReferrer
 	}
