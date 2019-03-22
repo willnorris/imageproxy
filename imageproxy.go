@@ -202,7 +202,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 // keys will be copied.
 func copyHeader(dst, src http.Header, keys ...string) {
 	if len(keys) == 0 {
-		for k, _ := range src {
+		for k := range src {
 			keys = append(keys, k)
 		}
 	}

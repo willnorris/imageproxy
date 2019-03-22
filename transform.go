@@ -105,7 +105,7 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 		}
 	case "tiff":
 		m = transformImage(m, opt)
-		err = tiff.Encode(buf, m, &tiff.Options{tiff.Deflate, true})
+		err = tiff.Encode(buf, m, &tiff.Options{Compression: tiff.Deflate, Predictor: true})
 		if err != nil {
 			return nil, err
 		}
