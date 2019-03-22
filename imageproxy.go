@@ -183,7 +183,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	contentType, _, _ := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-	if resp.ContentLength != 0 && !validContentType(p.ContentTypes, contentType) {
+	if resp.ContentLength != 0 && !contentTypeMatches(p.ContentTypes, contentType) {
 		msg := fmt.Sprintf("forbidden content-type: %q", contentType)
 		log.Print(msg)
 		http.Error(w, msg, http.StatusForbidden)
@@ -225,11 +225,11 @@ func (p *Proxy) allowed(r *Request) error {
 		// backwards compatible with old naming of the field
 		p.AllowHosts = p.Whitelist
 	}
-	if len(p.Referrers) > 0 && !validReferrer(p.Referrers, r.Original) {
+	if len(p.Referrers) > 0 && !referrerMatches(p.Referrers, r.Original) {
 		return fmt.Errorf("request does not contain an allowed referrer: %v", r)
 	}
 
-	if validHost(p.DenyHosts, r.URL) {
+	if hostMatches(p.DenyHosts, r.URL) {
 		return fmt.Errorf("request contains a denied host %v", r)
 	}
 
@@ -237,7 +237,7 @@ func (p *Proxy) allowed(r *Request) error {
 		return nil // no allowed hosts or signature key, all requests accepted
 	}
 
-	if len(p.AllowHosts) > 0 && validHost(p.AllowHosts, r.URL) {
+	if len(p.AllowHosts) > 0 && hostMatches(p.AllowHosts, r.URL) {
 		return nil
 	}
 
@@ -248,8 +248,8 @@ func (p *Proxy) allowed(r *Request) error {
 	return fmt.Errorf("request does not contain an allowed host or valid signature: %v", r)
 }
 
-// validContentType returns whether contentType matches one of the allowed patterns.
-func validContentType(patterns []string, contentType string) bool {
+// contentTypeMatches returns whether contentType matches one of the allowed patterns.
+func contentTypeMatches(patterns []string, contentType string) bool {
 	if len(patterns) == 0 {
 		return true
 	}
@@ -263,8 +263,8 @@ func validContentType(patterns []string, contentType string) bool {
 	return false
 }
 
-// validHost returns whether the host in u matches one of hosts.
-func validHost(hosts []string, u *url.URL) bool {
+// hostMatches returns whether the host in u matches one of hosts.
+func hostMatches(hosts []string, u *url.URL) bool {
 	for _, host := range hosts {
 		if u.Host == host {
 			return true
@@ -278,13 +278,13 @@ func validHost(hosts []string, u *url.URL) bool {
 }
 
 // returns whether the referrer from the request is in the host list.
-func validReferrer(hosts []string, r *http.Request) bool {
+func referrerMatches(hosts []string, r *http.Request) bool {
 	u, err := url.Parse(r.Header.Get("Referer"))
 	if err != nil { // malformed or blank header, just deny
 		return false
 	}
 
-	return validHost(hosts, u)
+	return hostMatches(hosts, u)
 }
 
 // validSignature returns whether the request signature is valid.

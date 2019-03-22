@@ -158,8 +158,8 @@ func TestAllowed(t *testing.T) {
 	}
 }
 
-func TestValidHost(t *testing.T) {
-	allowHosts := []string{"a.test", "*.b.test", "*c.test"}
+func TestHostMatches(t *testing.T) {
+	hosts := []string{"a.test", "*.b.test", "*c.test"}
 
 	tests := []struct {
 		url   string
@@ -182,8 +182,8 @@ func TestValidHost(t *testing.T) {
 		if err != nil {
 			t.Errorf("error parsing url %q: %v", tt.url, err)
 		}
-		if got, want := validHost(allowHosts, u), tt.valid; got != want {
-			t.Errorf("validHost(%v, %q) returned %v, want %v", allowHosts, u, got, want)
+		if got, want := hostMatches(hosts, u), tt.valid; got != want {
+			t.Errorf("hostMatches(%v, %q) returned %v, want %v", hosts, u, got, want)
 		}
 	}
 }
@@ -413,7 +413,7 @@ func TestTransformingTransport(t *testing.T) {
 	}
 }
 
-func TestValidContentType(t *testing.T) {
+func TestContentTypeMatches(t *testing.T) {
 	tests := []struct {
 		patterns    []string
 		contentType string
@@ -454,9 +454,9 @@ func TestValidContentType(t *testing.T) {
 		{[]string{"text/*", "image/*"}, "image/jpeg", true},
 	}
 	for _, tt := range tests {
-		got := validContentType(tt.patterns, tt.contentType)
+		got := contentTypeMatches(tt.patterns, tt.contentType)
 		if want := tt.valid; got != want {
-			t.Errorf("validContentType(%q, %q) returned %v, want %v", tt.patterns, tt.contentType, got, want)
+			t.Errorf("contentTypeMatches(%q, %q) returned %v, want %v", tt.patterns, tt.contentType, got, want)
 		}
 	}
 }
