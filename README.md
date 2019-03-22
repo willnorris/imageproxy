@@ -186,12 +186,12 @@ specify multiple hosts as a comma separated list, or prefix a host value with
 ### Allowed Hosts List ###
 
 You can limit the remote hosts that the proxy will fetch images from using the
-`remoteHosts` flag.  This is useful, for example, for locking the proxy down to
+`allowHosts` flag.  This is useful, for example, for locking the proxy down to
 your own hosts to prevent others from abusing it.  Of course if you want to
-support fetching from any host, leave off the remoteHosts flag.  Try it out by
+support fetching from any host, leave off the allowHosts flag.  Try it out by
 running:
 
-    imageproxy -remoteHosts example.com
+    imageproxy -allowHosts example.com
 
 Reload the [codercat URL][], and you should now get an error message.  You can
 specify multiple hosts as a comma separated list, or prefix a host value with
