@@ -7,6 +7,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+ - updated docker image to use go1.12 compiler and build imageproxy as a go module.
+
 ## [0.8.0] (2019-03-21)
 
 ### Added
