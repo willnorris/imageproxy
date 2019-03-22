@@ -22,6 +22,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -152,8 +153,8 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	req.Options.ScaleUp = p.ScaleUp
 
 	if err := p.allowed(req); err != nil {
-		log.Print(err)
-		http.Error(w, err.Error(), http.StatusForbidden)
+		log.Printf("%s: %v", err, req)
+		http.Error(w, msgNotAllowed, http.StatusForbidden)
 		return
 	}
 
@@ -184,9 +185,8 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 
 	contentType, _, _ := mime.ParseMediaType(resp.Header.Get("Content-Type"))
 	if resp.ContentLength != 0 && !contentTypeMatches(p.ContentTypes, contentType) {
-		msg := fmt.Sprintf("forbidden content-type: %q", contentType)
-		log.Print(msg)
-		http.Error(w, msg, http.StatusForbidden)
+		log.Printf("content-type not allowed: %q", contentType)
+		http.Error(w, msgNotAllowed, http.StatusForbidden)
 		return
 	}
 	w.Header().Set("Content-Type", contentType)
@@ -217,6 +217,14 @@ func copyHeader(dst, src http.Header, keys ...string) {
 	}
 }
 
+var (
+	errReferrer   = errors.New("request does not contain an allowed referrer")
+	errDeniedHost = errors.New("request contains a denied host")
+	errNotAllowed = errors.New("request does not contain an allowed host or valid signature")
+
+	msgNotAllowed = "requested URL is not allowed"
+)
+
 // allowed determines whether the specified request contains an allowed
 // referrer, host, and signature.  It returns an error if the request is not
 // allowed.
@@ -226,11 +234,11 @@ func (p *Proxy) allowed(r *Request) error {
 		p.AllowHosts = p.Whitelist
 	}
 	if len(p.Referrers) > 0 && !referrerMatches(p.Referrers, r.Original) {
-		return fmt.Errorf("request does not contain an allowed referrer: %v", r)
+		return errReferrer
 	}
 
 	if hostMatches(p.DenyHosts, r.URL) {
-		return fmt.Errorf("request contains a denied host %v", r)
+		return errDeniedHost
 	}
 
 	if len(p.AllowHosts) == 0 && len(p.SignatureKey) == 0 {
@@ -245,7 +253,7 @@ func (p *Proxy) allowed(r *Request) error {
 		return nil
 	}
 
-	return fmt.Errorf("request does not contain an allowed host or valid signature: %v", r)
+	return errNotAllowed
 }
 
 // contentTypeMatches returns whether contentType matches one of the allowed patterns.
