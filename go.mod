@@ -22,7 +22,7 @@ require (
 	github.com/jtolds/gls v4.2.1+incompatible // indirect
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/marstr/guid v0.0.0-20170427235115-8bdf7d1a087c // indirect
-	github.com/muesli/smartcrop v0.0.0-20171215203440-9032446b30f6
+	github.com/muesli/smartcrop v0.2.1-0.20181030220600-548bbf0c0965
 	github.com/nfnt/resize v0.0.0-20160724205520-891127d8d1b5 // indirect
 	github.com/peterbourgon/diskv v0.0.0-20171120014656-2973218375c3
 	github.com/pmezard/go-difflib v1.0.0 // indirect
