@@ -195,6 +195,28 @@ func TestHostMatches(t *testing.T) {
 	}
 }
 
+func TestReferrerMatches(t *testing.T) {
+	hosts := []string{"a.test"}
+
+	tests := []struct {
+		referrer string
+		valid    bool
+	}{
+		{"", false},
+		{"%", false},
+		{"http://a.test/", true},
+		{"http://b.test/", false},
+	}
+
+	for _, tt := range tests {
+		r, _ := http.NewRequest("GET", "/", nil)
+		r.Header.Set("Referer", tt.referrer)
+		if got, want := referrerMatches(hosts, r), tt.valid; got != want {
+			t.Errorf("referrerMatches(%v, %v) returned %v, want %v", hosts, r, got, want)
+		}
+	}
+}
+
 func TestValidSignature(t *testing.T) {
 	key := []byte("c0ffee")
 
@@ -348,6 +370,10 @@ func TestProxy_ServeHTTP(t *testing.T) {
 		{"/http://good.test/nocontent", http.StatusNoContent},       // non-OK response
 		{"/100/http://good.test/png", http.StatusOK},
 		{"/100/http://good.test/plain", http.StatusForbidden}, // non-image response
+
+		// health-check URLs
+		{"/", http.StatusOK},
+		{"/health-check", http.StatusOK},
 	}
 
 	for _, tt := range tests {

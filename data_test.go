@@ -16,6 +16,7 @@ package imageproxy
 
 import (
 	"net/http"
+	"net/url"
 	"testing"
 )
 
@@ -98,7 +99,7 @@ func TestParseOptions(t *testing.T) {
 		{"r90,fh,sc0ffee,png,q90,1x2,fv,fit", Options{1, 2, true, 90, true, true, 90, "c0ffee", false, "png", 0, 0, 0, 0, false}},
 
 		// all flags, in different orders with crop
-		{"q70,cx100,cw300,1x2,fit,cy200,r90,fv,ch400,fh,sc0ffee,png", Options{1, 2, true, 90, true, true, 70, "c0ffee", false, "png", 100, 200, 300, 400, false}},
+		{"q70,cx100,cw300,1x2,fit,cy200,r90,fv,ch400,fh,sc0ffee,png,sc,scaleUp", Options{1, 2, true, 90, true, true, 70, "c0ffee", true, "png", 100, 200, 300, 400, true}},
 		{"ch400,r90,cw300,fh,sc0ffee,png,cx100,q90,cy200,1x2,fv,fit", Options{1, 2, true, 90, true, true, 90, "c0ffee", false, "png", 100, 200, 300, 400, false}},
 
 		// all flags, in different orders with crop & different resizes
@@ -203,4 +204,20 @@ func TestNewRequest(t *testing.T) {
 			t.Errorf("NewRequest(%q) request options = %v, want %v", tt.URL, got, want)
 		}
 	}
+}
+
+func TestNewRequest_BaseURL(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/x/path", nil)
+	base, _ := url.Parse("https://example.com/")
+
+	r, err := NewRequest(req, base)
+	if err != nil {
+		t.Errorf("NewRequest(%v, %v) returned unexpected error: %v", req, base, err)
+	}
+
+	want := "https://example.com/path#0x0"
+	if got := r.String(); got != want {
+		t.Errorf("NewRequest(%v, %v) returned %q, want %q", req, base, got, want)
+	}
+
 }
