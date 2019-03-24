@@ -159,7 +159,11 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	if p.UserAgent != "" {
 		actualReq.Header.Set("User-Agent", p.UserAgent)
 	}
+	if len(p.ContentTypes) != 0 {
+		actualReq.Header.Set("Accept", strings.Join(p.ContentTypes, ", "))
+	}
 	resp, err := p.Client.Do(actualReq)
+
 	if err != nil {
 		msg := fmt.Sprintf("error fetching remote image: %v", err)
 		log.Print(msg)
@@ -170,7 +174,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 
 	cached := resp.Header.Get(httpcache.XFromCache)
 	if p.Verbose {
-		log.Printf("request: %v (served from cache: %v)", *req, cached == "1")
+		log.Printf("request: %+v (served from cache: %t)", *actualReq, cached == "1")
 	}
 
 	copyHeader(w.Header(), resp.Header, "Cache-Control", "Last-Modified", "Expires", "Etag", "Link")
