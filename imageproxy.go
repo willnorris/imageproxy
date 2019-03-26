@@ -170,6 +170,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
+	// close the original resp.Body, even if we wrap it in a NopCloser below
 	defer resp.Body.Close()
 
 	cached := resp.Header.Get(httpcache.XFromCache)
@@ -185,6 +186,12 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	contentType, _, _ := mime.ParseMediaType(resp.Header.Get("Content-Type"))
+	if contentType == "" {
+		// try to detect content type
+		b := bufio.NewReader(resp.Body)
+		resp.Body = ioutil.NopCloser(b)
+		contentType = peekContentType(b)
+	}
 	if resp.ContentLength != 0 && !contentTypeMatches(p.ContentTypes, contentType) {
 		log.Printf("content-type not allowed: %q", contentType)
 		http.Error(w, msgNotAllowed, http.StatusForbidden)
@@ -199,6 +206,16 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body)
+}
+
+// peekContentType peeks at the first 512 bytes of p, and attempts to detect
+// the content type.  Returns empty string if error occurs.
+func peekContentType(p *bufio.Reader) string {
+	byt, err := p.Peek(512)
+	if err != nil && err != bufio.ErrBufferFull {
+		return ""
+	}
+	return http.DetectContentType(byt)
 }
 
 // copyHeader copies header values from src to dst, adding to any existing
