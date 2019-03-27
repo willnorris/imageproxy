@@ -33,19 +33,19 @@ func TestOptions_String(t *testing.T) {
 		},
 		{
 			Options{1, 2, true, 90, true, true, 80, "", false, "", 0, 0, 0, 0, false},
-			"1x2,fit,r90,fv,fh,q80",
+			"1x2,fh,fit,fv,q80,r90",
 		},
 		{
 			Options{0.15, 1.3, false, 45, false, false, 95, "c0ffee", false, "png", 0, 0, 0, 0, false},
-			"0.15x1.3,r45,q95,sc0ffee,png",
+			"0.15x1.3,png,q95,r45,sc0ffee",
 		},
 		{
 			Options{0.15, 1.3, false, 45, false, false, 95, "c0ffee", false, "", 100, 200, 0, 0, false},
-			"0.15x1.3,r45,q95,sc0ffee,cx100,cy200",
+			"0.15x1.3,cx100,cy200,q95,r45,sc0ffee",
 		},
 		{
 			Options{0.15, 1.3, false, 45, false, false, 95, "c0ffee", false, "png", 100, 200, 300, 400, false},
-			"0.15x1.3,r45,q95,sc0ffee,png,cx100,cy200,cw300,ch400",
+			"0.15x1.3,ch400,cw300,cx100,cy200,png,q95,r45,sc0ffee",
 		},
 	}
 
