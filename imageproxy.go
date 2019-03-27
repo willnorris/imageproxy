@@ -146,14 +146,14 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// assign static settings from proxy to req.Options
-	req.Options.ScaleUp = p.ScaleUp
-
 	if err := p.allowed(req); err != nil {
 		log.Printf("%s: %v", err, req)
 		http.Error(w, msgNotAllowed, http.StatusForbidden)
 		return
 	}
+
+	// assign static settings from proxy to req.Options
+	req.Options.ScaleUp = p.ScaleUp
 
 	actualReq, _ := http.NewRequest("GET", req.String(), nil)
 	if p.UserAgent != "" {
@@ -322,10 +322,22 @@ func validSignature(key []byte, r *Request) bool {
 		return false
 	}
 
+	// check signature with URL only
 	mac := hmac.New(sha256.New, key)
 	mac.Write([]byte(r.URL.String()))
 	want := mac.Sum(nil)
+	if hmac.Equal(got, want) {
+		return true
+	}
 
+	// check signature with URL and options
+	u, opt := *r.URL, r.Options // make copies
+	opt.Signature = ""
+	u.Fragment = opt.String()
+
+	mac = hmac.New(sha256.New, key)
+	mac.Write([]byte(u.String()))
+	want = mac.Sum(nil)
 	return hmac.Equal(got, want)
 }
 

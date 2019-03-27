@@ -228,6 +228,10 @@ func TestValidSignature(t *testing.T) {
 		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ="}, true},
 		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ"}, true},
 		{"http://test/image", emptyOptions, false},
+		// url-only signature with options
+		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ", Rotate: 90}, true},
+		// signature calculated from url plus options
+		{"http://test/image", Options{Signature: "ZGTzEm32o4iZ7qcChls3EVYaWyrDd9u0etySo0-WkF8=", Rotate: 90}, true},
 	}
 
 	for _, tt := range tests {
@@ -237,7 +241,7 @@ func TestValidSignature(t *testing.T) {
 		}
 		req := &Request{u, tt.options, &http.Request{}}
 		if got, want := validSignature(key, req), tt.valid; got != want {
-			t.Errorf("validSignature(%v, %q) returned %v, want %v", key, u, got, want)
+			t.Errorf("validSignature(%v, %v) returned %v, want %v", key, req, got, want)
 		}
 	}
 }
