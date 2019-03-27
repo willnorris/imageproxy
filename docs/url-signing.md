@@ -65,6 +65,8 @@ options are sorted, moving `q75` before `r90`.
 Here are examples of calculating signatures in a variety of languages.  These
 demonstrate the HMAC-SHA256 bits, but not the option canonicalization.
 
+See also the [imageproxy-sign tool](/cmd/imageproxy-sign).
+
 ### Go
 
 main.go:
