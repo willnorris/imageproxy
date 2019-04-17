@@ -30,6 +30,7 @@ import (
 	"mime"
 	"net/http"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -60,6 +61,9 @@ type Proxy struct {
 	// reference to.  If nil, all remote URLs specified in requests must be
 	// absolute.
 	DefaultBaseURL *url.URL
+
+	// The Logger used by the image proxy
+	Logger *log.Logger
 
 	// SignatureKey is the HMAC key used to verify signed requests.
 	SignatureKey []byte
@@ -95,7 +99,8 @@ func NewProxy(transport http.RoundTripper, cache Cache) *Proxy {
 	}
 
 	proxy := &Proxy{
-		Cache: cache,
+		Cache:  cache,
+		Logger: log.New(os.Stderr, "", log.LstdFlags),
 	}
 
 	client := new(http.Client)
@@ -105,7 +110,7 @@ func NewProxy(transport http.RoundTripper, cache Cache) *Proxy {
 			CachingClient: client,
 			log: func(format string, v ...interface{}) {
 				if proxy.Verbose {
-					log.Printf(format, v...)
+					proxy.Logger.Printf(format, v...)
 				}
 			},
 		},
@@ -141,13 +146,13 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	req, err := NewRequest(r, p.DefaultBaseURL)
 	if err != nil {
 		msg := fmt.Sprintf("invalid request URL: %v", err)
-		log.Print(msg)
+		p.Logger.Print(msg)
 		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 
 	if err := p.allowed(req); err != nil {
-		log.Printf("%s: %v", err, req)
+		p.Logger.Printf("%s: %v", err, req)
 		http.Error(w, msgNotAllowed, http.StatusForbidden)
 		return
 	}
@@ -166,7 +171,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		msg := fmt.Sprintf("error fetching remote image: %v", err)
-		log.Print(msg)
+		p.Logger.Print(msg)
 		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
@@ -175,7 +180,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 
 	cached := resp.Header.Get(httpcache.XFromCache)
 	if p.Verbose {
-		log.Printf("request: %+v (served from cache: %t)", *actualReq, cached == "1")
+		p.Logger.Printf("request: %+v (served from cache: %t)", *actualReq, cached == "1")
 	}
 
 	copyHeader(w.Header(), resp.Header, "Cache-Control", "Last-Modified", "Expires", "Etag", "Link")
@@ -193,7 +198,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 		contentType = peekContentType(b)
 	}
 	if resp.ContentLength != 0 && !contentTypeMatches(p.ContentTypes, contentType) {
-		log.Printf("content-type not allowed: %q", contentType)
+		p.Logger.Printf("content-type not allowed: %q", contentType)
 		http.Error(w, msgNotAllowed, http.StatusForbidden)
 		return
 	}
