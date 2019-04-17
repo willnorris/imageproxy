@@ -30,7 +30,6 @@ import (
 	"mime"
 	"net/http"
 	"net/url"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -99,8 +98,7 @@ func NewProxy(transport http.RoundTripper, cache Cache) *Proxy {
 	}
 
 	proxy := &Proxy{
-		Cache:  cache,
-		Logger: log.New(os.Stderr, "", log.LstdFlags),
+		Cache: cache,
 	}
 
 	client := new(http.Client)
@@ -376,12 +374,16 @@ func should304(req *http.Request, resp *http.Response) bool {
 func (p *Proxy) log(v ...interface{}) {
 	if p.Logger != nil {
 		p.Logger.Print(v...)
+	} else {
+		log.Print(v...)
 	}
 }
 
 func (p *Proxy) logf(format string, v ...interface{}) {
 	if p.Logger != nil {
 		p.Logger.Printf(format, v...)
+	} else {
+		log.Printf(format, v...)
 	}
 }
 
