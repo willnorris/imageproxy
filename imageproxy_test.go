@@ -21,9 +21,11 @@ import (
 	"fmt"
 	"image"
 	"image/png"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -409,6 +411,52 @@ func TestProxy_ServeHTTP_is304(t *testing.T) {
 	}
 	if got, want := resp.Header().Get("Etag"), `"tag"`; got != want {
 		t.Errorf("ServeHTTP(%v) returned etag header %v, want %v", req, got, want)
+	}
+}
+
+func TestProxy_log(t *testing.T) {
+	var b strings.Builder
+
+	p := &Proxy{
+		Logger: log.New(&b, "", 0),
+	}
+	p.log("Test")
+
+	if got, want := b.String(), "Test\n"; got != want {
+		t.Errorf("log wrote %s, want %s", got, want)
+	}
+
+	b.Reset()
+	p.logf("Test %v", 123)
+
+	if got, want := b.String(), "Test 123\n"; got != want {
+		t.Errorf("logf wrote %s, want %s", got, want)
+	}
+}
+
+func TestProxy_log_default(t *testing.T) {
+	var b strings.Builder
+
+	defer func(flags int) {
+		log.SetOutput(os.Stderr)
+		log.SetFlags(flags)
+	}(log.Flags())
+
+	log.SetOutput(&b)
+	log.SetFlags(0)
+
+	p := &Proxy{}
+	p.log("Test")
+
+	if got, want := b.String(), "Test\n"; got != want {
+		t.Errorf("log wrote %s, want %s", got, want)
+	}
+
+	b.Reset()
+	p.logf("Test %v", 123)
+
+	if got, want := b.String(), "Test 123\n"; got != want {
+		t.Errorf("logf wrote %s, want %s", got, want)
 	}
 }
 
