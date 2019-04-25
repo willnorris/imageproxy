@@ -35,7 +35,7 @@ import (
 
 	"github.com/gregjones/httpcache"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	tphttp "willnorris.com/go/imageproxy/third_party/http"
+	tphttp "github.com/totalwinelabs/imageproxy/third_party/http"
 )
 
 // Proxy serves image requests.
