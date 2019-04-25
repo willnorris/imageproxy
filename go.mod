@@ -1,4 +1,4 @@
-module willnorris.com/go/imageproxy
+module github.com/totalwinelabs/imageproxy
 
 require (
 	cloud.google.com/go v0.0.0-20180131234750-2de512d2700d
