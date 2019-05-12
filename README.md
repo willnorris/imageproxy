@@ -323,17 +323,21 @@ ENTRYPOINT ["/go/bin/imageproxy", "-addr 0.0.0.0:8080"]
 
 ### nginx ###
 
-You can use follow config to prevent URL overwritting:
+Use the `proxy_pass` directive to send requests to your imageproxy instance.
+For example, to run imageproxy at the path "/api/imageproxy/", set:
 
 ```
-  location ~ ^/api/imageproxy/ {
-    # pattern match to capture the original URL to prevent URL
-    # canonicalization, which would strip double slashes
-    if ($request_uri ~ "/api/imageproxy/(.+)") {
-      set $path $1;
-      rewrite .* /$path break;
-    }
-    proxy_pass http://localhost:8080;
+  location /api/imageproxy/ {
+    proxy_pass http://localhost:4593/;
+  }
+```
+
+Depending on other directives you may have in your nginx config, you might need
+to alter the precedence order by setting:
+
+```
+  location ^~ /api/imageproxy/ {
+    proxy_pass http://localhost:4593/;
   }
 ```
 
