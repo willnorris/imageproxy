@@ -63,7 +63,9 @@ options are sorted, moving `q75` before `r90`.
 ## Language Examples
 
 Here are examples of calculating signatures in a variety of languages.  These
-demonstrate the HMAC-SHA256 bits, but not the option canonicalization.
+demonstrate the HMAC-SHA256 bits, but not the option canonicalization.  In each
+example, the remote URL `https://octodex.github.com/images/codercat.jpg` is
+signed using a signature key of `secretkey`.
 
 See also the [imageproxy-sign tool](/cmd/imageproxy-sign).
 
@@ -82,52 +84,53 @@ import (
 )
 
 func main() {
-        mac := hmac.New(sha256.New, []byte(os.Args[1]))
-        mac.Write([]byte(os.Args[2]))
-        want := mac.Sum(nil)
-        fmt.Println("result: ",base64.URLEncoding.EncodeToString(want))
+        key, url := os.Args[1], os.Args[2]
+        mac := hmac.New(sha256.New, []byte(key))
+        mac.Write([]byte(url))
+        result := mac.Sum(nil)
+        fmt.Println(base64.URLEncoding.EncodeToString(result))
 }
 ```
 
 ```shell
-$ go run main.go "test" "https://www.google.fr/images/srpr/logo11w.png"
-result:  RYifAJRfbhsitJeOrDNxWURCCkPsVR4ihCPXNv-ePbA=
+$ go run sign.go "secretkey" "https://octodex.github.com/images/codercat.jpg"
+cw34eyalj8YvpLpETxSIxv2k8QkLel2UAR5Cku2FzGM=
 ```
 
 ### OpenSSL
 
 ```shell
-$ echo -n "https://www.google.fr/images/srpr/logo11w.png" | openssl dgst -sha256 -hmac "test" -binary|base64| tr '/+' '_-'
-RYifAJRfbhsitJeOrDNxWURCCkPsVR4ihCPXNv-ePbA=
+$ echo -n "https://octodex.github.com/images/codercat.jpg" | openssl dgst -sha256 -hmac "secretkey" -binary|base64| tr '/+' '_-'
+cw34eyalj8YvpLpETxSIxv2k8QkLel2UAR5Cku2FzGM=
 ```
 
 ### Java
 
 ```java
-import org.apache.commons.codec.binary.Base64;
+import java.util.Base64;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-class EncodeUrl {
+class SignUrl {
 
-  public static String encode(String key, String data) throws Exception {
+  public static String sign(String key, String url) throws Exception {
     Mac sha256_HMAC = Mac.getInstance("HmacSHA256");
     SecretKeySpec secret_key = new SecretKeySpec(key.getBytes(), "HmacSHA256");
     sha256_HMAC.init(secret_key);
 
-    return Base64.encodeBase64URLSafeString(sha256_HMAC.doFinal(data.getBytes()));
+    return Base64.getUrlEncoder().encodeToString(sha256_HMAC.doFinal(url.getBytes()));
   }
 
   public static void main(String [] args) throws Exception {
-    System.out.println(encode(args[0], args[1]));
+    System.out.println(sign(args[0], args[1]));
   }
 
 }
 ```
 
 ```shell
-$ java -cp commons-codec-1.10.jar:. EncodeUrl test https://www.google.fr/images/srpr/logo11w.png
-RYifAJRfbhsitJeOrDNxWURCCkPsVR4ihCPXNv-ePbA
+$ javac SignUrl.java && java SignUrl "secretkey" "https://octodex.github.com/images/codercat.jpg"
+cw34eyalj8YvpLpETxSIxv2k8QkLel2UAR5Cku2FzGM=
 ```
 
 ### Ruby
@@ -136,49 +139,61 @@ RYifAJRfbhsitJeOrDNxWURCCkPsVR4ihCPXNv-ePbA
 require 'openssl'
 require 'base64'
 
-key = "test"
-data = "https://www.google.fr/images/srpr/logo11w.png"
-puts Base64.urlsafe_encode64(OpenSSL::HMAC.digest(OpenSSL::Digest.new('sha256'), key, data)).strip()
+key = ARGV[0]
+url = ARGV[1]
+puts Base64.urlsafe_encode64(OpenSSL::HMAC.digest(OpenSSL::Digest.new('sha256'), key, url)).strip()
 ```
 
 ```shell
-% ruby sign.rb
-RYifAJRfbhsitJeOrDNxWURCCkPsVR4ihCPXNv-ePbA=
+% ruby sign.rb "secretkey" "https://octodex.github.com/images/codercat.jpg"
+cw34eyalj8YvpLpETxSIxv2k8QkLel2UAR5Cku2FzGM=
 ```
 
 ### Python
 
 ```python
-import hmac
-import hashlib
 import base64
+import hashlib
+import hmac
+import sys
 
-key = 'secret key'
-data = 'https://octodex.github.com/images/codercat.jpg'
-print base64.urlsafe_b64encode(hmac.new(key, msg=data, digestmod=hashlib.sha256).digest()) 
+key = sys.argv[1]
+url = sys.argv[2]
+print base64.urlsafe_b64encode(hmac.new(key, msg=url, digestmod=hashlib.sha256).digest())
 ```
+
+````shell
+$ python sign.py "secretkey" "https://octodex.github.com/images/codercat.jpg"
+cw34eyalj8YvpLpETxSIxv2k8QkLel2UAR5Cku2FzGM=
+````
 
 ### JavaScript
 
 ```javascript
-import crypto from 'crypto';
-import URLSafeBase64 from 'urlsafe-base64';
+const crypto = require('crypto');
+const URLSafeBase64 = require('urlsafe-base64');
 
-let key = 'secret key';
-let data = 'https://octodex.github.com/images/codercat.jpg';
-console.log(URLSafeBase64.encode(crypto.createHmac('sha256', key).update(data).digest()));
+let key = process.argv[2];
+let url = process.argv[3];
+console.log(URLSafeBase64.encode(crypto.createHmac('sha256', key).update(url).digest()));
 ```
+
+````shell
+$ node sign.js "secretkey" "https://octodex.github.com/images/codercat.jpg"
+cw34eyalj8YvpLpETxSIxv2k8QkLel2UAR5Cku2FzGM=
+````
 
 ### PHP
 
 ````php
 <?php
-$key = 'test';
-$data = "https://www.google.fr/images/srpr/logo11w.png";
-echo strtr(base64_encode(hash_hmac('sha256', $data, $key, 1)), '/+' , '_-');
+
+$key = $argv[1];
+$url = $argv[2];
+echo strtr(base64_encode(hash_hmac('sha256', $url, $key, 1)), '/+' , '_-');
 ````
 
 ````shell
-$ php ex.php
-RYifAJRfbhsitJeOrDNxWURCCkPsVR4ihCPXNv-ePbA=
+$ php sign.php "secretkey" "https://octodex.github.com/images/codercat.jpg"
+cw34eyalj8YvpLpETxSIxv2k8QkLel2UAR5Cku2FzGM=
 ````
