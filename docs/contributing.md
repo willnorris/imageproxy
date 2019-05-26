@@ -8,6 +8,13 @@ bug being fixed.
 
 For new functionality, it's general best to open an issue first to discuss it.
 
+## Code Style and Tests
+
+Go code should follow general best practices, such as using go fmt, go lint, and
+go vet (this is enforced by our continuous integration setup).  Tests should
+always be included where possible, especially for bug fixes in order to prevent
+regressions.
+
 ## Contributor License Agreement
 
 Even though this is effectively a personal project of mine, it is still governed
