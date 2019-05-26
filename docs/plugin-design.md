@@ -1,5 +1,7 @@
 # Plugin Design Doc
 
+**Status:** idea phase, with no immediate timeline for implementation
+
 ## Objective
 
 Rearchitect imageproxy to use a plugin-based system for most features like
