@@ -134,6 +134,11 @@ enabled using the `-cache` flag.  It supports the following values:
 
        s3://fake-region/bucket/folder?endpoint=minio:9000&disableSSL=1&s3ForcePathStyle=1
 
+   Similarly, for [Digital Ocean Spaces](https://www.digitalocean.com/products/spaces/), 
+   provide a dummy region value and the appropriate endpoint for your space:
+
+       s3://fake-region/bucket/folder?endpoint=sfo2.digitaloceanspaces.com
+
    [aws-options]: https://docs.aws.amazon.com/sdk-for-go/api/aws/#Config
 
  - gcs URL (e.g. `gcs://bucket-name/optional-path-prefix`) - will cache images
