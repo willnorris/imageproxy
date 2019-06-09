@@ -160,11 +160,11 @@ version.
 
 [codercat URL]: http://localhost:8080/500/https://octodex.github.com/images/codercat.jpg
 
-If the `-cache` flag is specified multiple times, multiple caches will be
-created in a [tiered fashion][]. Typically this is used to put a smaller and
-faster in-memory cache in front of a larger but slower on-disk cache.  For
-example, the following will first check an in-memory cache for an image,
-followed by a gcs bucket:
+Multiple caches can be specified by separating them by spaces or by repeating
+the `-cache` flag multiple times.  The caches will be created in a [tiered
+fashion][]. Typically this is used to put a smaller and faster in-memory cache
+in front of a larger but slower on-disk cache.  For example, the following will
+first check an in-memory cache for an image, followed by a gcs bucket:
 
     imageproxy -cache memory -cache gcs://my-bucket/
 

@@ -122,15 +122,17 @@ func (tc *tieredCache) String() string {
 }
 
 func (tc *tieredCache) Set(value string) error {
-	c, err := parseCache(value)
-	if err != nil {
-		return err
-	}
+	for _, v := range strings.Fields(value) {
+		c, err := parseCache(v)
+		if err != nil {
+			return err
+		}
 
-	if tc.Cache == nil {
-		tc.Cache = c
-	} else {
-		tc.Cache = twotier.New(tc.Cache, c)
+		if tc.Cache == nil {
+			tc.Cache = c
+		} else {
+			tc.Cache = twotier.New(tc.Cache, c)
+		}
 	}
 	return nil
 }
