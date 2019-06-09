@@ -33,6 +33,7 @@ import (
 	"github.com/garyburd/redigo/redis"
 	"github.com/gregjones/httpcache/diskcache"
 	rediscache "github.com/gregjones/httpcache/redis"
+	"github.com/jamiealquiza/envy"
 	"github.com/peterbourgon/diskv"
 	"willnorris.com/go/imageproxy"
 	"willnorris.com/go/imageproxy/internal/gcscache"
@@ -60,6 +61,7 @@ func init() {
 }
 
 func main() {
+	envy.Parse("IMAGEPROXY")
 	flag.Parse()
 
 	p := imageproxy.NewProxy(nil, cache.Cache)

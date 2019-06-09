@@ -287,6 +287,13 @@ you want to use a different caching implementation, it's probably easiest to
 just make a copy of `cmd/imageproxy/main.go` and customize it to fit your
 needs... it's a very simple command.
 
+### Environment Variables ###
+
+All configuration flags have equivalent environment variables of the form
+`IMAGEPROXY_$NAME`.  For example, an on-disk cache could be configured by calling
+
+    IMAGEPROXY_CACHE="/tmp/imageproxy" imageproxy
+
 ## Deploying ##
 
 In most cases, you can follow the normal procedure for building a deploying any
