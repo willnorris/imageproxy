@@ -44,8 +44,8 @@ func TestOptions_String(t *testing.T) {
 			"0.15x1.3,cx100,cy200,q95,r45,sc0ffee",
 		},
 		{
-			Options{0.15, 1.3, false, 45, false, false, 95, "c0ffee", false, "png", 100, 200, 300, 400, false},
-			"0.15x1.3,ch400,cw300,cx100,cy200,png,q95,r45,sc0ffee",
+			Options{0.15, 1.3, false, 45, false, false, 95, "c0ffee", true, "png", 100, 200, 300, 400, true},
+			"0.15x1.3,ch400,cw300,cx100,cy200,png,q95,r45,sc,sc0ffee,scaleUp",
 		},
 	}
 

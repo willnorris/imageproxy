@@ -215,7 +215,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 // the content type.  Returns empty string if error occurs.
 func peekContentType(p *bufio.Reader) string {
 	byt, err := p.Peek(512)
-	if err != nil && err != bufio.ErrBufferFull {
+	if err != nil && err != bufio.ErrBufferFull && err != io.EOF {
 		return ""
 	}
 	return http.DetectContentType(byt)

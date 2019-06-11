@@ -17,6 +17,7 @@ package imageproxy
 import (
 	"bufio"
 	"bytes"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"image"
@@ -30,6 +31,21 @@ import (
 	"strings"
 	"testing"
 )
+
+func TestPeekContentType(t *testing.T) {
+	// 1 pixel png image, base64 encoded
+	b, _ := base64.StdEncoding.DecodeString("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAEUlEQVR4nGJiYGBgAAQAAP//AA8AA/6P688AAAAASUVORK5CYII=")
+	got := peekContentType(bufio.NewReader(bytes.NewReader(b)))
+	if want := "image/png"; got != want {
+		t.Errorf("peekContentType returned %v, want %v", got, want)
+	}
+
+	// single zero byte
+	got = peekContentType(bufio.NewReader(bytes.NewReader([]byte{0x0})))
+	if want := "application/octet-stream"; got != want {
+		t.Errorf("peekContentType returned %v, want %v", got, want)
+	}
+}
 
 func TestCopyHeader(t *testing.T) {
 	tests := []struct {
@@ -234,6 +250,8 @@ func TestValidSignature(t *testing.T) {
 		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ", Rotate: 90}, true},
 		// signature calculated from url plus options
 		{"http://test/image", Options{Signature: "ZGTzEm32o4iZ7qcChls3EVYaWyrDd9u0etySo0-WkF8=", Rotate: 90}, true},
+		// invalid base64 encoded signature
+		{"http://test/image", Options{Signature: "!!"}, false},
 	}
 
 	for _, tt := range tests {
