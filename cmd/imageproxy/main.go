@@ -168,9 +168,9 @@ func parseCache(c string) (imageproxy.Cache, error) {
 	case "s3":
 		return s3cache.New(u.String())
 	case "file":
-		fallthrough
-	default:
 		return diskCache(u.Path), nil
+	default:
+		return diskCache(c), nil
 	}
 }
 
