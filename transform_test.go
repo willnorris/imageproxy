@@ -28,6 +28,7 @@ import (
 	"testing"
 
 	"github.com/disintegration/imaging"
+	"golang.org/x/image/bmp"
 )
 
 var (
@@ -111,6 +112,7 @@ func TestTransform(t *testing.T) {
 		encode      func(io.Writer, image.Image)
 		exactOutput bool // whether input and output should match exactly
 	}{
+		{"bmp", func(w io.Writer, m image.Image) { bmp.Encode(w, m) }, true},
 		{"gif", func(w io.Writer, m image.Image) { gif.Encode(w, m, nil) }, true},
 		{"jpeg", func(w io.Writer, m image.Image) { jpeg.Encode(w, m, nil) }, false},
 		{"png", func(w io.Writer, m image.Image) { png.Encode(w, m) }, true},
