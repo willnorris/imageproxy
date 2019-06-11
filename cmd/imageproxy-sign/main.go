@@ -6,6 +6,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -17,38 +18,44 @@ import (
 	"willnorris.com/go/imageproxy"
 )
 
-var key = flag.String("key", "@/etc/imageproxy.key", "signing key, or file containing key prefixed with '@'")
+var signingKey = flag.String("key", "@/etc/imageproxy.key", "signing key, or file containing key prefixed with '@'")
 var urlOnly = flag.Bool("url", false, "only sign the URL value, do not include options")
 
 func main() {
 	flag.Parse()
+	u := flag.Arg(0)
 
-	if flag.NArg() < 1 {
-		fmt.Println("imageproxy-sign url [key]")
+	sig, err := sign(*signingKey, u, *urlOnly)
+	if err != nil {
+		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	u := parseURL(flag.Arg(0))
+	fmt.Printf("url: %v\n", u)
+	fmt.Printf("signature: %v\n", base64.URLEncoding.EncodeToString(sig))
+}
+
+func sign(key string, s string, urlOnly bool) ([]byte, error) {
+	if s == "" {
+		return nil, errors.New("imageproxy-sign url [key]")
+	}
+
+	u := parseURL(s)
 	if u == nil {
-		fmt.Printf("unable to parse URL: %v\n", flag.Arg(0))
-		os.Exit(1)
+		return nil, fmt.Errorf("unable to parse URL: %v", s)
 	}
-	if *urlOnly {
+	if urlOnly {
 		u.Fragment = ""
 	}
 
-	k, err := parseKey(*key)
+	k, err := parseKey(key)
 	if err != nil {
-		fmt.Printf("error parsing key: %v", err)
-		os.Exit(1)
+		return nil, fmt.Errorf("error parsing key: %v", err)
 	}
 
 	mac := hmac.New(sha256.New, []byte(k))
 	mac.Write([]byte(u.String()))
-	sig := mac.Sum(nil)
-
-	fmt.Printf("url: %v\n", u)
-	fmt.Printf("signature: %v\n", base64.URLEncoding.EncodeToString(sig))
+	return mac.Sum(nil), nil
 }
 
 func parseKey(s string) ([]byte, error) {
