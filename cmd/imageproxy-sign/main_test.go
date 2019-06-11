@@ -10,6 +10,30 @@ import (
 
 var key = "secret"
 
+func TestMainFunc(t *testing.T) {
+	os.Args = []string{"imageproxy-sign", "-key", key, "http://example.com/#0x0"}
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Errorf("error creating pipe: %v", err)
+	}
+	defer r.Close()
+	os.Stdout = w
+
+	main()
+	w.Close()
+
+	output, err := ioutil.ReadAll(r)
+	got := string(output)
+	if err != nil {
+		t.Errorf("error reading from pipe: %v", err)
+	}
+
+	want := "url: http://example.com/#0x0\nsignature: pwlnJ3bVazxg2nQxClimqT0VnNxUm5W0cdyg1HpKUPY=\n"
+	if got != want {
+		t.Errorf("main output %q, want %q", got, want)
+	}
+}
+
 func TestSign(t *testing.T) {
 	s := "http://example.com/image.jpg#0x0"
 
@@ -33,6 +57,25 @@ func TestSign_URLOnly(t *testing.T) {
 	want := []byte{0x93, 0xea, 0x5d, 0x23, 0x68, 0xa0, 0xfc, 0x50, 0x8e, 0x91, 0x7, 0xbf, 0x3e, 0xb3, 0x1f, 0x49, 0xf7, 0x1d, 0x81, 0xf1, 0x74, 0xfe, 0x25, 0x36, 0xfc, 0x74, 0xf8, 0x81, 0x15, 0xf5, 0x58, 0x40}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("sign(%q, %q, true) returned %v, want %v", key, s, got, want)
+	}
+}
+
+func TestSign_Errors(t *testing.T) {
+	var err error
+
+	tests := []struct {
+		key, url string
+	}{
+		{"", ""},
+		{"", "%"},
+		{"@/does/not/exist", "s"},
+	}
+
+	for _, tt := range tests {
+		_, err = sign(tt.key, tt.url, false)
+		if err == nil {
+			t.Errorf("sign(%q, %q, false) did not return expected error", tt.key, tt.url)
+		}
 	}
 }
 
