@@ -331,7 +331,7 @@ docker run -p 8080:8080 willnorris/imageproxy -addr 0.0.0.0:8080
 Or in your Dockerfile:
 
 ```
-ENTRYPOINT ["/go/bin/imageproxy", "-addr 0.0.0.0:8080"]
+ENTRYPOINT ["/app/imageproxy", "-addr 0.0.0.0:8080"]
 ```
 
 ### nginx ###
