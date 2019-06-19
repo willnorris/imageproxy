@@ -24,8 +24,4 @@ func TestNopCache(t *testing.T) {
 	if ok != false {
 		t.Errorf("NopCache.Get returned ok = true, should always be false.")
 	}
-
-	// nothing to test on these methods other than to verify they exist
-	NopCache.Set("", []byte{})
-	NopCache.Delete("")
 }

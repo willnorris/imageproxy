@@ -17,35 +17,17 @@ package imageproxy
 import (
 	"bufio"
 	"bytes"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"image"
 	"image/png"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
 	"reflect"
 	"strings"
 	"testing"
 )
-
-func TestPeekContentType(t *testing.T) {
-	// 1 pixel png image, base64 encoded
-	b, _ := base64.StdEncoding.DecodeString("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAEUlEQVR4nGJiYGBgAAQAAP//AA8AA/6P688AAAAASUVORK5CYII=")
-	got := peekContentType(bufio.NewReader(bytes.NewReader(b)))
-	if want := "image/png"; got != want {
-		t.Errorf("peekContentType returned %v, want %v", got, want)
-	}
-
-	// single zero byte
-	got = peekContentType(bufio.NewReader(bytes.NewReader([]byte{0x0})))
-	if want := "application/octet-stream"; got != want {
-		t.Errorf("peekContentType returned %v, want %v", got, want)
-	}
-}
 
 func TestCopyHeader(t *testing.T) {
 	tests := []struct {
@@ -115,7 +97,7 @@ func TestCopyHeader(t *testing.T) {
 }
 
 func TestAllowed(t *testing.T) {
-	allowHosts := []string{"good"}
+	remoteHosts := []string{"good"}
 	key := []byte("c0ffee")
 
 	genRequest := func(headers map[string]string) *http.Request {
@@ -127,48 +109,41 @@ func TestAllowed(t *testing.T) {
 	}
 
 	tests := []struct {
-		url        string
-		options    Options
-		allowHosts []string
-		denyHosts  []string
-		referrers  []string
-		key        []byte
-		request    *http.Request
-		allowed    bool
+		url         string
+		options     Options
+		remoteHosts []string
+		referrers   []string
+		key         []byte
+		request     *http.Request
+		allowed     bool
 	}{
-		// no allowHosts or signature key
-		{"http://test/image", emptyOptions, nil, nil, nil, nil, nil, true},
+		// no remoteHosts or signature key
+		{"http://test/image", emptyOptions, nil, nil, nil, nil, true},
 
-		// allowHosts
-		{"http://good/image", emptyOptions, allowHosts, nil, nil, nil, nil, true},
-		{"http://bad/image", emptyOptions, allowHosts, nil, nil, nil, nil, false},
+		// remoteHosts
+		{"http://good/image", emptyOptions, remoteHosts, nil, nil, nil, true},
+		{"http://bad/image", emptyOptions, remoteHosts, nil, nil, nil, false},
 
 		// referrer
-		{"http://test/image", emptyOptions, nil, nil, allowHosts, nil, genRequest(map[string]string{"Referer": "http://good/foo"}), true},
-		{"http://test/image", emptyOptions, nil, nil, allowHosts, nil, genRequest(map[string]string{"Referer": "http://bad/foo"}), false},
-		{"http://test/image", emptyOptions, nil, nil, allowHosts, nil, genRequest(map[string]string{"Referer": "MALFORMED!!"}), false},
-		{"http://test/image", emptyOptions, nil, nil, allowHosts, nil, genRequest(map[string]string{}), false},
+		{"http://test/image", emptyOptions, nil, remoteHosts, nil, genRequest(map[string]string{"Referer": "http://good/foo"}), true},
+		{"http://test/image", emptyOptions, nil, remoteHosts, nil, genRequest(map[string]string{"Referer": "http://bad/foo"}), false},
+		{"http://test/image", emptyOptions, nil, remoteHosts, nil, genRequest(map[string]string{"Referer": "MALFORMED!!"}), false},
+		{"http://test/image", emptyOptions, nil, remoteHosts, nil, genRequest(map[string]string{}), false},
 
 		// signature key
-		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ="}, nil, nil, nil, key, nil, true},
-		{"http://test/image", Options{Signature: "deadbeef"}, nil, nil, nil, key, nil, false},
-		{"http://test/image", emptyOptions, nil, nil, nil, key, nil, false},
+		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ="}, nil, nil, key, nil, true},
+		{"http://test/image", Options{Signature: "deadbeef"}, nil, nil, key, nil, false},
+		{"http://test/image", emptyOptions, nil, nil, key, nil, false},
 
-		// allowHosts and signature
-		{"http://good/image", emptyOptions, allowHosts, nil, nil, key, nil, true},
-		{"http://bad/image", Options{Signature: "gWivrPhXBbsYEwpmWAKjbJEiAEgZwbXbltg95O2tgNI="}, nil, nil, nil, key, nil, true},
-		{"http://bad/image", emptyOptions, allowHosts, nil, nil, key, nil, false},
-
-		// deny requests that match denyHosts, even if signature is valid or also matches allowHosts
-		{"http://test/image", emptyOptions, nil, []string{"test"}, nil, nil, nil, false},
-		{"http://test/image", emptyOptions, []string{"test"}, []string{"test"}, nil, nil, nil, false},
-		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ="}, nil, []string{"test"}, nil, key, nil, false},
+		// remoteHosts and signature
+		{"http://good/image", emptyOptions, remoteHosts, nil, key, nil, true},
+		{"http://bad/image", Options{Signature: "gWivrPhXBbsYEwpmWAKjbJEiAEgZwbXbltg95O2tgNI="}, nil, nil, key, nil, true},
+		{"http://bad/image", emptyOptions, remoteHosts, nil, key, nil, false},
 	}
 
 	for _, tt := range tests {
 		p := NewProxy(nil, nil)
-		p.AllowHosts = tt.allowHosts
-		p.DenyHosts = tt.denyHosts
+		p.RemoteHosts = tt.remoteHosts
 		p.SignatureKey = tt.key
 		p.Referrers = tt.referrers
 
@@ -183,8 +158,8 @@ func TestAllowed(t *testing.T) {
 	}
 }
 
-func TestHostMatches(t *testing.T) {
-	hosts := []string{"a.test", "*.b.test", "*c.test"}
+func TestValidHost(t *testing.T) {
+	remoteHosts := []string{"a.test", "*.b.test", "*c.test"}
 
 	tests := []struct {
 		url   string
@@ -207,30 +182,8 @@ func TestHostMatches(t *testing.T) {
 		if err != nil {
 			t.Errorf("error parsing url %q: %v", tt.url, err)
 		}
-		if got, want := hostMatches(hosts, u), tt.valid; got != want {
-			t.Errorf("hostMatches(%v, %q) returned %v, want %v", hosts, u, got, want)
-		}
-	}
-}
-
-func TestReferrerMatches(t *testing.T) {
-	hosts := []string{"a.test"}
-
-	tests := []struct {
-		referrer string
-		valid    bool
-	}{
-		{"", false},
-		{"%", false},
-		{"http://a.test/", true},
-		{"http://b.test/", false},
-	}
-
-	for _, tt := range tests {
-		r, _ := http.NewRequest("GET", "/", nil)
-		r.Header.Set("Referer", tt.referrer)
-		if got, want := referrerMatches(hosts, r), tt.valid; got != want {
-			t.Errorf("referrerMatches(%v, %v) returned %v, want %v", hosts, r, got, want)
+		if got, want := validHost(remoteHosts, u), tt.valid; got != want {
+			t.Errorf("validHost(%v, %q) returned %v, want %v", remoteHosts, u, got, want)
 		}
 	}
 }
@@ -246,12 +199,6 @@ func TestValidSignature(t *testing.T) {
 		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ="}, true},
 		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ"}, true},
 		{"http://test/image", emptyOptions, false},
-		// url-only signature with options
-		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ", Rotate: 90}, true},
-		// signature calculated from url plus options
-		{"http://test/image", Options{Signature: "ZGTzEm32o4iZ7qcChls3EVYaWyrDd9u0etySo0-WkF8=", Rotate: 90}, true},
-		// invalid base64 encoded signature
-		{"http://test/image", Options{Signature: "!!"}, false},
 	}
 
 	for _, tt := range tests {
@@ -261,7 +208,7 @@ func TestValidSignature(t *testing.T) {
 		}
 		req := &Request{u, tt.options, &http.Request{}}
 		if got, want := validSignature(key, req), tt.valid; got != want {
-			t.Errorf("validSignature(%v, %v) returned %v, want %v", key, req, got, want)
+			t.Errorf("validSignature(%v, %q) returned %v, want %v", key, u, got, want)
 		}
 	}
 }
@@ -379,7 +326,7 @@ func TestProxy_ServeHTTP(t *testing.T) {
 		Client: &http.Client{
 			Transport: testTransport{},
 		},
-		AllowHosts:   []string{"good.test"},
+		RemoteHosts:  []string{"good.test"},
 		ContentTypes: []string{"image/*"},
 	}
 
@@ -394,10 +341,6 @@ func TestProxy_ServeHTTP(t *testing.T) {
 		{"/http://good.test/nocontent", http.StatusNoContent},       // non-OK response
 		{"/100/http://good.test/png", http.StatusOK},
 		{"/100/http://good.test/plain", http.StatusForbidden}, // non-image response
-
-		// health-check URLs
-		{"/", http.StatusOK},
-		{"/health-check", http.StatusOK},
 	}
 
 	for _, tt := range tests {
@@ -429,52 +372,6 @@ func TestProxy_ServeHTTP_is304(t *testing.T) {
 	}
 	if got, want := resp.Header().Get("Etag"), `"tag"`; got != want {
 		t.Errorf("ServeHTTP(%v) returned etag header %v, want %v", req, got, want)
-	}
-}
-
-func TestProxy_log(t *testing.T) {
-	var b strings.Builder
-
-	p := &Proxy{
-		Logger: log.New(&b, "", 0),
-	}
-	p.log("Test")
-
-	if got, want := b.String(), "Test\n"; got != want {
-		t.Errorf("log wrote %s, want %s", got, want)
-	}
-
-	b.Reset()
-	p.logf("Test %v", 123)
-
-	if got, want := b.String(), "Test 123\n"; got != want {
-		t.Errorf("logf wrote %s, want %s", got, want)
-	}
-}
-
-func TestProxy_log_default(t *testing.T) {
-	var b strings.Builder
-
-	defer func(flags int) {
-		log.SetOutput(os.Stderr)
-		log.SetFlags(flags)
-	}(log.Flags())
-
-	log.SetOutput(&b)
-	log.SetFlags(0)
-
-	p := &Proxy{}
-	p.log("Test")
-
-	if got, want := b.String(), "Test\n"; got != want {
-		t.Errorf("log wrote %s, want %s", got, want)
-	}
-
-	b.Reset()
-	p.logf("Test %v", 123)
-
-	if got, want := b.String(), "Test 123\n"; got != want {
-		t.Errorf("logf wrote %s, want %s", got, want)
 	}
 }
 
@@ -516,7 +413,7 @@ func TestTransformingTransport(t *testing.T) {
 	}
 }
 
-func TestContentTypeMatches(t *testing.T) {
+func TestValidContentType(t *testing.T) {
 	tests := []struct {
 		patterns    []string
 		contentType string
@@ -557,9 +454,9 @@ func TestContentTypeMatches(t *testing.T) {
 		{[]string{"text/*", "image/*"}, "image/jpeg", true},
 	}
 	for _, tt := range tests {
-		got := contentTypeMatches(tt.patterns, tt.contentType)
+		got := validContentType(tt.patterns, tt.contentType)
 		if want := tt.valid; got != want {
-			t.Errorf("contentTypeMatches(%q, %q) returned %v, want %v", tt.patterns, tt.contentType, got, want)
+			t.Errorf("validContentType(%q, %q) returned %v, want %v", tt.patterns, tt.contentType, got, want)
 		}
 	}
 }

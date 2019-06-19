@@ -1,3 +1,4 @@
+# This is the systemd config I use for https://willnorris.com/api/imageproxy/
 [Unit]
 Description=Image Proxy
 
@@ -8,7 +9,7 @@ ExecStart=/usr/local/bin/imageproxy \
     -cache /var/cache/imageproxy \
     -signatureKey @/etc/imageproxy.key \
     -baseURL https://willnorris.com/ \
-    -allowHosts willnorris.com,notsoserendipitous.com,gabenorris.com
+    -remoteHosts willnorris.com,notsoserendipitous.com,gabenorris.com
 Restart=on-abort
 
 [Install]

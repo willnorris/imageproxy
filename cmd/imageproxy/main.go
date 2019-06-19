@@ -33,7 +33,6 @@ import (
 	"github.com/garyburd/redigo/redis"
 	"github.com/gregjones/httpcache/diskcache"
 	rediscache "github.com/gregjones/httpcache/redis"
-	"github.com/jamiealquiza/envy"
 	"github.com/peterbourgon/diskv"
 	"github.com/totalwinelabs/imageproxy"
 	"github.com/totalwinelabs/imageproxy/internal/gcscache"
@@ -43,8 +42,8 @@ import (
 const defaultMemorySize = 100
 
 var addr = flag.String("addr", "localhost:8080", "TCP address to listen on")
-var allowHosts = flag.String("allowHosts", "", "comma separated list of allowed remote hosts")
-var denyHosts = flag.String("denyHosts", "", "comma separated list of denied remote hosts")
+var remoteHosts = flag.String("remoteHosts", "", "comma separated list of allowed remote hosts")
+var whitelist = flag.String("whitelist", "", "deprecated. use 'remoteHosts' instead")
 var referrers = flag.String("referrers", "", "comma separated list of allowed referring hosts")
 var baseURL = flag.String("baseURL", "", "default base URL for relative remote URLs")
 var cache tieredCache
@@ -54,22 +53,21 @@ var timeout = flag.Duration("timeout", 0, "time limit for requests served by thi
 var verbose = flag.Bool("verbose", false, "print verbose logging messages")
 var version = flag.Bool("version", false, "Deprecated: this flag does nothing")
 var contentTypes = flag.String("contentTypes", "image/*", "comma separated list of allowed content types")
-var userAgent = flag.String("userAgent", "willnorris/imageproxy", "specify the user-agent used by imageproxy when fetching images from origin website")
 
 func init() {
 	flag.Var(&cache, "cache", "location to cache images (see https://github.com/willnorris/imageproxy#cache)")
 }
 
 func main() {
-	envy.Parse("IMAGEPROXY")
 	flag.Parse()
+	if *remoteHosts == "" {
+		// backwards compatible with old naming of the flag
+		*remoteHosts = *whitelist
+	}
 
 	p := imageproxy.NewProxy(nil, cache.Cache)
-	if *allowHosts != "" {
-		p.AllowHosts = strings.Split(*allowHosts, ",")
-	}
-	if *denyHosts != "" {
-		p.DenyHosts = strings.Split(*denyHosts, ",")
+	if *remoteHosts != "" {
+		p.RemoteHosts = strings.Split(*remoteHosts, ",")
 	}
 	if *referrers != "" {
 		p.Referrers = strings.Split(*referrers, ",")
@@ -100,7 +98,6 @@ func main() {
 	p.Timeout = *timeout
 	p.ScaleUp = *scaleUp
 	p.Verbose = *verbose
-	p.UserAgent = *userAgent
 
 	server := &http.Server{
 		Addr:    *addr,
@@ -122,17 +119,15 @@ func (tc *tieredCache) String() string {
 }
 
 func (tc *tieredCache) Set(value string) error {
-	for _, v := range strings.Fields(value) {
-		c, err := parseCache(v)
-		if err != nil {
-			return err
-		}
+	c, err := parseCache(value)
+	if err != nil {
+		return err
+	}
 
-		if tc.Cache == nil {
-			tc.Cache = c
-		} else {
-			tc.Cache = twotier.New(tc.Cache, c)
-		}
+	if tc.Cache == nil {
+		tc.Cache = c
+	} else {
+		tc.Cache = twotier.New(tc.Cache, c)
 	}
 	return nil
 }
@@ -168,9 +163,9 @@ func parseCache(c string) (imageproxy.Cache, error) {
 	case "s3":
 		return s3cache.New(u.String())
 	case "file":
-		return diskCache(u.Path), nil
+		fallthrough
 	default:
-		return diskCache(c), nil
+		return diskCache(u.Path), nil
 	}
 }
 

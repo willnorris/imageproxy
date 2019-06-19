@@ -97,21 +97,7 @@ func New(s string) (*cache, error) {
 		prefix = path[1]
 	}
 
-	config := aws.NewConfig().WithRegion(region)
-
-	// allow overriding some additional config options, mostly useful when
-	// working with s3-compatible services other than AWS.
-	if v := u.Query().Get("endpoint"); v != "" {
-		config = config.WithEndpoint(v)
-	}
-	if v := u.Query().Get("disableSSL"); v == "1" {
-		config = config.WithDisableSSL(true)
-	}
-	if v := u.Query().Get("s3ForcePathStyle"); v == "1" {
-		config = config.WithS3ForcePathStyle(true)
-	}
-
-	sess, err := session.NewSession(config)
+	sess, err := session.NewSession(&aws.Config{Region: &region})
 	if err != nil {
 		return nil, err
 	}

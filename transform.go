@@ -31,9 +31,7 @@ import (
 
 	"github.com/disintegration/imaging"
 	"github.com/muesli/smartcrop"
-	"github.com/muesli/smartcrop/nfnt"
 	"github.com/rwcarlsen/goexif/exif"
-	"golang.org/x/image/bmp"    // register bmp format
 	"golang.org/x/image/tiff"   // register tiff format
 	_ "golang.org/x/image/webp" // register webp format
 	"willnorris.com/go/gifresize"
@@ -80,12 +78,6 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	var outputBytes []byte
 	switch format {
-	case "bmp":
-		m = transformImage(m, opt)
-		err = bmp.Encode(buf, m)
-		if err != nil {
-			return nil, err
-		}
 	case "gif":
 		fn := func(img image.Image) image.Image {
 			return transformImage(img, opt)
@@ -126,7 +118,7 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 		}
 	case "tiff":
 		m = transformImage(m, opt)
-		err = tiff.Encode(buf, m, &tiff.Options{Compression: tiff.Deflate, Predictor: true})
+		err = tiff.Encode(buf, m, &tiff.Options{tiff.Deflate, true})
 		if err != nil {
 			return nil, err
 		}
@@ -218,8 +210,6 @@ func resizeParams(m image.Image, opt Options) (w, h int, resize bool) {
 	return w, h, true
 }
 
-var smartcropAnalyzer = smartcrop.NewAnalyzer(nfnt.NewDefaultResizer())
-
 // cropParams calculates crop rectangle parameters to keep it in image bounds
 func cropParams(m image.Image, opt Options) image.Rectangle {
 	if !opt.SmartCrop && opt.CropX == 0 && opt.CropY == 0 && opt.CropWidth == 0 && opt.CropHeight == 0 {
@@ -233,10 +223,12 @@ func cropParams(m image.Image, opt Options) image.Rectangle {
 	if opt.SmartCrop {
 		w := evaluateFloat(opt.Width, imgW)
 		h := evaluateFloat(opt.Height, imgH)
-		r, err := smartcropAnalyzer.FindBestCrop(m, w, h)
+		log.Printf("smartcrop input: %dx%d", w, h)
+		r, err := smartcrop.SmartCrop(m, w, h)
 		if err != nil {
-			log.Printf("smartcrop error finding best crop: %v", err)
+			log.Printf("error with smartcrop: %v", err)
 		} else {
+			log.Printf("smartcrop rectangle: %v", r)
 			return r
 		}
 	}
