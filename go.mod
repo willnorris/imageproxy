@@ -22,7 +22,7 @@ require (
 	github.com/muesli/smartcrop v0.2.1-0.20181030220600-548bbf0c0965
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
 	github.com/peterbourgon/diskv v0.0.0-20171120014656-2973218375c3
-	github.com/rwcarlsen/goexif v0.0.0-20190318171057-76e3344f7516
+	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
 	github.com/satori/go.uuid v0.0.0-20180103174451-36e9d2ebbde5 // indirect
 	github.com/stretchr/testify v1.3.0 // indirect
 	go.opencensus.io v0.19.2 // indirect
