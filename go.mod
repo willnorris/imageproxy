@@ -40,3 +40,5 @@ replace github.com/golang/lint => github.com/golang/lint v0.0.0-20190227174305-8
 
 // local copy of envy package without cobra support
 replace github.com/jamiealquiza/envy => ./third_party/envy
+
+replace git.apache.org/thrift.git => github.com/apache/thrift v0.12.0
