@@ -25,11 +25,11 @@ require (
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
 	github.com/satori/go.uuid v0.0.0-20180103174451-36e9d2ebbde5 // indirect
 	github.com/stretchr/testify v1.3.0 // indirect
-	go.opencensus.io v0.19.2 // indirect
 	golang.org/x/image v0.0.0-20190321063152-3fc05d484e9f
 	golang.org/x/net v0.0.0-20190322120337-addf6b3196f6 // indirect
 	golang.org/x/oauth2 v0.0.0-20190319182350-c85d3e98c914 // indirect
 	golang.org/x/sys v0.0.0-20190322080309-f49334f85ddc // indirect
+	google.golang.org/api v0.3.0
 	google.golang.org/appengine v1.5.0 // indirect
 	google.golang.org/genproto v0.0.0-20190321212433-e79c0c59cdb5 // indirect
 	willnorris.com/go/gifresize v1.0.0
@@ -40,3 +40,5 @@ replace github.com/golang/lint => github.com/golang/lint v0.0.0-20190227174305-8
 
 // local copy of envy package without cobra support
 replace github.com/jamiealquiza/envy => ./third_party/envy
+
+replace git.apache.org/thrift.git => github.com/apache/thrift v0.12.0
