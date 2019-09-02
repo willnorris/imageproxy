@@ -154,6 +154,9 @@ enabled using the `-cache` flag.  It supports the following values:
    registration](https://www.iana.org/assignments/uri-schemes/prov/redis).
    Rather than specify password in the URI, use the `REDIS_PASSWORD`
    environment variable.
+ - dropbox cache URL (e.g. `dropbox://folder-name`) will store the data on dropbox. For authentication 
+   set the `DROPBOX_ACCESS_TOKEN` environment variable. The folder name is optional only `dropbox:` should
+   also work as a valid cache parameter. 
 
 For example, to cache files on disk in the `/tmp/imageproxy` directory:
 

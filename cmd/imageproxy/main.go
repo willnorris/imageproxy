@@ -36,6 +36,7 @@ import (
 	"github.com/jamiealquiza/envy"
 	"github.com/peterbourgon/diskv"
 	"willnorris.com/go/imageproxy"
+	"willnorris.com/go/imageproxy/internal/dropboxcache"
 	"willnorris.com/go/imageproxy/internal/gcscache"
 	"willnorris.com/go/imageproxy/internal/s3cache"
 )
@@ -167,6 +168,8 @@ func parseCache(c string) (imageproxy.Cache, error) {
 		return rediscache.NewWithClient(conn), nil
 	case "s3":
 		return s3cache.New(u.String())
+	case "dropbox":
+		return dropboxcache.New(u.Host)
 	case "file":
 		return diskCache(u.Path), nil
 	default:

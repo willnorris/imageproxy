@@ -11,6 +11,7 @@ require (
 	github.com/die-net/lrucache v0.0.0-20181227122439-19a39ef22a11
 	github.com/disintegration/imaging v1.6.0
 	github.com/dnaeon/go-vcr v1.0.1 // indirect
+	github.com/dropbox/dropbox-sdk-go-unofficial v5.4.0+incompatible
 	github.com/garyburd/redigo v1.6.0
 	github.com/gomodule/redigo v2.0.0+incompatible // indirect
 	github.com/google/btree v1.0.0 // indirect
