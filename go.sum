@@ -5,8 +5,6 @@ cloud.google.com/go v0.37.1 h1:2kHhTjz+eKEI7tt3Fqf5j3APCq+z9tuY2CzeCIxTo+A=
 cloud.google.com/go v0.37.1/go.mod h1:SAbnLi6YTSPKSI0dTUEOVLCkyPfKXK8n4ibqiMoj4ok=
 contrib.go.opencensus.io/exporter/ocagent v0.4.9 h1:8ZbMXpyd04/3LILa/9Tzr8N4HzZNj6Vb2xsaSuR4nQI=
 contrib.go.opencensus.io/exporter/ocagent v0.4.9/go.mod h1:ueLzZcP7LPhPulEBukGn4aLh7Mx9YJwpVJ9nL2FYltw=
-git.apache.org/thrift.git v0.0.0-20180902110319-2566ecd5d999/go.mod h1:fPE2ZNJGynbRyZ4dJvy6G277gSllfV2HJqblrnkyeyg=
-git.apache.org/thrift.git v0.12.0/go.mod h1:fPE2ZNJGynbRyZ4dJvy6G277gSllfV2HJqblrnkyeyg=
 github.com/Azure/azure-sdk-for-go v26.5.0+incompatible h1:hA2SzI1Y6tVkb7wCiM8IA3ogXstVq9WLypkBdvxyN8g=
 github.com/Azure/azure-sdk-for-go v26.5.0+incompatible/go.mod h1:9XXNKU+eRnpl9moKnB4QOLf1HestfXbmab5FXxiDBjc=
 github.com/Azure/go-autorest v11.5.2+incompatible h1:NTIEargbhAGNWuT7QEXJ2fqLMFvatupHIscb9FYwVOg=
@@ -20,6 +18,7 @@ github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuy
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
 github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239/go.mod h1:2FmKhYUyUczH0OGQWaF5ceTx0UBShxjsH6f8oGKYe2c=
 github.com/apache/thrift v0.12.0/go.mod h1:cp2SuWMxlEZw2r+iP2GNCdIi4C1qmUzdZFSVb+bacwQ=
+github.com/apache/thrift v0.12.1-0.20190107215100-e824efcb7935/go.mod h1:cp2SuWMxlEZw2r+iP2GNCdIi4C1qmUzdZFSVb+bacwQ=
 github.com/aws/aws-sdk-go v1.19.0 h1:3d9Htr/dl/+8xJYx/fpjEifvfpabZB1YUu61i/WX87Q=
 github.com/aws/aws-sdk-go v1.19.0/go.mod h1:KmX6BPdI08NWTb3/sm4ZGu5ShLoqVDhKgpiN924inxo=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
@@ -55,7 +54,7 @@ github.com/gogo/protobuf v1.1.1/go.mod h1:r8qH/GZQm5c6nD/R0oafs1akxWv10x8SbQlK7a
 github.com/gogo/protobuf v1.2.0/go.mod h1:r8qH/GZQm5c6nD/R0oafs1akxWv10x8SbQlK7atdtwQ=
 github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b h1:VKtxabqXZkF25pY9ekfRL6a582T4P37/31XEstQ5p58=
 github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b/go.mod h1:SBH7ygxi8pfUlaOkMMuAQtPIUF8ecWP5IEl/CR7VP2Q=
-github.com/golang/lint v0.0.0-20190227174305-8f45f776aaf1/go.mod h1:tluoj9z5200jBnyusfRPU2LqT6J+DAorxEvtC7LHB+E=
+github.com/golang/lint v0.0.0-20181217174547-8f45f776aaf1/go.mod h1:tluoj9z5200jBnyusfRPU2LqT6J+DAorxEvtC7LHB+E=
 github.com/golang/mock v1.1.1/go.mod h1:oTYuIxOrZwtPieC+H1uAHpcLFnEyAGVDL/k47Jfbm0A=
 github.com/golang/mock v1.2.0/go.mod h1:oTYuIxOrZwtPieC+H1uAHpcLFnEyAGVDL/k47Jfbm0A=
 github.com/golang/protobuf v1.2.0/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=

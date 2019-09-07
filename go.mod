@@ -36,9 +36,15 @@ require (
 )
 
 // temporary fix to https://github.com/golang/lint/issues/436 which still seems to be a problem
-replace github.com/golang/lint => github.com/golang/lint v0.0.0-20190227174305-8f45f776aaf1
+replace github.com/golang/lint => github.com/golang/lint v0.0.0-20181217174547-8f45f776aaf1
 
 // local copy of envy package without cobra support
 replace github.com/jamiealquiza/envy => ./third_party/envy
 
-replace git.apache.org/thrift.git => github.com/apache/thrift v0.12.0
+// replace git.apache.org with github.com/apache (which is the upstream master
+// anyway), since git.apache.org is offline. v0.12.0 is the latest release, but
+// go complains about "github.com/apache/thrift@v0.12.0 used for two different
+// module paths".  Instead we move one commit ahead.
+replace git.apache.org/thrift.git => github.com/apache/thrift v0.12.1-0.20190107215100-e824efcb7935
+
+go 1.13
