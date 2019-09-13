@@ -334,6 +334,11 @@ Or in your Dockerfile:
 ENTRYPOINT ["/app/imageproxy", "-addr 0.0.0.0:8080"]
 ```
 
+If running imageproxy inside docker with a bind-mounted on-disk cache, make sure
+the container is running as a user that has write permission to the mounted host
+directory.  See more details in
+[#198](https://github.com/willnorris/imageproxy/issues/198).
+
 ### nginx ###
 
 Use the `proxy_pass` directive to send requests to your imageproxy instance.
