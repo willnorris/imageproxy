@@ -189,7 +189,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	contentType, _, _ := mime.ParseMediaType(resp.Header.Get("Content-Type"))
-	if contentType == "" {
+	if contentType == "" || contentType == "application/octet-stream" || contentType == "binary/octet-stream" {
 		// try to detect content type
 		b := bufio.NewReader(resp.Body)
 		resp.Body = ioutil.NopCloser(b)
