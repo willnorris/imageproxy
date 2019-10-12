@@ -80,6 +80,10 @@ does](https://caddy.community/t/59)).
 thinking through the use cases and what kind of plugin API we really need to
 provide.)
 
+See also issues and PRs with [label:plugins][].
+
+[label:plugins]: https://github.com/willnorris/imageproxy/issues?q=label:plugins
+
 #### Caching backend
 
 This is one of the most common feature requests, and is also one of the worst
