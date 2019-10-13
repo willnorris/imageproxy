@@ -263,6 +263,9 @@ func peekContentType(p *bufio.Reader) string {
 	if err != nil && err != bufio.ErrBufferFull && err != io.EOF {
 		return ""
 	}
+	if bytes.HasPrefix(byt, []byte("<svg")) {
+		return "image/svg+xml"
+	}
 	return http.DetectContentType(byt)
 }
 
