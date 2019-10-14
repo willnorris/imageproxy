@@ -44,3 +44,5 @@ require (
 	gopkg.in/yaml.v2 v2.2.1 // indirect
 	willnorris.com/go/gifresize v1.0.0
 )
+
+go 1.13
