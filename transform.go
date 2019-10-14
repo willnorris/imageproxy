@@ -322,9 +322,15 @@ func transformImage(m image.Image, opt Options) image.Image {
 func transformPrimitive(m image.Image, opt Options) *primitive.Model {
 	// set size to the longest of height or width
 	size := m.Bounds().Size().X
+	o := Options{Width: 256}
 	if h := m.Bounds().Size().Y; size < h {
 		size = h
+		o = Options{Height: 256}
 	}
+
+	// scale image down to no larger than 256, which is all we need for the
+	// primitive algorithm
+	m = transformImage(m, o)
 
 	bg := primitive.MakeColor(primitive.AverageImageColor(m))
 	model := primitive.NewModel(m, bg, size, runtime.NumCPU())
