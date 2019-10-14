@@ -45,4 +45,3 @@ require (
 	willnorris.com/go/gifresize v1.0.0
 )
 
-go 1.13
