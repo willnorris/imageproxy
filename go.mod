@@ -11,6 +11,9 @@ require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/dnaeon/go-vcr v1.0.1 // indirect
 	github.com/fcjr/aia-transport-go v1.2.2
+	github.com/fogleman/gg v1.3.0 // indirect
+	github.com/fogleman/primitive v0.0.0-20190214200932-673f57e7b1b5
+	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/gorilla/mux v1.8.0
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79

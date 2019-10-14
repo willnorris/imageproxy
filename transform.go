@@ -13,8 +13,10 @@ import (
 	"io"
 	"log"
 	"math"
+	"runtime"
 
 	"github.com/disintegration/imaging"
+	"github.com/fogleman/primitive/primitive"
 	"github.com/muesli/smartcrop"
 	"github.com/muesli/smartcrop/nfnt"
 	"github.com/prometheus/client_golang/prometheus"
@@ -309,5 +311,25 @@ func transformImage(m image.Image, opt Options) image.Image {
 		m = imaging.FlipH(m)
 	}
 
+	if opt.Primitive.Count > 0 {
+		model := transformPrimitive(m, opt)
+		m = model.Context.Image()
+	}
+
 	return m
+}
+
+func transformPrimitive(m image.Image, opt Options) *primitive.Model {
+	// set size to the longest of height or width
+	size := m.Bounds().Size().X
+	if h := m.Bounds().Size().Y; size < h {
+		size = h
+	}
+
+	bg := primitive.MakeColor(primitive.AverageImageColor(m))
+	model := primitive.NewModel(m, bg, size, runtime.NumCPU())
+	for i := 0; i < opt.Primitive.Count; i++ {
+		model.Step(primitive.ShapeType(opt.Primitive.Mode), 128, 0)
+	}
+	return model
 }

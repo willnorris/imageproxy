@@ -20,6 +20,7 @@ const (
 	optFormatJPEG      = "jpeg"
 	optFormatPNG       = "png"
 	optFormatTIFF      = "tiff"
+	optPrimitivePrefix = "p"
 	optRotatePrefix    = "r"
 	optQualityPrefix   = "q"
 	optSignaturePrefix = "s"
@@ -80,6 +81,11 @@ type Options struct {
 
 	// Automatically find good crop points based on image content.
 	SmartCrop bool
+
+	Primitive struct {
+		Count int
+		Mode  int
+	}
 }
 
 func (o Options) String() string {
@@ -123,6 +129,9 @@ func (o Options) String() string {
 	if o.SmartCrop {
 		opts = append(opts, optSmartCrop)
 	}
+	if o.Primitive.Count != 0 {
+		opts = append(opts, fmt.Sprintf("%s%d:%d", optPrimitivePrefix, o.Primitive.Count, o.Primitive.Mode))
+	}
 	sort.Strings(opts)
 	return strings.Join(opts, ",")
 }
@@ -132,7 +141,7 @@ func (o Options) String() string {
 // the presence of other fields (like Fit).  A non-empty Format value is
 // assumed to involve a transformation.
 func (o Options) transform() bool {
-	return o.Width != 0 || o.Height != 0 || o.Rotate != 0 || o.FlipHorizontal || o.FlipVertical || o.Quality != 0 || o.Format != "" || o.CropX != 0 || o.CropY != 0 || o.CropWidth != 0 || o.CropHeight != 0
+	return o.Width != 0 || o.Height != 0 || o.Rotate != 0 || o.FlipHorizontal || o.FlipVertical || o.Quality != 0 || o.Format != "" || o.CropX != 0 || o.CropY != 0 || o.CropWidth != 0 || o.CropHeight != 0 || o.SmartCrop || o.Primitive.Count != 0
 }
 
 // ParseOptions parses str as a list of comma separated transformation options.
@@ -271,6 +280,13 @@ func ParseOptions(str string) Options {
 		case strings.HasPrefix(opt, optCropHeight):
 			value := strings.TrimPrefix(opt, optCropHeight)
 			options.CropHeight, _ = strconv.ParseFloat(value, 64)
+		case strings.HasPrefix(opt, optPrimitivePrefix):
+			value := strings.TrimPrefix(opt, optPrimitivePrefix)
+			parts := strings.Split(value, ":")
+			if len(parts) >= 2 {
+				options.Primitive.Count, _ = strconv.Atoi(parts[0])
+				options.Primitive.Mode, _ = strconv.Atoi(parts[1])
+			}
 		case strings.Contains(opt, optSizeDelimiter):
 			size := strings.SplitN(opt, optSizeDelimiter, 2)
 			if w := size[0]; w != "" {
