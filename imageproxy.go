@@ -30,7 +30,7 @@ import (
 	"mime"
 	"net/http"
 	"net/url"
-	"path/filepath"
+	"path"
 	"strings"
 	"time"
 
@@ -280,7 +280,7 @@ func contentTypeMatches(patterns []string, contentType string) bool {
 	}
 
 	for _, pattern := range patterns {
-		if ok, err := filepath.Match(pattern, contentType); ok && err == nil {
+		if ok, err := path.Match(pattern, contentType); ok && err == nil {
 			return true
 		}
 	}
