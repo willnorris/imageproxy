@@ -35,9 +35,9 @@ jobs:
       run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
 
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v1.0.3
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      run: bash <(curl -s https://codecov.io/bash)
 
   # On Windows, just run the local tests.  Don't bother with checking gofmt, go
   # vet, or uploading results to Codecov
