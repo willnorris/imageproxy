@@ -30,6 +30,7 @@ const (
 	optFormatJPEG      = "jpeg"
 	optFormatPNG       = "png"
 	optFormatTIFF      = "tiff"
+	optFormatWebp      = "webp"
 	optRotatePrefix    = "r"
 	optQualityPrefix   = "q"
 	optSignaturePrefix = "s"
@@ -90,6 +91,8 @@ type Options struct {
 
 	// Automatically find good crop points based on image content.
 	SmartCrop bool
+
+	Webp bool
 }
 
 func (o Options) String() string {
@@ -244,7 +247,6 @@ func (o Options) transform() bool {
 // 	cx10,cy20,cw100,ch200 - crop image starting at (10,20) is 100px wide and 200px tall
 func ParseOptions(str string) Options {
 	var options Options
-
 	for _, opt := range strings.Split(str, ",") {
 		switch {
 		case len(opt) == 0:
@@ -257,7 +259,7 @@ func ParseOptions(str string) Options {
 			options.FlipHorizontal = true
 		case opt == optScaleUp: // this option is intentionally not documented above
 			options.ScaleUp = true
-		case opt == optFormatJPEG, opt == optFormatPNG, opt == optFormatTIFF:
+		case opt == optFormatJPEG, opt == optFormatPNG, opt == optFormatTIFF, opt == optFormatWebp:
 			options.Format = opt
 		case opt == optSmartCrop:
 			options.SmartCrop = true

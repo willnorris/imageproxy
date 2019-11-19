@@ -70,7 +70,7 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 		format = "jpeg"
 	}
 
-	if opt.Format != "" {
+	if opt.Format != "" && opt.Format != "webp" {
 		format = opt.Format
 	}
 
@@ -99,7 +99,11 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 			return nil, err
 		}
 		fileBytes := buf.Bytes()
-		outputBytes, err = CompressJPG(fileBytes)
+		if opt.Format == optFormatWebp {
+			outputBytes, err = ConvertToWebP(fileBytes)
+		} else {
+			outputBytes, err = CompressJPG(fileBytes)
+		}
 		if err != nil {
 			fmt.Println(err)
 			return fileBytes, nil
@@ -111,7 +115,11 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 			return nil, err
 		}
 		fileBytes := buf.Bytes()
-		outputBytes, err = CompressPNG(fileBytes)
+		if opt.Format == optFormatWebp {
+			outputBytes, err = ConvertToWebP(fileBytes)
+		} else {
+			outputBytes, err = CompressPNG(fileBytes)
+		}
 		if err != nil {
 			fmt.Println(err)
 			return fileBytes, nil
@@ -156,6 +164,23 @@ func CompressPNG(input []byte) (output []byte, err error) {
 func CompressJPG(input []byte) (output []byte, err error) {
 	start := time.Now()
 	cmd := exec.Command("jpegoptim", "--stdin", "--stdout", "--strip-all", "--max=85")
+	cmd.Stdin = strings.NewReader(string(input))
+	var o bytes.Buffer
+	cmd.Stdout = &o
+	err = cmd.Run()
+
+	if err != nil {
+		return
+	}
+
+	output = o.Bytes()
+	compressionSummary.Observe(float64(time.Since(start).Seconds()))
+	return
+}
+
+func ConvertToWebP(input []byte) (output []byte, err error) {
+	start := time.Now()
+	cmd := exec.Command("cwebp", "-q", "75", "-o", "-", "--", "-")
 	cmd.Stdin = strings.NewReader(string(input))
 	var o bytes.Buffer
 	cmd.Stdout = &o

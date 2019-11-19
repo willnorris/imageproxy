@@ -149,7 +149,6 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
-
 	// assign static settings from proxy to req.Options
 	req.Options.ScaleUp = p.ScaleUp
 
@@ -193,6 +192,12 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	contentType, _, _ := mime.ParseMediaType(resp.Header.Get("Content-Type"))
+	if contentType == "" || contentType == "application/octet-stream" || contentType == "binary/octet-stream" {
+		// try to detect content type
+		b := bufio.NewReader(resp.Body)
+		resp.Body = ioutil.NopCloser(b)
+		contentType = peekContentType(b)
+	}
 	if resp.ContentLength != 0 && !validContentType(p.ContentTypes, contentType) {
 		msg := fmt.Sprintf("forbidden content-type: %q", contentType)
 		log.Print(msg)
@@ -208,6 +213,16 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body)
+}
+
+// peekContentType peeks at the first 512 bytes of p, and attempts to detect
+// the content type.  Returns empty string if error occurs.
+func peekContentType(p *bufio.Reader) string {
+	byt, err := p.Peek(512)
+	if err != nil && err != bufio.ErrBufferFull && err != io.EOF {
+		return ""
+	}
+	return http.DetectContentType(byt)
 }
 
 // copyHeader copies header values from src to dst, adding to any existing

@@ -35,8 +35,8 @@ import (
 	rediscache "github.com/gregjones/httpcache/redis"
 	"github.com/peterbourgon/diskv"
 	"github.com/totalwinelabs/imageproxy"
-	"github.com/totalwinelabs/imageproxy/internal/gcscache"
-	"github.com/totalwinelabs/imageproxy/internal/s3cache"
+	"github.com/totalwinelabs/imageproxy/cache/gcscache"
+	"github.com/totalwinelabs/imageproxy/cache/s3cache"
 )
 
 const defaultMemorySize = 100

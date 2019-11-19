@@ -9,7 +9,7 @@ RUN go-wrapper download
 RUN CGO_ENABLED=0 GOOS=linux go-wrapper install
 
 FROM alpine:3.8
-RUN apk update && apk add pngquant jpegoptim
+RUN apk update && apk add pngquant jpegoptim libwebp-tools
 
 WORKDIR /go/bin
 
