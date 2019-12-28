@@ -85,12 +85,16 @@ type Proxy struct {
 
 	// The User-Agent used by imageproxy when requesting origin image
 	UserAgent string
+
+	// Request header override key values. provided by user. (for example Expires)
+	HeaderOverrides map[string]string
 }
 
 // NewProxy constructs a new proxy.  The provided http RoundTripper will be
 // used to fetch remote URLs.  If nil is provided, http.DefaultTransport will
 // be used.
-func NewProxy(transport http.RoundTripper, cache Cache) *Proxy {
+// overrideHeader are key/values to override the request headers, such as expires
+func NewProxy(transport http.RoundTripper, cache Cache, overrideHeader map[string]string) *Proxy {
 	if transport == nil {
 		transport, _ = aia.NewTransport()
 	}
@@ -217,6 +221,10 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 
 	copyHeader(w.Header(), resp.Header, "Cache-Control", "Last-Modified", "Expires", "Etag", "Link")
 
+	for k, v := range p.HeaderOverrides {
+		p.logf("overriding request header %s:%s", k, v)
+		resp.Header.Set(k, v)
+	}
 	if should304(r, resp) {
 		w.WriteHeader(http.StatusNotModified)
 		return

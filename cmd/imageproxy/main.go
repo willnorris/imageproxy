@@ -47,6 +47,8 @@ var verbose = flag.Bool("verbose", false, "print verbose logging messages")
 var _ = flag.Bool("version", false, "Deprecated: this flag does nothing")
 var contentTypes = flag.String("contentTypes", "image/*", "comma separated list of allowed content types")
 var userAgent = flag.String("userAgent", "willnorris/imageproxy", "specify the user-agent used by imageproxy when fetching images from origin website")
+var overrideCacheControl = flag.String("override-cache-control", "", "manually override the remote website Cache-Control header. for more info see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control")
+var overrideExpires = flag.String("override-expires", "", "manually override the remote website expires header in form of Sat, 28 Dec 2019 04:09:32 GMT")
 
 func init() {
 	flag.Var(&cache, "cache", "location to cache images (see https://github.com/willnorris/imageproxy#cache)")
@@ -57,7 +59,15 @@ func main() {
 	envy.Parse("IMAGEPROXY")
 	flag.Parse()
 
-	p := imageproxy.NewProxy(nil, cache.Cache)
+	overrideOpts := map[string]string{}
+	if *overrideCacheControl != "" {
+		overrideOpts["Cache-Control"] = *overrideCacheControl
+	}
+	if *overrideExpires != "" {
+		overrideOpts["Expires"] = *overrideExpires
+	}
+
+	p := imageproxy.NewProxy(nil, cache.Cache, overrideOpts)
 	if *allowHosts != "" {
 		p.AllowHosts = strings.Split(*allowHosts, ",")
 	}
