@@ -28,6 +28,13 @@ additional image adjustment options.
 
 imageproxy URLs are of the form `http://localhost/{options}/{remote_url}`.
 
+## Override request expires ##
+To manually override the remote image expiration :
+
+```
+imageproxy -override-cache-control="public" -override-expires="Sat, 28 Dec 2199 04:09:32 GMT"
+```
+
 ### Options ###
 
 Options are available for cropping, resizing, rotation, flipping, and digital
