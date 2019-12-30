@@ -65,7 +65,7 @@ type Proxy struct {
 	Logger *log.Logger
 
 	// SignatureKey is the HMAC key used to verify signed requests.
-	SignatureKey []byte
+	SignatureKey [][]byte
 
 	// Allow images to scale beyond their original dimensions.
 	ScaleUp bool
@@ -266,8 +266,12 @@ func (p *Proxy) allowed(r *Request) error {
 		return nil
 	}
 
-	if len(p.SignatureKey) > 0 && validSignature(p.SignatureKey, r) {
-		return nil
+	if len(p.SignatureKey) > 0 {
+		for _, signatureKey := range p.SignatureKey {
+			if validSignature(signatureKey, r) {
+				return nil
+			}
+		}
 	}
 
 	return errNotAllowed
