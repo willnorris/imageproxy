@@ -60,6 +60,24 @@ options are sorted, moving `q75` before `r90`.
 [ParseOptions]: https://godoc.org/willnorris.com/go/imageproxy#ParseOptions
 [size option]: https://godoc.org/willnorris.com/go/imageproxy#hdr-Size_and_Cropping
 
+
+## Signed options example
+
+Here is an example with signed options through each step.
+
+Using the github codercat, our image url is `https://octodex.github.com/images/codercat.jpg` and our options are `400x400` and `q40`.
+
+The signature key is `secretkey`
+
+The value that goes into the Digest is `https://octodex.github.com/images/codercat.jpg#400x400,q40`
+
+and our resulting signed key is `0sR2kjyfiF1RQRj4Jm2fFa3_6SDFqdAaDEmy1oD2U-4=`
+
+The final url would be
+`http://localhost:8080/400x400,q40,s0sR2kjyfiF1RQRj4Jm2fFa3_6SDFqdAaDEmy1oD2U-4=/https://octodex.github.com/images/codercat.jpg`
+
+
+
 ## Language Examples
 
 Here are examples of calculating signatures in a variety of languages.  These
