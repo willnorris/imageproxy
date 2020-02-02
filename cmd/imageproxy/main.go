@@ -48,7 +48,7 @@ var denyHosts = flag.String("denyHosts", "", "comma separated list of denied rem
 var referrers = flag.String("referrers", "", "comma separated list of allowed referring hosts")
 var baseURL = flag.String("baseURL", "", "default base URL for relative remote URLs")
 var cache tieredCache
-var signatureKeyList SignatureKeyList
+var signatureKeys signatureKeyList
 var scaleUp = flag.Bool("scaleUp", false, "allow images to scale beyond their original dimensions")
 var timeout = flag.Duration("timeout", 0, "time limit for requests served by this proxy")
 var verbose = flag.Bool("verbose", false, "print verbose logging messages")
@@ -58,7 +58,7 @@ var userAgent = flag.String("userAgent", "willnorris/imageproxy", "specify the u
 
 func init() {
 	flag.Var(&cache, "cache", "location to cache images (see https://github.com/willnorris/imageproxy#cache)")
-	flag.Var(&signatureKeyList, "signatureKey", "HMAC key used in calculating request signatures")
+	flag.Var(&signatureKeys, "signatureKey", "HMAC key used in calculating request signatures")
 }
 
 func main() {
@@ -78,7 +78,7 @@ func main() {
 	if *contentTypes != "" {
 		p.ContentTypes = strings.Split(*contentTypes, ",")
 	}
-	p.SignatureKeys = signatureKeyList
+	p.SignatureKeys = signatureKeys
 	if *baseURL != "" {
 		var err error
 		p.DefaultBaseURL, err = url.Parse(*baseURL)
@@ -102,13 +102,13 @@ func main() {
 	log.Fatal(http.ListenAndServe(*addr, nil))
 }
 
-type SignatureKeyList [][]byte
+type signatureKeyList [][]byte
 
-func (skl *SignatureKeyList) String() string {
+func (skl *signatureKeyList) String() string {
 	return fmt.Sprint(*skl)
 }
 
-func (skl *SignatureKeyList) Set(value string) error {
+func (skl *signatureKeyList) Set(value string) error {
 	key := []byte(value)
 	if strings.HasPrefix(value, "@") {
 		file := strings.TrimPrefix(value, "@")
