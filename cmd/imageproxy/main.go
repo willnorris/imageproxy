@@ -78,7 +78,7 @@ func main() {
 	if *contentTypes != "" {
 		p.ContentTypes = strings.Split(*contentTypes, ",")
 	}
-	p.SignatureKey = signatureKeyList.SignatureKey
+	p.SignatureKeys = signatureKeyList
 	if *baseURL != "" {
 		var err error
 		p.DefaultBaseURL, err = url.Parse(*baseURL)
@@ -102,9 +102,7 @@ func main() {
 	log.Fatal(http.ListenAndServe(*addr, nil))
 }
 
-type SignatureKeyList struct {
-	SignatureKey [][]byte
-}
+type SignatureKeyList [][]byte
 
 func (skl *SignatureKeyList) String() string {
 	return fmt.Sprint(*skl)
@@ -121,7 +119,7 @@ func (skl *SignatureKeyList) Set(value string) error {
 		}
 	}
 
-	skl.SignatureKey = append(skl.SignatureKey, key)
+	*skl = append(*skl, key)
 	return nil
 }
 

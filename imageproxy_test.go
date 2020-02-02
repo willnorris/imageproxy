@@ -138,7 +138,7 @@ func TestAllowed(t *testing.T) {
 		allowHosts []string
 		denyHosts  []string
 		referrers  []string
-		key        [][]byte
+		keys       [][]byte
 		request    *http.Request
 		allowed    bool
 	}{
@@ -157,8 +157,8 @@ func TestAllowed(t *testing.T) {
 
 		// signature key
 		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ="}, nil, nil, nil, key, nil, true},
-		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ="}, nil, nil, nil, multipleKey, nil, true},
-		{"http://test/image", Options{Signature: "FWIawYV4SEyI4zKJMeGugM-eJM1eI_jXPEQ20ZgRe4A="}, nil, nil, nil, multipleKey, nil, true},
+		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ="}, nil, nil, nil, multipleKey, nil, true}, // signed with key "c0ffee"
+		{"http://test/image", Options{Signature: "FWIawYV4SEyI4zKJMeGugM-eJM1eI_jXPEQ20ZgRe4A="}, nil, nil, nil, multipleKey, nil, true}, // signed with key "beer"
 		{"http://test/image", Options{Signature: "deadbeef"}, nil, nil, nil, key, nil, false},
 		{"http://test/image", Options{Signature: "deadbeef"}, nil, nil, nil, multipleKey, nil, false},
 		{"http://test/image", emptyOptions, nil, nil, nil, key, nil, false},
@@ -178,7 +178,7 @@ func TestAllowed(t *testing.T) {
 		p := NewProxy(nil, nil)
 		p.AllowHosts = tt.allowHosts
 		p.DenyHosts = tt.denyHosts
-		p.SignatureKey = tt.key
+		p.SignatureKeys = tt.keys
 		p.Referrers = tt.referrers
 
 		u, err := url.Parse(tt.url)

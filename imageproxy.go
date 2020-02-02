@@ -64,8 +64,9 @@ type Proxy struct {
 	// The Logger used by the image proxy
 	Logger *log.Logger
 
-	// SignatureKey is the HMAC key used to verify signed requests.
-	SignatureKey [][]byte
+	// SignatureKeys is a list of HMAC keys used to verify signed requests.
+	// Any of them can be used to verify signed requests.
+	SignatureKeys [][]byte
 
 	// Allow images to scale beyond their original dimensions.
 	ScaleUp bool
@@ -258,7 +259,7 @@ func (p *Proxy) allowed(r *Request) error {
 		return errDeniedHost
 	}
 
-	if len(p.AllowHosts) == 0 && len(p.SignatureKey) == 0 {
+	if len(p.AllowHosts) == 0 && len(p.SignatureKeys) == 0 {
 		return nil // no allowed hosts or signature key, all requests accepted
 	}
 
@@ -266,11 +267,9 @@ func (p *Proxy) allowed(r *Request) error {
 		return nil
 	}
 
-	if len(p.SignatureKey) > 0 {
-		for _, signatureKey := range p.SignatureKey {
-			if validSignature(signatureKey, r) {
-				return nil
-			}
+	for _, signatureKey := range p.SignatureKeys {
+		if len(signatureKey) > 0 && validSignature(signatureKey, r) {
+			return nil
 		}
 	}
 
