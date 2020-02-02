@@ -109,17 +109,18 @@ func (skl *signatureKeyList) String() string {
 }
 
 func (skl *signatureKeyList) Set(value string) error {
-	key := []byte(value)
-	if strings.HasPrefix(value, "@") {
-		file := strings.TrimPrefix(value, "@")
-		var err error
-		key, err = ioutil.ReadFile(file)
-		if err != nil {
-			log.Fatalf("error reading signature file: %v", err)
+	for _, v := range strings.Fields(value) {
+		key := []byte(v)
+		if strings.HasPrefix(v, "@") {
+			file := strings.TrimPrefix(v, "@")
+			var err error
+			key, err = ioutil.ReadFile(file)
+			if err != nil {
+				log.Fatalf("error reading signature file: %v", err)
+			}
 		}
+		*skl = append(*skl, key)
 	}
-
-	*skl = append(*skl, key)
 	return nil
 }
 

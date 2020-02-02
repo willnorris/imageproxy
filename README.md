@@ -235,7 +235,7 @@ which contains the HMAC key.
 
 Try it out by running:
 
-    imageproxy -signatureKey "secret key"
+    imageproxy -signatureKey "secretkey"
 
 Reload the [codercat URL][], and you should see an error message.  Now load a
 [signed codercat URL][] (which contains the [signature option][]) and verify
@@ -245,7 +245,11 @@ that it loads properly.
 [signature option]: https://godoc.org/willnorris.com/go/imageproxy#hdr-Signature
 
 Some simple code samples for generating signatures in various languages can be
-found in [docs/url-signing.md](/docs/url-signing.md).
+found in [docs/url-signing.md](/docs/url-signing.md).  Multiple valid signature
+keys may be provided to support key rotation by repeating the `signatureKey`
+flag multiple times, or by providing a space-separated list of keys.  To use a
+key with a literal space character, load the key from a file using the "@"
+prefix documented above.
 
 If both a whiltelist and signatureKey are specified, requests can match either.
 In other words, requests that match one of the allowed hosts don't necessarily
