@@ -56,6 +56,10 @@ type Proxy struct {
 	// hosts are allowed.
 	Referrers []string
 
+	// IncludeReferer controls whether the original Referer request header
+	// is included in remote requests.
+	IncludeReferer bool
+
 	// DefaultBaseURL is the URL that relative remote URLs are resolved in
 	// reference to.  If nil, all remote URLs specified in requests must be
 	// absolute.
@@ -165,6 +169,10 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	}
 	if len(p.ContentTypes) != 0 {
 		actualReq.Header.Set("Accept", strings.Join(p.ContentTypes, ", "))
+	}
+	if p.IncludeReferer {
+		// pass along the referer header from the original request
+		copyHeader(actualReq.Header, r.Header, "referer")
 	}
 	resp, err := p.Client.Do(actualReq)
 
