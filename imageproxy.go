@@ -197,12 +197,12 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	// close the original resp.Body, even if we wrap it in a NopCloser below
 	defer resp.Body.Close()
 
-	cached := resp.Header.Get(httpcache.XFromCache)
+	cached := resp.Header.Get(httpcache.XFromCache) == "1"
 	if p.Verbose {
-		p.logf("request: %+v (served from cache: %t)", *actualReq, cached == "1")
+		p.logf("request: %+v (served from cache: %t)", *actualReq, cached)
 	}
 
-	if cached == "1" {
+	if cached {
 		requestServedFromCacheCount.Inc()
 	}
 
