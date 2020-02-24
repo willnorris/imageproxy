@@ -275,7 +275,7 @@ func exifOrientation(r io.Reader) (opt Options) {
 // transformImage modifies the image m based on the transformations specified
 // in opt.
 func transformImage(m image.Image, opt Options) image.Image {
-	timer := prometheus.NewTimer(imageTransformationSummary)
+	timer := prometheus.NewTimer(metricTransformationDuration)
 	defer timer.ObserveDuration()
 
 	// Parse crop and resize parameters before applying any transforms.

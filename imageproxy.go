@@ -150,7 +150,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h = tphttp.TimeoutHandler(h, p.Timeout, "Gateway timeout waiting for remote resource.")
 	}
 
-	timer := prometheus.NewTimer(httpRequestsResponseTime)
+	timer := prometheus.NewTimer(metricRequestDuration)
 	defer timer.ObserveDuration()
 	h.ServeHTTP(w, r)
 }
@@ -191,7 +191,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 		msg := fmt.Sprintf("error fetching remote image: %v", err)
 		p.log(msg)
 		http.Error(w, msg, http.StatusInternalServerError)
-		remoteImageFetchErrors.Inc()
+		metricRemoteErrors.Inc()
 		return
 	}
 	// close the original resp.Body, even if we wrap it in a NopCloser below
@@ -203,7 +203,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if cached {
-		requestServedFromCacheCount.Inc()
+		metricServedFromCache.Inc()
 	}
 
 	copyHeader(w.Header(), resp.Header, "Cache-Control", "Last-Modified", "Expires", "Etag", "Link")

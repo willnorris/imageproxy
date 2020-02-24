@@ -5,29 +5,32 @@ import (
 )
 
 var (
-	requestServedFromCacheCount = prometheus.NewCounter(
+	metricServedFromCache = prometheus.NewCounter(
 		prometheus.CounterOpts{
-			Name: "requests_served_from_cache",
-			Help: "Number of requests served from cache.",
+			Namespace: "imageproxy",
+			Name:      "requests_served_from_cache_total",
+			Help:      "Number of requests served from cache.",
 		})
-	imageTransformationSummary = prometheus.NewSummary(prometheus.SummaryOpts{
-		Name: "image_transformation_seconds",
-		Help: "Time taken for image transformations in seconds.",
+	metricTransformationDuration = prometheus.NewSummary(prometheus.SummaryOpts{
+		Namespace: "imageproxy",
+		Name:      "transformation_duration_seconds",
+		Help:      "Time taken for image transformations in seconds.",
 	})
-	remoteImageFetchErrors = prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "remote_image_fetch_errors",
-		Help: "Total image fetch failures",
+	metricRemoteErrors = prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "imageproxy",
+		Name:      "remote_fetch_errors_total",
+		Help:      "Total remote image fetch errors",
 	})
-	httpRequestsResponseTime = prometheus.NewSummary(prometheus.SummaryOpts{
+	metricRequestDuration = prometheus.NewSummary(prometheus.SummaryOpts{
 		Namespace: "http",
-		Name:      "response_time_seconds",
+		Name:      "request_duration_seconds",
 		Help:      "Request response times",
 	})
 )
 
 func init() {
-	prometheus.MustRegister(imageTransformationSummary)
-	prometheus.MustRegister(requestServedFromCacheCount)
-	prometheus.MustRegister(remoteImageFetchErrors)
-	prometheus.MustRegister(httpRequestsResponseTime)
+	prometheus.MustRegister(metricTransformationDuration)
+	prometheus.MustRegister(metricServedFromCache)
+	prometheus.MustRegister(metricRemoteErrors)
+	prometheus.MustRegister(metricRequestDuration)
 }
