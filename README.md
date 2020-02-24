@@ -307,8 +307,7 @@ All configuration flags have equivalent environment variables of the form
 ## Deploying ##
 
 In most cases, you can follow the normal procedure for building a deploying any
-go application.  For example, I build it directly on my production debian server
-using:
+go application.  For example:
 
  - `go build willnorris.com/go/imageproxy/cmd/imageproxy`
  - copy resulting binary to `/usr/local/bin`
