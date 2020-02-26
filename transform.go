@@ -364,7 +364,11 @@ func exifOrientation(r io.Reader) (opt Options) {
 }
 
 func addSizeIndicator(m image.Image, size string) image.Image {
-	path := fmt.Sprintf("../../indicators-size/indicator-size-%s.png", size)
+	relativePath := "../.."
+	if os.Getenv("DOCKER") == "true" {
+		relativePath = ""
+	}
+	path := fmt.Sprintf("%s/assests/indicator-size-%s.png", relativePath, size)
 	sizeImageFile, err := os.Open(path)
 	defer sizeImageFile.Close()
 	if err != nil {
