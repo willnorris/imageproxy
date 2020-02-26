@@ -18,7 +18,7 @@ COPY --from=build /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=build /etc/ssl/certs /etc/ssl/certs
 COPY --from=build /go/bin/imageproxy .
 COPY --from=build /go/src/willnorris.com/go/imageproxy/assets /assets
-CMD ["-addr", "0s.0.0.0:8080"]
+CMD ["-addr", "0.0.0.0:8080"]
 ENTRYPOINT ["/go/bin/imageproxy"]
 
 EXPOSE 8080
