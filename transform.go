@@ -368,7 +368,7 @@ func addSizeIndicator(m image.Image, size string) image.Image {
 	if os.Getenv("DOCKER") == "true" {
 		relativePath = ""
 	}
-	path := fmt.Sprintf("%s/assests/indicator-size-%s.png", relativePath, size)
+	path := fmt.Sprintf("%s/assets/indicator-size-%s.png", relativePath, size)
 	sizeImageFile, err := os.Open(path)
 	defer sizeImageFile.Close()
 	if err != nil {
