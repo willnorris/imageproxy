@@ -18,12 +18,14 @@ import (
 	"bytes"
 	"fmt"
 	"image"
+	"image/draw"
 	_ "image/gif" // register gif format
 	"image/jpeg"
 	"image/png"
 	"io"
 	"log"
 	"math"
+	"os"
 
 	"os/exec"
 	"strings"
@@ -291,6 +293,25 @@ func cropParams(m image.Image, opt Options) image.Rectangle {
 	return image.Rect(x0, y0, x1, y1)
 }
 
+//make image square by adding transparency to max side
+func makeSquare(m image.Image, sidePadding int) image.Image {
+	x := m.Bounds().Dx()
+	x = x + sidePadding
+	y := m.Bounds().Dy()
+	max := 0
+	if x > y {
+		max = x
+	} else {
+		max = y
+	}
+	backGroundColor := image.Transparent
+	offset := image.Pt(max/2-m.Bounds().Dx()/2, max/2-m.Bounds().Dy()/2)
+	transparentSquare := image.NewRGBA(image.Rect(0, 0, max, max))
+	draw.Draw(transparentSquare, transparentSquare.Bounds(), backGroundColor, image.ZP, draw.Src)
+	draw.Draw(transparentSquare, transparentSquare.Bounds().Add(offset), m, image.ZP, draw.Over)
+	return transparentSquare
+}
+
 // read EXIF orientation tag from r and adjust opt to orient image correctly.
 func exifOrientation(r io.Reader) (opt Options) {
 	// Exif Orientation Tag values
@@ -342,6 +363,35 @@ func exifOrientation(r io.Reader) (opt Options) {
 	return opt
 }
 
+func addSizeIndicator(m image.Image, size string) image.Image {
+	path := fmt.Sprintf("../../indicators-size/indicator-size-%s.png", size)
+	sizeImageFile, err := os.Open(path)
+	defer sizeImageFile.Close()
+	if err != nil {
+		log.Fatalf("failed to open: %s", err)
+	}
+
+	sizeImage, err := png.Decode(sizeImageFile)
+	x := m.Bounds().Dx() / 4
+	if x > 150 {
+		x = 150
+	}
+	if x < 52 {
+		x = 52
+	}
+	sizeImage = imaging.Resize(sizeImage, x, x, resampleFilter)
+	offset := image.Pt(m.Bounds().Dx()-sizeImage.Bounds().Dx(), m.Bounds().Dy()-sizeImage.Bounds().Dy())
+	b := m.Bounds()
+	output := image.NewRGBA(b)
+	draw.Draw(output, b, m, image.ZP, draw.Src)
+	draw.Draw(output, sizeImage.Bounds().Add(offset), sizeImage, image.ZP, draw.Over)
+
+	if err != nil {
+		log.Fatalf("failed to decode: %s", err)
+	}
+	return output
+}
+
 // transformImage modifies the image m based on the transformations specified
 // in opt.
 func transformImage(m image.Image, opt Options) image.Image {
@@ -388,6 +438,14 @@ func transformImage(m image.Image, opt Options) image.Image {
 		m = imaging.FlipH(m)
 	}
 
+	if opt.Square {
+		m = makeSquare(m, 0)
+	}
+	if opt.IndicatorSize != "" {
+		m = addSizeIndicator(m, opt.IndicatorSize)
+	}
+
+	fmt.Println(m.Bounds().Dx(), m.Bounds().Dy())
 	imageTransformationSummary.Observe(float64(time.Since(start).Seconds()))
 
 	return m

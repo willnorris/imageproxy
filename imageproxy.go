@@ -193,12 +193,19 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	contentType, _, _ := mime.ParseMediaType(resp.Header.Get("Content-Type"))
+
+	//fix for google storage giving a 403 when an image is not found
+	if resp.StatusCode == 403 && contentType == "application/xml" {
+		http.Error(w, "no image found", http.StatusNotFound)
+		return
+	}
 	if contentType == "" || contentType == "application/octet-stream" || contentType == "binary/octet-stream" {
 		// try to detect content type
 		b := bufio.NewReader(resp.Body)
 		resp.Body = ioutil.NopCloser(b)
 		contentType = peekContentType(b)
 	}
+
 	if resp.ContentLength != 0 && !validContentType(p.ContentTypes, contentType) {
 		msg := fmt.Sprintf("forbidden content-type: %q", contentType)
 		log.Print(msg)

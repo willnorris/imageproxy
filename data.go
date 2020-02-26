@@ -24,23 +24,30 @@ import (
 )
 
 const (
-	optFit             = "fit"
-	optFlipVertical    = "fv"
-	optFlipHorizontal  = "fh"
-	optFormatJPEG      = "jpeg"
-	optFormatPNG       = "png"
-	optFormatTIFF      = "tiff"
-	optFormatWebp      = "webp"
-	optRotatePrefix    = "r"
-	optQualityPrefix   = "q"
-	optSignaturePrefix = "s"
-	optSizeDelimiter   = "x"
-	optScaleUp         = "scaleUp"
-	optCropX           = "cx"
-	optCropY           = "cy"
-	optCropWidth       = "cw"
-	optCropHeight      = "ch"
-	optSmartCrop       = "sc"
+	optFit                = "fit"
+	optFlipVertical       = "fv"
+	optFlipHorizontal     = "fh"
+	optFormatJPEG         = "jpeg"
+	optFormatPNG          = "png"
+	optFormatTIFF         = "tiff"
+	optFormatWebp         = "webp"
+	optRotatePrefix       = "r"
+	optQualityPrefix      = "q"
+	optSignaturePrefix    = "s"
+	optSizeDelimiter      = "x"
+	optScaleUp            = "scaleUp"
+	optCropX              = "cx"
+	optCropY              = "cy"
+	optCropWidth          = "cw"
+	optCropHeight         = "ch"
+	optSmartCrop          = "sc"
+	optSquare             = "sq"
+	optIndicatorSize50ml  = "50ml"
+	optIndicatorSize100ml = "100ml"
+	optIndicatorSize187ml = "187ml"
+	optIndicatorSize200ml = "200ml"
+	optIndicatorSize375ml = "375ml"
+	optIndicatorSize500ml = "500ml"
 )
 
 // URLError reports a malformed URL error.
@@ -93,6 +100,9 @@ type Options struct {
 	SmartCrop bool
 
 	Webp bool
+
+	Square        bool
+	IndicatorSize string
 }
 
 func (o Options) String() string {
@@ -136,6 +146,12 @@ func (o Options) String() string {
 	if o.SmartCrop {
 		opts = append(opts, optSmartCrop)
 	}
+	if o.Square {
+		opts = append(opts, optSquare)
+	}
+	if o.IndicatorSize != "" {
+		opts = append(opts, o.IndicatorSize)
+	}
 	return strings.Join(opts, ",")
 }
 
@@ -144,7 +160,7 @@ func (o Options) String() string {
 // the presence of other fields (like Fit).  A non-empty Format value is
 // assumed to involve a transformation.
 func (o Options) transform() bool {
-	return o.Width != 0 || o.Height != 0 || o.Rotate != 0 || o.FlipHorizontal || o.FlipVertical || o.Quality != 0 || o.Format != "" || o.CropX != 0 || o.CropY != 0 || o.CropWidth != 0 || o.CropHeight != 0
+	return o.Square || o.Width != 0 || o.Height != 0 || o.Rotate != 0 || o.FlipHorizontal || o.FlipVertical || o.Quality != 0 || o.Format != "" || o.CropX != 0 || o.CropY != 0 || o.CropWidth != 0 || o.CropHeight != 0
 }
 
 // ParseOptions parses str as a list of comma separated transformation options.
@@ -245,6 +261,7 @@ func (o Options) transform() bool {
 // 	200x,png    - 200 pixels wide, converted to PNG format
 // 	cw100,ch100 - crop image to 100px square, starting at (0,0)
 // 	cx10,cy20,cw100,ch200 - crop image starting at (10,20) is 100px wide and 200px tall
+//  sq make image square by adding transparency on both sides of the image
 func ParseOptions(str string) Options {
 	var options Options
 	for _, opt := range strings.Split(str, ",") {
@@ -263,6 +280,26 @@ func ParseOptions(str string) Options {
 			options.Format = opt
 		case opt == optSmartCrop:
 			options.SmartCrop = true
+		case opt == optSquare:
+			options.Square = true
+		case opt == optIndicatorSize50ml:
+			options.IndicatorSize = optIndicatorSize50ml
+			options.Square = true
+		case opt == optIndicatorSize100ml:
+			options.IndicatorSize = optIndicatorSize100ml
+			options.Square = true
+		case opt == optIndicatorSize187ml:
+			options.IndicatorSize = optIndicatorSize187ml
+			options.Square = true
+		case opt == optIndicatorSize200ml:
+			options.IndicatorSize = optIndicatorSize200ml
+			options.Square = true
+		case opt == optIndicatorSize375ml:
+			options.IndicatorSize = optIndicatorSize375ml
+			options.Square = true
+		case opt == optIndicatorSize500ml:
+			options.IndicatorSize = optIndicatorSize500ml
+			options.Square = true
 		case strings.HasPrefix(opt, optRotatePrefix):
 			value := strings.TrimPrefix(opt, optRotatePrefix)
 			options.Rotate, _ = strconv.Atoi(value)
