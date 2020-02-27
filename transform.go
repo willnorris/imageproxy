@@ -48,6 +48,8 @@ const maxExifSize = 1 << 20
 // resample filter used when resizing images
 var resampleFilter = imaging.Lanczos
 
+var assets = make(map[string]image.Image)
+
 // Transform the provided image.  img should contain the raw bytes of an
 // encoded image in one of the supported formats (gif, jpeg, or png).  The
 // bytes of a similarly encoded image is returned.
@@ -368,14 +370,11 @@ func addSizeIndicator(m image.Image, size string) image.Image {
 	if os.Getenv("DOCKER") == "true" {
 		relativePath = ""
 	}
-	path := fmt.Sprintf("%s/assets/indicator-size-%s.png", relativePath, size)
-	sizeImageFile, err := os.Open(path)
-	defer sizeImageFile.Close()
+	err, sizeImage := getIndicatorImage(relativePath, size)
 	if err != nil {
-		log.Fatalf("failed to open: %s", err)
+		log.Fatalf("failed to decode: %s", err)
+		return nil
 	}
-
-	sizeImage, err := png.Decode(sizeImageFile)
 	x := m.Bounds().Dx() / 4
 	if x > 150 {
 		x = 150
@@ -394,6 +393,24 @@ func addSizeIndicator(m image.Image, size string) image.Image {
 		log.Fatalf("failed to decode: %s", err)
 	}
 	return output
+}
+
+func getIndicatorImage(relativePath string, size string) (error, image.Image) {
+	sizeImage := assets[size]
+	if sizeImage != nil {
+		return nil, sizeImage
+	}
+	path := fmt.Sprintf("%s/assets/indicator-size-%s.png", relativePath, size)
+	sizeImageFile, err := os.Open(path)
+	defer sizeImageFile.Close()
+	if err != nil {
+		log.Fatalf("failed to open: %s", err)
+		return err, nil
+	}
+
+	sizeImage, err = png.Decode(sizeImageFile)
+	assets[size] = sizeImage
+	return err, sizeImage
 }
 
 // transformImage modifies the image m based on the transformations specified
@@ -449,7 +466,6 @@ func transformImage(m image.Image, opt Options) image.Image {
 		m = addSizeIndicator(m, opt.IndicatorSize)
 	}
 
-	fmt.Println(m.Bounds().Dx(), m.Bounds().Dy())
 	imageTransformationSummary.Observe(float64(time.Since(start).Seconds()))
 
 	return m
