@@ -46,6 +46,7 @@ const (
 	optIndicatorSize100ml = "100ml"
 	optIndicatorSize187ml = "187ml"
 	optIndicatorSize200ml = "200ml"
+	optIndicatorSize300ml = "300ml"
 	optIndicatorSize375ml = "375ml"
 	optIndicatorSize500ml = "500ml"
 )
@@ -293,6 +294,9 @@ func ParseOptions(str string) Options {
 			options.Square = true
 		case opt == optIndicatorSize200ml:
 			options.IndicatorSize = optIndicatorSize200ml
+			options.Square = true
+		case opt == optIndicatorSize300ml:
+			options.IndicatorSize = optIndicatorSize300ml
 			options.Square = true
 		case opt == optIndicatorSize375ml:
 			options.IndicatorSize = optIndicatorSize375ml
