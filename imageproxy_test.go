@@ -110,8 +110,11 @@ func TestAllowed(t *testing.T) {
 		return req
 	}
 
+	now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+
 	tests := []struct {
 		url        string
+		now        time.Time
 		options    Options
 		allowHosts []string
 		denyHosts  []string
@@ -153,6 +156,11 @@ func TestAllowed(t *testing.T) {
 		{url: "http://test/image", options: Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ="}, denyHosts: []string{"test"}, keys: key, allowed: false},
 		{url: "http://127.0.0.1/image", denyHosts: []string{"127.0.0.0/8"}, allowed: false},
 		{url: "http://127.0.0.1:3000/image", denyHosts: []string{"127.0.0.0/8"}, allowed: false},
+
+		// valid until options
+		{url: "http://test/image", now: now, options: Options{ValidUntil: now.Add(time.Second)}, allowed: true},
+		{url: "http://test/image", now: now, options: Options{ValidUntil: now.Add(-time.Second)}, allowed: false},
+		{url: "http://test/image", now: now, options: Options{ValidUntil: now}, allowed: false},
 	}
 
 	for _, tt := range tests {
@@ -161,6 +169,7 @@ func TestAllowed(t *testing.T) {
 		p.DenyHosts = tt.denyHosts
 		p.SignatureKeys = tt.keys
 		p.Referrers = tt.referrers
+		p.timeNow = tt.now
 
 		u, err := url.Parse(tt.url)
 		if err != nil {

@@ -101,6 +101,8 @@ type Proxy struct {
 	// remote server specifies 'private' or 'no-store' in the cache-control
 	// header.
 	ForceCache bool
+
+	timeNow time.Time // current time, used for testing
 }
 
 // NewProxy constructs a new proxy.  The provided http RoundTripper will be
@@ -278,7 +280,6 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	resp, err := p.Client.Do(actualReq)
-
 	if err != nil {
 		msg := fmt.Sprintf("error fetching remote image: %v", err)
 		p.log(msg)
@@ -371,15 +372,29 @@ var (
 	errDeniedHost       = errors.New("request contains a denied host")
 	errNotAllowed       = errors.New("request does not contain an allowed host or valid signature")
 	errTooManyRedirects = errors.New("too many redirects")
+	errNotValid         = errors.New("request is no longer valid")
 
 	msgNotAllowed           = "requested URL is not allowed"
 	msgNotAllowedInRedirect = "requested URL in redirect is not allowed"
 )
 
+func (p *Proxy) now() time.Time {
+	if !p.timeNow.IsZero() {
+		return p.timeNow
+	}
+	return time.Now()
+}
+
 // allowed determines whether the specified request contains an allowed
 // referrer, host, and signature.  It returns an error if the request is not
-// allowed.
+// allowed or not valid any longer.
 func (p *Proxy) allowed(r *Request) error {
+	if !r.Options.ValidUntil.IsZero() {
+		if !p.now().Before(r.Options.ValidUntil) {
+			return errNotValid
+		}
+	}
+
 	if len(p.Referrers) > 0 && !referrerMatches(p.Referrers, r.Original) {
 		return errReferrer
 	}
