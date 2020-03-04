@@ -204,7 +204,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 
 	//fix for google storage giving a 403 when an image is not found
 	if resp.StatusCode == http.StatusForbidden && strings.Contains(contentType, "xml") {
-		http.Error(w, "no image found "+strconv.Itoa(resp.StatusCode), http.StatusNotFound)
+		http.Error(w, "no image found", http.StatusNotFound)
 		return
 	}
 
