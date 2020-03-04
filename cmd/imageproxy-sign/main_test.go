@@ -131,6 +131,9 @@ func TestParseURL(t *testing.T) {
 		// ensure signature values are stripped
 		{"http://localhost:8080/sc0ffee/http://example.com/", "http://example.com/#0x0"},
 		{"http://example.com/#sc0ffee", "http://example.com/#0x0"},
+
+		// validuntil
+		{"http://localhost:8080/vu20200304/http://example.com/", "http://example.com/#0x0,vu20200304"},
 	}
 
 	for _, tt := range tests {

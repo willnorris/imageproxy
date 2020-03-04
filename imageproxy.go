@@ -186,7 +186,6 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 		copyHeader(actualReq.Header, r.Header, "referer")
 	}
 	resp, err := p.Client.Do(actualReq)
-
 	if err != nil {
 		msg := fmt.Sprintf("error fetching remote image: %v", err)
 		p.log(msg)
@@ -229,7 +228,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 
 	copyHeader(w.Header(), resp.Header, "Content-Length")
 
-	//Enable CORS for 3rd party applications
+	// Enable CORS for 3rd party applications
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	w.WriteHeader(resp.StatusCode)
@@ -267,14 +266,22 @@ var (
 	errReferrer   = errors.New("request does not contain an allowed referrer")
 	errDeniedHost = errors.New("request contains a denied host")
 	errNotAllowed = errors.New("request does not contain an allowed host or valid signature")
+	errNotValid   = errors.New("request is no longer valid")
 
 	msgNotAllowed = "requested URL is not allowed"
 )
 
 // allowed determines whether the specified request contains an allowed
 // referrer, host, and signature.  It returns an error if the request is not
-// allowed.
+// allowed or not valid any longer.
 func (p *Proxy) allowed(r *Request) error {
+	if r.Options.ValidUntil > 0 {
+		y, m, d := time.Now().Date()
+		if r.Options.ValidUntil < y*10000+int(m)*100+d {
+			return errNotValid
+		}
+	}
+
 	if len(p.Referrers) > 0 && !referrerMatches(p.Referrers, r.Original) {
 		return errReferrer
 	}
