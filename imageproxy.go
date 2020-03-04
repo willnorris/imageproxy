@@ -195,7 +195,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	contentType, _, _ := mime.ParseMediaType(resp.Header.Get("Content-Type"))
 
 	//fix for google storage giving a 403 when an image is not found
-	if resp.StatusCode == 403 && contentType == "application/xml" {
+	if resp.StatusCode == 403 && strings.Contains(contentType ,"xml") {
 		http.Error(w, "no image found", http.StatusNotFound)
 		return
 	}
