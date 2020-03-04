@@ -312,6 +312,14 @@ If both a whiltelist and signatureKey are specified, requests can match either.
 In other words, requests that match one of the allowed hosts don't necessarily
 need to be signed, though they can be.
 
+To limit how long a URL is valid (particularly useful for signed URLs),
+you can specify a "valid until" time using the `vu` option with a Unix timestamp.
+For example, the following signed URL would only be valid until 2020-01-01:
+
+```
+http://localhost:8080/vu1577836800,sjNcVf6LxzKEvR6Owgg3zhEMN7xbWxlpf-eyYbRfFK4A=/https://example.com/image
+```
+
 ### Default Base URL
 
 Typically, remote images to be proxied are specified as absolute URLs.

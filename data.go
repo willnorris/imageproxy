@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 )
 
@@ -33,6 +34,7 @@ const (
 	optCropHeight      = "ch"
 	optSmartCrop       = "sc"
 	optTrim            = "trim"
+	optValidUntil      = "vu"
 )
 
 // URLError reports a malformed URL error.
@@ -86,6 +88,9 @@ type Options struct {
 
 	// If true, automatically trim pixels of the same color around the edges
 	Trim bool
+
+	// If non-zero, the URL is valid until this time.
+	ValidUntil time.Time
 }
 
 func (o Options) String() string {
@@ -132,7 +137,12 @@ func (o Options) String() string {
 	if o.Trim {
 		opts = append(opts, optTrim)
 	}
+	if !o.ValidUntil.IsZero() {
+		opts = append(opts, fmt.Sprintf("%s%d", optValidUntil, o.ValidUntil.Unix()))
+	}
+
 	sort.Strings(opts)
+
 	return strings.Join(opts, ",")
 }
 
@@ -235,6 +245,11 @@ func (o Options) transform() bool {
 // that have been resized or cropped.  The trim option is applied before other
 // options such as cropping or resizing.
 //
+// # Valid Until
+//
+// The "vu{unixtime}" option specifies a Unix timestamp at which the request URL is no longer valid.
+// For example, "vu1800000000" would mean the URL is valid until 2027-01-15T08:00:00Z.
+//
 // Examples
 //
 //	0x0         - no resizing
@@ -289,6 +304,11 @@ func ParseOptions(str string) Options {
 		case strings.HasPrefix(opt, optCropHeight):
 			value := strings.TrimPrefix(opt, optCropHeight)
 			options.CropHeight, _ = strconv.ParseFloat(value, 64)
+		case strings.HasPrefix(opt, optValidUntil):
+			value := strings.TrimPrefix(opt, optValidUntil)
+			if v, _ := strconv.ParseInt(value, 10, 64); v > 0 {
+				options.ValidUntil = time.Unix(v, 0)
+			}
 		case strings.Contains(opt, optSizeDelimiter):
 			size := strings.SplitN(opt, optSizeDelimiter, 2)
 			if w := size[0]; w != "" {
