@@ -219,6 +219,11 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 
 	//Enable CORS for 3rd party applications
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+	surrogateKey := "image"
+	if req.Options.IndicatorSize != "" {
+		surrogateKey = surrogateKey + " " + req.Options.IndicatorSize
+	}
+	w.Header().Set("Surrogate-Key:", surrogateKey)
 
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body)
