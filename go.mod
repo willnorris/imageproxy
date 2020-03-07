@@ -8,6 +8,7 @@ require (
 	github.com/PaulARoy/azurestoragecache v0.0.0-20170906084534-3c249a3ba788
 	github.com/aws/aws-sdk-go v1.19.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
+	github.com/didip/tollbooth v4.0.2+incompatible
 	github.com/die-net/lrucache v0.0.0-20181227122439-19a39ef22a11
 	github.com/disintegration/imaging v1.6.0
 	github.com/dnaeon/go-vcr v1.0.1 // indirect
@@ -21,6 +22,7 @@ require (
 	github.com/marstr/guid v0.0.0-20170427235115-8bdf7d1a087c // indirect
 	github.com/muesli/smartcrop v0.2.1-0.20181030220600-548bbf0c0965
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
+	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/peterbourgon/diskv v0.0.0-20171120014656-2973218375c3
 	github.com/prometheus/client_golang v1.4.1
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd

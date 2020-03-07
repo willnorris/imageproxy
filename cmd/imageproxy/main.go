@@ -28,6 +28,7 @@ import (
 	"time"
 
 	"github.com/PaulARoy/azurestoragecache"
+	"github.com/didip/tollbooth"
 	"github.com/die-net/lrucache"
 	"github.com/die-net/lrucache/twotier"
 	"github.com/garyburd/redigo/redis"
@@ -56,6 +57,7 @@ var verbose = flag.Bool("verbose", false, "print verbose logging messages")
 var version = flag.Bool("version", false, "Deprecated: this flag does nothing")
 var contentTypes = flag.String("contentTypes", "image/*", "comma separated list of allowed content types")
 var userAgent = flag.String("userAgent", "willnorris/imageproxy", "specify the user-agent used by imageproxy when fetching images from origin website")
+var rateLimit = flag.Float64("rateLimit", 10, "set number of requests per second to allow before rate limiting occurs")
 
 func init() {
 	flag.Var(&cache, "cache", "location to cache images (see https://github.com/willnorris/imageproxy#cache)")
@@ -100,7 +102,7 @@ func main() {
 	}
 
 	fmt.Printf("imageproxy listening on %s\n", server.Addr)
-	http.Handle("/", p)
+	http.Handle("/", tollbooth.LimitFuncHandler(tollbooth.NewLimiter(*rateLimit, nil), p.ServeHTTP))
 	log.Fatal(http.ListenAndServe(*addr, nil))
 }
 
