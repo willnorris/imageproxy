@@ -12,5 +12,8 @@ go_import_path: willnorris.com/go/imageproxy
 
 env:
   - GO111MODULE=on
+  - DD_AGENT_HOST=localhost
+  - DD_TRACE_AGENT_PORT=8126
+  - DD_SERVICE_NAME=safeimage
 
 install: true
