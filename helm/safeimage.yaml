@@ -34,6 +34,16 @@ resources:
 extraSpecSpecs: {}
 healthcheck: # checkout https://github.com/bufferapp/EKG for complete docs
   enabled: false
+env:
+  - name: DD_AGENT_HOST
+    valueFrom:
+      fieldRef:
+        fieldPath: status.hostIP
+  - name: DD_TRACE_AGENT_PORT
+    value: "8126"
+  - name: DD_SERVICE_NAME
+    value: "safeimage"
+
 service:
   enabled: true
   externalPort: 80

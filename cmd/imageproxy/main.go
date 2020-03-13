@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -37,6 +38,8 @@ import (
 	"willnorris.com/go/imageproxy"
 	"willnorris.com/go/imageproxy/internal/gcscache"
 	"willnorris.com/go/imageproxy/internal/s3cache"
+
+	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
 const defaultMemorySize = 100
@@ -59,6 +62,15 @@ func init() {
 }
 
 func main() {
+
+	// add datadog tracing
+	addr := net.JoinHostPort(
+		os.Getenv("DD_AGENT_HOST"),
+		os.Getenv("DD_TRACE_AGENT_PORT"),
+	)
+	tracer.Start(tracer.WithAgentAddr(addr), tracer.WithServiceName(os.Getenv("DD_SERVICE_NAME")))
+	defer tracer.Stop()
+
 	flag.Parse()
 	if *remoteHosts == "" {
 		// backwards compatible with old naming of the flag

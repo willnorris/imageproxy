@@ -1,5 +1,7 @@
 module willnorris.com/go/imageproxy
 
+go 1.14
+
 require (
 	cloud.google.com/go v0.0.0-20180131234750-2de512d2700d
 	github.com/Azure/azure-sdk-for-go v12.3.0-beta+incompatible // indirect
@@ -40,6 +42,7 @@ require (
 	google.golang.org/appengine v0.0.0-20171212223047-5bee14b453b4 // indirect
 	google.golang.org/genproto v0.0.0-20180125080656-4eb30f4778ee // indirect
 	google.golang.org/grpc v0.0.0-20180201193814-f9628db66d14 // indirect
+	gopkg.in/DataDog/dd-trace-go.v1 v1.22.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 	gopkg.in/yaml.v2 v2.2.1 // indirect
 	willnorris.com/go/gifresize v1.0.0
