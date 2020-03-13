@@ -94,7 +94,7 @@ func (d *Directory) Create(options *FileRequestOptions) error {
 }
 
 // CreateIfNotExists creates this directory under the associated share if the
-// directory does not exist. Returns true if the directory is newly created or
+// directory does not exists. Returns true if the directory is newly created or
 // false if the directory already exists.
 //
 // See https://docs.microsoft.com/en-us/rest/api/storageservices/fileservices/Create-Directory
@@ -107,10 +107,10 @@ func (d *Directory) CreateIfNotExists(options *FileRequestOptions) (bool, error)
 	params := prepareOptions(options)
 	resp, err := d.fsc.createResourceNoClose(d.buildPath(), resourceDirectory, params, nil)
 	if resp != nil {
-		defer drainRespBody(resp)
-		if resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusConflict {
-			if resp.StatusCode == http.StatusCreated {
-				d.updateEtagAndLastModified(resp.Header)
+		defer readAndCloseBody(resp.body)
+		if resp.statusCode == http.StatusCreated || resp.statusCode == http.StatusConflict {
+			if resp.statusCode == http.StatusCreated {
+				d.updateEtagAndLastModified(resp.headers)
 				return true, nil
 			}
 
@@ -135,9 +135,9 @@ func (d *Directory) Delete(options *FileRequestOptions) error {
 func (d *Directory) DeleteIfExists(options *FileRequestOptions) (bool, error) {
 	resp, err := d.fsc.deleteResourceNoClose(d.buildPath(), resourceDirectory, options)
 	if resp != nil {
-		defer drainRespBody(resp)
-		if resp.StatusCode == http.StatusAccepted || resp.StatusCode == http.StatusNotFound {
-			return resp.StatusCode == http.StatusAccepted, nil
+		defer readAndCloseBody(resp.body)
+		if resp.statusCode == http.StatusAccepted || resp.statusCode == http.StatusNotFound {
+			return resp.statusCode == http.StatusAccepted, nil
 		}
 	}
 	return false, err
@@ -200,9 +200,9 @@ func (d *Directory) ListDirsAndFiles(params ListDirsAndFilesParameters) (*DirsAn
 		return nil, err
 	}
 
-	defer resp.Body.Close()
+	defer resp.body.Close()
 	var out DirsAndFilesListResponse
-	err = xmlUnmarshal(resp.Body, &out)
+	err = xmlUnmarshal(resp.body, &out)
 	return &out, err
 }
 

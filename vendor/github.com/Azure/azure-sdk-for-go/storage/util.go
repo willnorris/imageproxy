@@ -17,7 +17,6 @@ package storage
 import (
 	"bytes"
 	"crypto/hmac"
-	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/xml"
@@ -30,8 +29,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	uuid "github.com/satori/go.uuid"
 )
 
 var (
@@ -212,11 +209,6 @@ func (t *TimeRFC1123) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error
 	return nil
 }
 
-// MarshalXML marshals using time.RFC1123.
-func (t *TimeRFC1123) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
-	return e.EncodeElement(time.Time(*t).Format(time.RFC1123), start)
-}
-
 // returns a map of custom metadata values from the specified HTTP header
 func getMetadataFromHeaders(header http.Header) map[string]string {
 	metadata := make(map[string]string)
@@ -244,17 +236,4 @@ func getMetadataFromHeaders(header http.Header) map[string]string {
 	}
 
 	return metadata
-}
-
-// newUUID returns a new uuid using RFC 4122 algorithm.
-func newUUID() (uuid.UUID, error) {
-	u := [16]byte{}
-	// Set all bits to randomly (or pseudo-randomly) chosen values.
-	_, err := rand.Read(u[:])
-	if err != nil {
-		return uuid.UUID{}, err
-	}
-	u[8] = (u[8]&(0xff>>2) | (0x02 << 6)) // u.setVariant(ReservedRFC4122)
-	u[6] = (u[6] & 0xF) | (uuid.V4 << 4)  // u.setVersion(V4)
-	return uuid.FromBytes(u[:])
 }

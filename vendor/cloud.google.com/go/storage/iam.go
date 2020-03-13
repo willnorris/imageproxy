@@ -1,4 +1,4 @@
-// Copyright 2017 Google LLC
+// Copyright 2017 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,13 +15,10 @@
 package storage
 
 import (
-	"context"
-
 	"cloud.google.com/go/iam"
-	"cloud.google.com/go/internal/trace"
+	"golang.org/x/net/context"
 	raw "google.golang.org/api/storage/v1"
 	iampb "google.golang.org/genproto/googleapis/iam/v1"
-	"google.golang.org/genproto/googleapis/type/expr"
 )
 
 // IAM provides access to IAM access control for the bucket.
@@ -38,20 +35,14 @@ type iamClient struct {
 	userProject string
 }
 
-func (c *iamClient) Get(ctx context.Context, resource string) (p *iampb.Policy, err error) {
-	return c.GetWithVersion(ctx, resource, 1)
-}
-
-func (c *iamClient) GetWithVersion(ctx context.Context, resource string, requestedPolicyVersion int32) (p *iampb.Policy, err error) {
-	ctx = trace.StartSpan(ctx, "cloud.google.com/go/storage.IAM.Get")
-	defer func() { trace.EndSpan(ctx, err) }()
-
-	call := c.raw.Buckets.GetIamPolicy(resource).OptionsRequestedPolicyVersion(int64(requestedPolicyVersion))
+func (c *iamClient) Get(ctx context.Context, resource string) (*iampb.Policy, error) {
+	call := c.raw.Buckets.GetIamPolicy(resource)
 	setClientHeader(call.Header())
 	if c.userProject != "" {
 		call.UserProject(c.userProject)
 	}
 	var rp *raw.Policy
+	var err error
 	err = runWithRetry(ctx, func() error {
 		rp, err = call.Context(ctx).Do()
 		return err
@@ -62,10 +53,7 @@ func (c *iamClient) GetWithVersion(ctx context.Context, resource string, request
 	return iamFromStoragePolicy(rp), nil
 }
 
-func (c *iamClient) Set(ctx context.Context, resource string, p *iampb.Policy) (err error) {
-	ctx = trace.StartSpan(ctx, "cloud.google.com/go/storage.IAM.Set")
-	defer func() { trace.EndSpan(ctx, err) }()
-
+func (c *iamClient) Set(ctx context.Context, resource string, p *iampb.Policy) error {
 	rp := iamToStoragePolicy(p)
 	call := c.raw.Buckets.SetIamPolicy(resource, rp)
 	setClientHeader(call.Header())
@@ -78,16 +66,14 @@ func (c *iamClient) Set(ctx context.Context, resource string, p *iampb.Policy) (
 	})
 }
 
-func (c *iamClient) Test(ctx context.Context, resource string, perms []string) (permissions []string, err error) {
-	ctx = trace.StartSpan(ctx, "cloud.google.com/go/storage.IAM.Test")
-	defer func() { trace.EndSpan(ctx, err) }()
-
+func (c *iamClient) Test(ctx context.Context, resource string, perms []string) ([]string, error) {
 	call := c.raw.Buckets.TestIamPermissions(resource, perms)
 	setClientHeader(call.Header())
 	if c.userProject != "" {
 		call.UserProject(c.userProject)
 	}
 	var res *raw.TestIamPermissionsResponse
+	var err error
 	err = runWithRetry(ctx, func() error {
 		res, err = call.Context(ctx).Do()
 		return err
@@ -102,7 +88,6 @@ func iamToStoragePolicy(ip *iampb.Policy) *raw.Policy {
 	return &raw.Policy{
 		Bindings: iamToStorageBindings(ip.Bindings),
 		Etag:     string(ip.Etag),
-		Version:  int64(ip.Version),
 	}
 }
 
@@ -110,24 +95,11 @@ func iamToStorageBindings(ibs []*iampb.Binding) []*raw.PolicyBindings {
 	var rbs []*raw.PolicyBindings
 	for _, ib := range ibs {
 		rbs = append(rbs, &raw.PolicyBindings{
-			Role:      ib.Role,
-			Members:   ib.Members,
-			Condition: iamToStorageCondition(ib.Condition),
+			Role:    ib.Role,
+			Members: ib.Members,
 		})
 	}
 	return rbs
-}
-
-func iamToStorageCondition(exprpb *expr.Expr) *raw.Expr {
-	if exprpb == nil {
-		return nil
-	}
-	return &raw.Expr{
-		Expression:  exprpb.Expression,
-		Description: exprpb.Description,
-		Location:    exprpb.Location,
-		Title:       exprpb.Title,
-	}
 }
 
 func iamFromStoragePolicy(rp *raw.Policy) *iampb.Policy {
@@ -141,22 +113,9 @@ func iamFromStorageBindings(rbs []*raw.PolicyBindings) []*iampb.Binding {
 	var ibs []*iampb.Binding
 	for _, rb := range rbs {
 		ibs = append(ibs, &iampb.Binding{
-			Role:      rb.Role,
-			Members:   rb.Members,
-			Condition: iamFromStorageCondition(rb.Condition),
+			Role:    rb.Role,
+			Members: rb.Members,
 		})
 	}
 	return ibs
-}
-
-func iamFromStorageCondition(rawexpr *raw.Expr) *expr.Expr {
-	if rawexpr == nil {
-		return nil
-	}
-	return &expr.Expr{
-		Expression:  rawexpr.Expression,
-		Description: rawexpr.Description,
-		Location:    rawexpr.Location,
-		Title:       rawexpr.Title,
-	}
 }

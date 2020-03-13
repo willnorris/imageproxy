@@ -16,7 +16,6 @@ package storage
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -27,7 +26,7 @@ import (
 	"strings"
 	"time"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/satori/go.uuid"
 )
 
 // Annotating as secure for gas scanning
@@ -112,13 +111,13 @@ func (e *Entity) Get(timeout uint, ml MetadataLevel, options *GetEntityOptions) 
 	if err != nil {
 		return err
 	}
-	defer drainRespBody(resp)
+	defer readAndCloseBody(resp.body)
 
-	if err = checkRespCode(resp, []int{http.StatusOK}); err != nil {
+	if err = checkRespCode(resp.statusCode, []int{http.StatusOK}); err != nil {
 		return err
 	}
 
-	respBody, err := ioutil.ReadAll(resp.Body)
+	respBody, err := ioutil.ReadAll(resp.body)
 	if err != nil {
 		return err
 	}
@@ -154,21 +153,22 @@ func (e *Entity) Insert(ml MetadataLevel, options *EntityOptions) error {
 	if err != nil {
 		return err
 	}
-	defer drainRespBody(resp)
+	defer resp.body.Close()
+
+	data, err := ioutil.ReadAll(resp.body)
+	if err != nil {
+		return err
+	}
 
 	if ml != EmptyPayload {
-		if err = checkRespCode(resp, []int{http.StatusCreated}); err != nil {
-			return err
-		}
-		data, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
+		if err = checkRespCode(resp.statusCode, []int{http.StatusCreated}); err != nil {
 			return err
 		}
 		if err = e.UnmarshalJSON(data); err != nil {
 			return err
 		}
 	} else {
-		if err = checkRespCode(resp, []int{http.StatusNoContent}); err != nil {
+		if err = checkRespCode(resp.statusCode, []int{http.StatusNoContent}); err != nil {
 			return err
 		}
 	}
@@ -207,18 +207,18 @@ func (e *Entity) Delete(force bool, options *EntityOptions) error {
 	uri := e.Table.tsc.client.getEndpoint(tableServiceName, e.buildPath(), query)
 	resp, err := e.Table.tsc.client.exec(http.MethodDelete, uri, headers, nil, e.Table.tsc.auth)
 	if err != nil {
-		if resp != nil && resp.StatusCode == http.StatusPreconditionFailed {
+		if resp.statusCode == http.StatusPreconditionFailed {
 			return fmt.Errorf(etagErrorTemplate, err)
 		}
 		return err
 	}
-	defer drainRespBody(resp)
+	defer readAndCloseBody(resp.body)
 
-	if err = checkRespCode(resp, []int{http.StatusNoContent}); err != nil {
+	if err = checkRespCode(resp.statusCode, []int{http.StatusNoContent}); err != nil {
 		return err
 	}
 
-	return e.updateTimestamp(resp.Header)
+	return e.updateTimestamp(resp.headers)
 }
 
 // InsertOrReplace inserts an entity or replaces the existing one.
@@ -247,7 +247,7 @@ func (e *Entity) MarshalJSON() ([]byte, error) {
 		switch t := v.(type) {
 		case []byte:
 			completeMap[typeKey] = OdataBinary
-			completeMap[k] = t
+			completeMap[k] = string(t)
 		case time.Time:
 			completeMap[typeKey] = OdataDateTime
 			completeMap[k] = t.Format(time.RFC3339Nano)
@@ -257,9 +257,6 @@ func (e *Entity) MarshalJSON() ([]byte, error) {
 		case int64:
 			completeMap[typeKey] = OdataInt64
 			completeMap[k] = fmt.Sprintf("%v", v)
-		case float32, float64:
-			completeMap[typeKey] = OdataDouble
-			completeMap[k] = fmt.Sprintf("%v", v)
 		default:
 			completeMap[k] = v
 		}
@@ -267,8 +264,7 @@ func (e *Entity) MarshalJSON() ([]byte, error) {
 			if !(completeMap[k] == OdataBinary ||
 				completeMap[k] == OdataDateTime ||
 				completeMap[k] == OdataGUID ||
-				completeMap[k] == OdataInt64 ||
-				completeMap[k] == OdataDouble) {
+				completeMap[k] == OdataInt64) {
 				return nil, fmt.Errorf("Odata.type annotation %v value is not valid", k)
 			}
 			valueKey := strings.TrimSuffix(k, OdataTypeSuffix)
@@ -325,10 +321,7 @@ func (e *Entity) UnmarshalJSON(data []byte) error {
 			}
 			switch v {
 			case OdataBinary:
-				props[valueKey], err = base64.StdEncoding.DecodeString(str)
-				if err != nil {
-					return fmt.Errorf(errorTemplate, err)
-				}
+				props[valueKey] = []byte(str)
 			case OdataDateTime:
 				t, err := time.Parse("2006-01-02T15:04:05Z", str)
 				if err != nil {
@@ -343,12 +336,6 @@ func (e *Entity) UnmarshalJSON(data []byte) error {
 					return fmt.Errorf(errorTemplate, err)
 				}
 				props[valueKey] = i
-			case OdataDouble:
-				f, err := strconv.ParseFloat(str, 64)
-				if err != nil {
-					return fmt.Errorf(errorTemplate, err)
-				}
-				props[valueKey] = f
 			default:
 				return fmt.Errorf(errorTemplate, fmt.Sprintf("%v is not supported", v))
 			}
@@ -409,13 +396,13 @@ func (e *Entity) insertOr(verb string, options *EntityOptions) error {
 	if err != nil {
 		return err
 	}
-	defer drainRespBody(resp)
+	defer readAndCloseBody(resp.body)
 
-	if err = checkRespCode(resp, []int{http.StatusNoContent}); err != nil {
+	if err = checkRespCode(resp.statusCode, []int{http.StatusNoContent}); err != nil {
 		return err
 	}
 
-	return e.updateEtagAndTimestamp(resp.Header)
+	return e.updateEtagAndTimestamp(resp.headers)
 }
 
 func (e *Entity) updateMerge(force bool, verb string, options *EntityOptions) error {
@@ -433,18 +420,18 @@ func (e *Entity) updateMerge(force bool, verb string, options *EntityOptions) er
 	uri := e.Table.tsc.client.getEndpoint(tableServiceName, e.buildPath(), query)
 	resp, err := e.Table.tsc.client.exec(verb, uri, headers, bytes.NewReader(body), e.Table.tsc.auth)
 	if err != nil {
-		if resp != nil && resp.StatusCode == http.StatusPreconditionFailed {
+		if resp.statusCode == http.StatusPreconditionFailed {
 			return fmt.Errorf(etagErrorTemplate, err)
 		}
 		return err
 	}
-	defer drainRespBody(resp)
+	defer readAndCloseBody(resp.body)
 
-	if err = checkRespCode(resp, []int{http.StatusNoContent}); err != nil {
+	if err = checkRespCode(resp.statusCode, []int{http.StatusNoContent}); err != nil {
 		return err
 	}
 
-	return e.updateEtagAndTimestamp(resp.Header)
+	return e.updateEtagAndTimestamp(resp.headers)
 }
 
 func stringFromMap(props map[string]interface{}, key string) string {

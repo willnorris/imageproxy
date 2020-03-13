@@ -1,4 +1,4 @@
-// Copyright 2017 Google LLC
+// Copyright 2017 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,12 +15,11 @@
 package storage
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"regexp"
 
-	"cloud.google.com/go/internal/trace"
+	"golang.org/x/net/context"
 	raw "google.golang.org/api/storage/v1"
 )
 
@@ -119,10 +118,7 @@ func toRawNotification(n *Notification) *raw.Notification {
 // AddNotification adds a notification to b. You must set n's TopicProjectID, TopicID
 // and PayloadFormat, and must not set its ID. The other fields are all optional. The
 // returned Notification's ID can be used to refer to it.
-func (b *BucketHandle) AddNotification(ctx context.Context, n *Notification) (ret *Notification, err error) {
-	ctx = trace.StartSpan(ctx, "cloud.google.com/go/storage.Bucket.AddNotification")
-	defer func() { trace.EndSpan(ctx, err) }()
-
+func (b *BucketHandle) AddNotification(ctx context.Context, n *Notification) (*Notification, error) {
 	if n.ID != "" {
 		return nil, errors.New("storage: AddNotification: ID must not be set")
 	}
@@ -146,16 +142,14 @@ func (b *BucketHandle) AddNotification(ctx context.Context, n *Notification) (re
 
 // Notifications returns all the Notifications configured for this bucket, as a map
 // indexed by notification ID.
-func (b *BucketHandle) Notifications(ctx context.Context) (n map[string]*Notification, err error) {
-	ctx = trace.StartSpan(ctx, "cloud.google.com/go/storage.Bucket.Notifications")
-	defer func() { trace.EndSpan(ctx, err) }()
-
+func (b *BucketHandle) Notifications(ctx context.Context) (map[string]*Notification, error) {
 	call := b.c.raw.Notifications.List(b.name)
 	setClientHeader(call.Header())
 	if b.userProject != "" {
 		call.UserProject(b.userProject)
 	}
 	var res *raw.Notifications
+	var err error
 	err = runWithRetry(ctx, func() error {
 		res, err = call.Context(ctx).Do()
 		return err
@@ -175,10 +169,7 @@ func notificationsToMap(rns []*raw.Notification) map[string]*Notification {
 }
 
 // DeleteNotification deletes the notification with the given ID.
-func (b *BucketHandle) DeleteNotification(ctx context.Context, id string) (err error) {
-	ctx = trace.StartSpan(ctx, "cloud.google.com/go/storage.Bucket.DeleteNotification")
-	defer func() { trace.EndSpan(ctx, err) }()
-
+func (b *BucketHandle) DeleteNotification(ctx context.Context, id string) error {
 	call := b.c.raw.Notifications.Delete(b.name, id)
 	setClientHeader(call.Header())
 	if b.userProject != "" {

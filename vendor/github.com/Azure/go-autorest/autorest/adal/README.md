@@ -1,24 +1,19 @@
-# Azure Active Directory authentication for Go
+# Azure Active Directory library for Go
 
-This is a standalone package for authenticating with Azure Active
-Directory from other Go libraries and applications, in particular the [Azure SDK
-for Go](https://github.com/Azure/azure-sdk-for-go).
+This project provides a stand alone Azure Active Directory library for Go. The code was extracted
+from [go-autorest](https://github.com/Azure/go-autorest/) project, which is used as a base for
+[azure-sdk-for-go](https://github.com/Azure/azure-sdk-for-go).
 
-Note: Despite the package's name it is not related to other "ADAL" libraries
-maintained in the [github.com/AzureAD](https://github.com/AzureAD) org. Issues
-should be opened in [this repo's](https://github.com/Azure/go-autorest/issues)
-or [the SDK's](https://github.com/Azure/azure-sdk-for-go/issues) issue
-trackers.
 
-## Install
+## Installation
 
-```bash
+```
 go get -u github.com/Azure/go-autorest/autorest/adal
 ```
 
 ## Usage
 
-An Active Directory application is required in order to use this library. An application can be registered in the [Azure Portal](https://portal.azure.com/) by following these [guidelines](https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-integrating-applications) or using the [Azure CLI](https://github.com/Azure/azure-cli).
+An Active Directory application is required in order to use this library. An application can be registered in the [Azure Portal](https://portal.azure.com/) follow these [guidelines](https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-integrating-applications) or using the [Azure CLI](https://github.com/Azure/azure-cli).
 
 ### Register an Azure AD Application with secret
 
@@ -135,7 +130,7 @@ resource := "https://management.core.windows.net/"
 applicationSecret := "APPLICATION_SECRET"
 
 spt, err := adal.NewServicePrincipalToken(
-	*oauthConfig,
+	oauthConfig,
 	appliationID,
 	applicationSecret,
 	resource,
@@ -170,7 +165,7 @@ if err != nil {
 }
 
 spt, err := adal.NewServicePrincipalTokenFromCertificate(
-	*oauthConfig,
+	oauthConfig,
 	applicationID,
 	certificate,
 	rsaPrivateKey,
@@ -195,7 +190,7 @@ oauthClient := &http.Client{}
 // Acquire the device code
 deviceCode, err := adal.InitiateDeviceAuth(
 	oauthClient,
-	*oauthConfig,
+	oauthConfig,
 	applicationID,
 	resource)
 if err != nil {
@@ -212,7 +207,7 @@ if err != nil {
 }
 
 spt, err := adal.NewServicePrincipalTokenFromManualToken(
-	*oauthConfig,
+	oauthConfig,
 	applicationID,
 	resource,
 	*token,
@@ -227,7 +222,7 @@ if (err == nil) {
 
 ```Go
 spt, err := adal.NewServicePrincipalTokenFromUsernamePassword(
-	*oauthConfig,
+	oauthConfig,
 	applicationID,
 	username,
 	password,
@@ -243,11 +238,11 @@ if (err == nil) {
 
 ``` Go
 spt, err := adal.NewServicePrincipalTokenFromAuthorizationCode(
-	*oauthConfig,
+	oauthConfig,
 	applicationID,
 	clientSecret,
-        authorizationCode,
-        redirectURI,
+      authorizationCode,
+      redirectURI,
 	resource,
 	callbacks...)
 

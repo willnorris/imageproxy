@@ -24,11 +24,10 @@
 package stats // import "google.golang.org/grpc/stats"
 
 import (
-	"context"
 	"net"
 	"time"
 
-	"google.golang.org/grpc/metadata"
+	"golang.org/x/net/context"
 )
 
 // RPCStats contains stats information about RPCs.
@@ -91,8 +90,6 @@ type InHeader struct {
 	LocalAddr net.Addr
 	// Compression is the compression algorithm used for the RPC.
 	Compression string
-	// Header contains the header metadata received.
-	Header metadata.MD
 }
 
 // IsClient indicates if the stats information is from client side.
@@ -106,9 +103,6 @@ type InTrailer struct {
 	Client bool
 	// WireLength is the wire length of trailer.
 	WireLength int
-	// Trailer contains the trailer metadata received from the server. This
-	// field is only valid if this InTrailer is from the client side.
-	Trailer metadata.MD
 }
 
 // IsClient indicates if the stats information is from client side.
@@ -151,8 +145,6 @@ type OutHeader struct {
 	LocalAddr net.Addr
 	// Compression is the compression algorithm used for the RPC.
 	Compression string
-	// Header contains the header metadata sent.
-	Header metadata.MD
 }
 
 // IsClient indicates if this stats information is from client side.
@@ -166,9 +158,6 @@ type OutTrailer struct {
 	Client bool
 	// WireLength is the wire length of trailer.
 	WireLength int
-	// Trailer contains the trailer metadata sent to the client. This
-	// field is only valid if this OutTrailer is from the server side.
-	Trailer metadata.MD
 }
 
 // IsClient indicates if this stats information is from client side.
@@ -180,14 +169,8 @@ func (s *OutTrailer) isRPCStats() {}
 type End struct {
 	// Client is true if this End is from client side.
 	Client bool
-	// BeginTime is the time when the RPC began.
-	BeginTime time.Time
 	// EndTime is the time when the RPC ends.
 	EndTime time.Time
-	// Trailer contains the trailer metadata received from the server. This
-	// field is only valid if this End is from the client side.
-	// Deprecated: use Trailer in InTrailer instead.
-	Trailer metadata.MD
 	// Error is the error the RPC ended with. It is an error generated from
 	// status.Status and can be converted back to status.Status using
 	// status.FromError if non-nil.

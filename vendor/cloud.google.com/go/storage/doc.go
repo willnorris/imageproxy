@@ -1,4 +1,4 @@
-// Copyright 2016 Google LLC
+// Copyright 2016 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,14 +19,9 @@ Google Cloud Storage stores data in named objects, which are grouped into bucket
 More information about Google Cloud Storage is available at
 https://cloud.google.com/storage/docs.
 
-See https://godoc.org/cloud.google.com/go for authentication, timeouts,
-connection pooling and similar aspects of this package.
-
-All of the methods of this package use exponential backoff to retry calls that fail
-with certain errors, as described in
-https://cloud.google.com/storage/docs/exponential-backoff. Retrying continues
-indefinitely unless the controlling context is canceled or the client is closed. See
-context.WithTimeout and context.WithCancel.
+All of the methods of this package use exponential backoff to retry calls
+that fail with certain errors, as described in
+https://cloud.google.com/storage/docs/exponential-backoff.
 
 
 Creating a Client
@@ -66,7 +61,7 @@ global across all projects.
 
 Each bucket has associated metadata, represented in this package by
 BucketAttrs. The third argument to BucketHandle.Create allows you to set
-the initial BucketAttrs of a bucket. To retrieve a bucket's attributes, use
+the intial BucketAttrs of a bucket. To retrieve a bucket's attributes, use
 Attrs:
 
     attrs, err := bkt.Attrs(ctx)
@@ -79,16 +74,15 @@ Attrs:
 Objects
 
 An object holds arbitrary data as a sequence of bytes, like a file. You
-refer to objects using a handle, just as with buckets, but unlike buckets
-you don't explicitly create an object. Instead, the first time you write
-to an object it will be created. You can use the standard Go io.Reader
-and io.Writer interfaces to read and write object data:
+refer to objects using a handle, just as with buckets. You can use the
+standard Go io.Reader and io.Writer interfaces to read and write
+object data:
 
     obj := bkt.Object("data")
     // Write something to obj.
     // w implements io.Writer.
     w := obj.NewWriter(ctx)
-    // Write some text to obj. This will either create the object or overwrite whatever is there already.
+    // Write some text to obj. This will overwrite whatever is there.
     if _, err := fmt.Fprintf(w, "This object contains text.\n"); err != nil {
         // TODO: Handle error.
     }
@@ -116,33 +110,6 @@ Objects also have attributes, which you can fetch with Attrs:
     }
     fmt.Printf("object %s has size %d and can be read using %s\n",
         objAttrs.Name, objAttrs.Size, objAttrs.MediaLink)
-
-Listing objects
-
-Listing objects in a bucket is done with the Bucket.Objects method:
-
-    query := &storage.Query{Prefix: ""}
-
-    var names []string
-    it := bkt.Objects(ctx, query)
-    for {
-        attrs, err := it.Next()
-        if err == iterator.Done {
-            break
-        }
-        if err != nil {
-            log.Fatal(err)
-        }
-        names = append(names, attrs.Name)
-    }
-
-If only a subset of object attributes is needed when listing, specifying this
-subset using Query.SetAttrSelection may speed up the listing process:
-
-    query := &storage.Query{Prefix: ""}
-    query.SetAttrSelection([]string{"Name"})
-
-    // ... as before
 
 ACLs
 
@@ -191,13 +158,9 @@ SignedURL for details.
     }
     fmt.Println(url)
 
-Errors
+Authentication
 
-Errors returned by this client are often of the type [`googleapi.Error`](https://godoc.org/google.golang.org/api/googleapi#Error).
-These errors can be introspected for more information by type asserting to the richer `googleapi.Error` type. For example:
-
-	if e, ok := err.(*googleapi.Error); ok {
-		  if e.Code == 409 { ... }
-	}
+See examples of authorization and authentication at
+https://godoc.org/cloud.google.com/go#pkg-examples.
 */
 package storage // import "cloud.google.com/go/storage"

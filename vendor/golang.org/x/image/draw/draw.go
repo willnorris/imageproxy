@@ -11,8 +11,9 @@
 // package in the standard library.
 package draw
 
-// This file just contains the API exported by the image/draw package in the
-// standard library. Other files in this package provide additional features.
+// This file, and the go1_*.go files, just contains the API exported by the
+// image/draw package in the standard library. Other files in this package
+// provide additional features.
 
 import (
 	"image"
@@ -31,9 +32,6 @@ func DrawMask(dst Image, r image.Rectangle, src image.Image, sp image.Point, mas
 	draw.DrawMask(dst, r, src, sp, mask, mp, draw.Op(op))
 }
 
-// Drawer contains the Draw method.
-type Drawer = draw.Drawer
-
 // FloydSteinberg is a Drawer that is the Src Op with Floyd-Steinberg error
 // diffusion.
 var FloydSteinberg Drawer = floydSteinberg{}
@@ -43,19 +41,3 @@ type floydSteinberg struct{}
 func (floydSteinberg) Draw(dst Image, r image.Rectangle, src image.Image, sp image.Point) {
 	draw.FloydSteinberg.Draw(dst, r, src, sp)
 }
-
-// Image is an image.Image with a Set method to change a single pixel.
-type Image = draw.Image
-
-// Op is a Porter-Duff compositing operator.
-type Op = draw.Op
-
-const (
-	// Over specifies ``(src in mask) over dst''.
-	Over Op = draw.Over
-	// Src specifies ``src in mask''.
-	Src Op = draw.Src
-)
-
-// Quantizer produces a palette for an image.
-type Quantizer = draw.Quantizer

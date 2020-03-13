@@ -47,15 +47,11 @@ func DoRetryWithRegistration(client autorest.Client) autorest.SendDecorator {
 				if resp.StatusCode != http.StatusConflict || client.SkipResourceProviderRegistration {
 					return resp, err
 				}
-
 				var re RequestError
-				if strings.Contains(r.Header.Get("Content-Type"), "xml") {
-					// XML errors (e.g. Storage Data Plane) only return the inner object
-					err = autorest.Respond(resp, autorest.ByUnmarshallingXML(&re.ServiceError))
-				} else {
-					err = autorest.Respond(resp, autorest.ByUnmarshallingJSON(&re))
-				}
-
+				err = autorest.Respond(
+					resp,
+					autorest.ByUnmarshallingJSON(&re),
+				)
 				if err != nil {
 					return resp, err
 				}
@@ -68,14 +64,17 @@ func DoRetryWithRegistration(client autorest.Client) autorest.SendDecorator {
 					}
 				}
 			}
-			return resp, err
+			return resp, fmt.Errorf("failed request: %s", err)
 		})
 	}
 }
 
 func getProvider(re RequestError) (string, error) {
-	if re.ServiceError != nil && len(re.ServiceError.Details) > 0 {
-		return re.ServiceError.Details[0]["target"].(string), nil
+	if re.ServiceError != nil {
+		if re.ServiceError.Details != nil && len(*re.ServiceError.Details) > 0 {
+			detail := (*re.ServiceError.Details)[0].(map[string]interface{})
+			return detail["target"].(string), nil
+		}
 	}
 	return "", errors.New("provider was not found in the response")
 }
@@ -119,7 +118,7 @@ func register(client autorest.Client, originalReq *http.Request, re RequestError
 	if err != nil {
 		return err
 	}
-	req = req.WithContext(originalReq.Context())
+	req.Cancel = originalReq.Cancel
 
 	resp, err := autorest.SendWithSender(client, req,
 		autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...),
@@ -144,8 +143,8 @@ func register(client autorest.Client, originalReq *http.Request, re RequestError
 	}
 
 	// poll for registered provisioning state
-	registrationStartTime := time.Now()
-	for err == nil && (client.PollingDuration == 0 || (client.PollingDuration != 0 && time.Since(registrationStartTime) < client.PollingDuration)) {
+	now := time.Now()
+	for err == nil && time.Since(now) < client.PollingDuration {
 		// taken from the resources SDK
 		// https://github.com/Azure/azure-sdk-for-go/blob/9f366792afa3e0ddaecdc860e793ba9d75e76c27/arm/resources/resources/providers.go#L45
 		preparer := autorest.CreatePreparer(
@@ -158,7 +157,7 @@ func register(client autorest.Client, originalReq *http.Request, re RequestError
 		if err != nil {
 			return err
 		}
-		req = req.WithContext(originalReq.Context())
+		req.Cancel = originalReq.Cancel
 
 		resp, err := autorest.SendWithSender(client, req,
 			autorest.DoRetryForStatusCodes(client.RetryAttempts, client.RetryDuration, autorest.StatusCodesForRetry...),
@@ -182,12 +181,12 @@ func register(client autorest.Client, originalReq *http.Request, re RequestError
 			break
 		}
 
-		delayed := autorest.DelayWithRetryAfter(resp, originalReq.Context().Done())
-		if !delayed && !autorest.DelayForBackoff(client.PollingDelay, 0, originalReq.Context().Done()) {
-			return originalReq.Context().Err()
+		delayed := autorest.DelayWithRetryAfter(resp, originalReq.Cancel)
+		if !delayed {
+			autorest.DelayForBackoff(client.PollingDelay, 0, originalReq.Cancel)
 		}
 	}
-	if client.PollingDuration != 0 && !(time.Since(registrationStartTime) < client.PollingDuration) {
+	if !(time.Since(now) < client.PollingDuration) {
 		return errors.New("polling for resource provider registration has exceeded the polling duration")
 	}
 	return err

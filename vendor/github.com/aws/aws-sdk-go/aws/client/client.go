@@ -12,14 +12,13 @@ import (
 type Config struct {
 	Config        *aws.Config
 	Handlers      request.Handlers
-	PartitionID   string
 	Endpoint      string
 	SigningRegion string
 	SigningName   string
 
 	// States that the signing name did not come from a modeled source but
 	// was derived based on other data. Used by service client constructors
-	// to determine if the signin name can be overridden based on metadata the
+	// to determine if the signin name can be overriden based on metadata the
 	// service has.
 	SigningNameDerived bool
 }
@@ -65,7 +64,7 @@ func New(cfg aws.Config, info metadata.ClientInfo, handlers request.Handlers, op
 	default:
 		maxRetries := aws.IntValue(cfg.MaxRetries)
 		if cfg.MaxRetries == nil || maxRetries == aws.UseServiceDefaultRetries {
-			maxRetries = DefaultRetryerMaxNumRetries
+			maxRetries = 3
 		}
 		svc.Retryer = DefaultRetryer{NumMaxRetries: maxRetries}
 	}

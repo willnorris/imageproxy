@@ -17,7 +17,6 @@ import (
 	"io/ioutil"
 	"math"
 
-	"golang.org/x/image/ccitt"
 	"golang.org/x/image/tiff/lzw"
 )
 
@@ -111,7 +110,7 @@ func (d *decoder) ifdUint(p []byte) (u []uint, err error) {
 	return u, nil
 }
 
-// parseIFD decides whether the IFD entry in p is "interesting" and
+// parseIFD decides whether the the IFD entry in p is "interesting" and
 // stows away the data in the decoder. It returns the tag number of the
 // entry and an error, if any.
 func (d *decoder) parseIFD(p []byte) (int, error) {
@@ -130,10 +129,7 @@ func (d *decoder) parseIFD(p []byte) (int, error) {
 		tTileOffsets,
 		tTileByteCounts,
 		tImageLength,
-		tImageWidth,
-		tFillOrder,
-		tT4Options,
-		tT6Options:
+		tImageWidth:
 		val, err := d.ifdUint(p)
 		if err != nil {
 			return 0, err
@@ -268,9 +264,6 @@ func (d *decoder) decode(dst image.Image, xmin, ymin, xmax, ymax int) error {
 					}
 					img.SetGray16(x, y, color.Gray16{v})
 				}
-				if rMaxX == img.Bounds().Max.X {
-					d.off += 2 * (xmax - img.Bounds().Max.X)
-				}
 			}
 		} else {
 			img := dst.(*image.Gray)
@@ -404,9 +397,6 @@ func newDecoder(r io.Reader) (*decoder, error) {
 
 	p := make([]byte, 8)
 	if _, err := d.r.ReadAt(p, 0); err != nil {
-		if err == io.EOF {
-			err = io.ErrUnexpectedEOF
-		}
 		return nil, err
 	}
 	switch string(p[0:4]) {
@@ -448,8 +438,7 @@ func newDecoder(r io.Reader) (*decoder, error) {
 	d.config.Height = int(d.firstVal(tImageLength))
 
 	if _, ok := d.features[tBitsPerSample]; !ok {
-		// Default is 1 per specification.
-		d.features[tBitsPerSample] = []uint{1}
+		return nil, FormatError("BitsPerSample tag missing")
 	}
 	d.bpp = d.firstVal(tBitsPerSample)
 	switch d.bpp {
@@ -545,13 +534,6 @@ func DecodeConfig(r io.Reader) (image.Config, error) {
 		return image.Config{}, err
 	}
 	return d.config, nil
-}
-
-func ccittFillOrder(tiffFillOrder uint) ccitt.Order {
-	if tiffFillOrder == 2 {
-		return ccitt.LSB
-	}
-	return ccitt.MSB
 }
 
 // Decode reads a TIFF image from r and returns it as an image.Image.
@@ -659,16 +641,6 @@ func Decode(r io.Reader) (img image.Image, err error) {
 					d.buf = make([]byte, n)
 					_, err = d.r.ReadAt(d.buf, offset)
 				}
-			case cG3:
-				inv := d.firstVal(tPhotometricInterpretation) == pWhiteIsZero
-				order := ccittFillOrder(d.firstVal(tFillOrder))
-				r := ccitt.NewReader(io.NewSectionReader(d.r, offset, n), order, ccitt.Group3, blkW, blkH, &ccitt.Options{Invert: inv, Align: false})
-				d.buf, err = ioutil.ReadAll(r)
-			case cG4:
-				inv := d.firstVal(tPhotometricInterpretation) == pWhiteIsZero
-				order := ccittFillOrder(d.firstVal(tFillOrder))
-				r := ccitt.NewReader(io.NewSectionReader(d.r, offset, n), order, ccitt.Group4, blkW, blkH, &ccitt.Options{Invert: inv, Align: false})
-				d.buf, err = ioutil.ReadAll(r)
 			case cLZW:
 				r := lzw.NewReader(io.NewSectionReader(d.r, offset, n), lzw.MSB, 8)
 				d.buf, err = ioutil.ReadAll(r)

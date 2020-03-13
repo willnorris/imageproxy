@@ -76,14 +76,9 @@ import (
 )
 
 const (
-	authorizationHeader     = "Authorization"
-	authHeaderSignatureElem = "Signature="
-	signatureQueryKey       = "X-Amz-Signature"
-
 	authHeaderPrefix = "AWS4-HMAC-SHA256"
 	timeFormat       = "20060102T150405Z"
 	shortTimeFormat  = "20060102"
-	awsV4Request     = "aws4_request"
 
 	// emptyStringSHA256 is a SHA256 of an empty string
 	emptyStringSHA256 = `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`
@@ -92,9 +87,9 @@ const (
 var ignoredHeaders = rules{
 	blacklist{
 		mapRule{
-			authorizationHeader: struct{}{},
-			"User-Agent":        struct{}{},
-			"X-Amzn-Trace-Id":   struct{}{},
+			"Authorization":   struct{}{},
+			"User-Agent":      struct{}{},
+			"X-Amzn-Trace-Id": struct{}{},
 		},
 	},
 }
@@ -103,25 +98,25 @@ var ignoredHeaders = rules{
 var requiredSignedHeaders = rules{
 	whitelist{
 		mapRule{
-			"Cache-Control":                         struct{}{},
-			"Content-Disposition":                   struct{}{},
-			"Content-Encoding":                      struct{}{},
-			"Content-Language":                      struct{}{},
-			"Content-Md5":                           struct{}{},
-			"Content-Type":                          struct{}{},
-			"Expires":                               struct{}{},
-			"If-Match":                              struct{}{},
-			"If-Modified-Since":                     struct{}{},
-			"If-None-Match":                         struct{}{},
-			"If-Unmodified-Since":                   struct{}{},
-			"Range":                                 struct{}{},
-			"X-Amz-Acl":                             struct{}{},
-			"X-Amz-Copy-Source":                     struct{}{},
-			"X-Amz-Copy-Source-If-Match":            struct{}{},
-			"X-Amz-Copy-Source-If-Modified-Since":   struct{}{},
-			"X-Amz-Copy-Source-If-None-Match":       struct{}{},
-			"X-Amz-Copy-Source-If-Unmodified-Since": struct{}{},
-			"X-Amz-Copy-Source-Range":               struct{}{},
+			"Cache-Control":                                               struct{}{},
+			"Content-Disposition":                                         struct{}{},
+			"Content-Encoding":                                            struct{}{},
+			"Content-Language":                                            struct{}{},
+			"Content-Md5":                                                 struct{}{},
+			"Content-Type":                                                struct{}{},
+			"Expires":                                                     struct{}{},
+			"If-Match":                                                    struct{}{},
+			"If-Modified-Since":                                           struct{}{},
+			"If-None-Match":                                               struct{}{},
+			"If-Unmodified-Since":                                         struct{}{},
+			"Range":                                                       struct{}{},
+			"X-Amz-Acl":                                                   struct{}{},
+			"X-Amz-Copy-Source":                                           struct{}{},
+			"X-Amz-Copy-Source-If-Match":                                  struct{}{},
+			"X-Amz-Copy-Source-If-Modified-Since":                         struct{}{},
+			"X-Amz-Copy-Source-If-None-Match":                             struct{}{},
+			"X-Amz-Copy-Source-If-Unmodified-Since":                       struct{}{},
+			"X-Amz-Copy-Source-Range":                                     struct{}{},
 			"X-Amz-Copy-Source-Server-Side-Encryption-Customer-Algorithm": struct{}{},
 			"X-Amz-Copy-Source-Server-Side-Encryption-Customer-Key":       struct{}{},
 			"X-Amz-Copy-Source-Server-Side-Encryption-Customer-Key-Md5":   struct{}{},
@@ -139,7 +134,6 @@ var requiredSignedHeaders = rules{
 			"X-Amz-Server-Side-Encryption-Customer-Key":                   struct{}{},
 			"X-Amz-Server-Side-Encryption-Customer-Key-Md5":               struct{}{},
 			"X-Amz-Storage-Class":                                         struct{}{},
-			"X-Amz-Tagging":                                               struct{}{},
 			"X-Amz-Website-Redirect-Location":                             struct{}{},
 			"X-Amz-Content-Sha256":                                        struct{}{},
 		},
@@ -187,7 +181,7 @@ type Signer struct {
 	// http://docs.aws.amazon.com/general/latest/gr/sigv4-create-canonical-request.html
 	DisableURIPathEscaping bool
 
-	// Disables the automatical setting of the HTTP request's Body field with the
+	// Disales the automatical setting of the HTTP request's Body field with the
 	// io.ReadSeeker passed in to the signer. This is useful if you're using a
 	// custom wrapper around the body for the io.ReadSeeker and want to preserve
 	// the Body value on the Request.Body.
@@ -234,9 +228,11 @@ type signingCtx struct {
 
 	DisableURIPathEscaping bool
 
-	credValues      credentials.Value
-	isPresign       bool
-	unsignedPayload bool
+	credValues         credentials.Value
+	isPresign          bool
+	formattedTime      string
+	formattedShortTime string
+	unsignedPayload    bool
 
 	bodyDigest       string
 	signedHeaders    string
@@ -340,7 +336,7 @@ func (v4 Signer) signWithBody(r *http.Request, body io.ReadSeeker, service, regi
 	}
 
 	var err error
-	ctx.credValues, err = v4.Credentials.GetWithContext(requestContext(r))
+	ctx.credValues, err = v4.Credentials.Get()
 	if err != nil {
 		return http.Header{}, err
 	}
@@ -425,7 +421,7 @@ var SignRequestHandler = request.NamedHandler{
 // If the credentials of the request's config are set to
 // credentials.AnonymousCredentials the request will not be signed.
 func SignSDKRequest(req *request.Request) {
-	SignSDKRequestWithCurrentTime(req, time.Now)
+	signSDKRequestWithCurrTime(req, time.Now)
 }
 
 // BuildNamedHandler will build a generic handler for signing.
@@ -433,15 +429,12 @@ func BuildNamedHandler(name string, opts ...func(*Signer)) request.NamedHandler 
 	return request.NamedHandler{
 		Name: name,
 		Fn: func(req *request.Request) {
-			SignSDKRequestWithCurrentTime(req, time.Now, opts...)
+			signSDKRequestWithCurrTime(req, time.Now, opts...)
 		},
 	}
 }
 
-// SignSDKRequestWithCurrentTime will sign the SDK's request using the time
-// function passed in. Behaves the same as SignSDKRequest with the exception
-// the request is signed with the value returned by the current time function.
-func SignSDKRequestWithCurrentTime(req *request.Request, curTimeFn func() time.Time, opts ...func(*Signer)) {
+func signSDKRequestWithCurrTime(req *request.Request, curTimeFn func() time.Time, opts ...func(*Signer)) {
 	// If the request does not need to be signed ignore the signing of the
 	// request if the AnonymousCredentials object is used.
 	if req.Config.Credentials == credentials.AnonymousCredentials {
@@ -477,9 +470,13 @@ func SignSDKRequestWithCurrentTime(req *request.Request, curTimeFn func() time.T
 		opt(v4)
 	}
 
-	curTime := curTimeFn()
+	signingTime := req.Time
+	if !req.LastSignedAt.IsZero() {
+		signingTime = req.LastSignedAt
+	}
+
 	signedHeaders, err := v4.signWithBody(req.HTTPRequest, req.GetBody(),
-		name, region, req.ExpireTime, req.ExpireTime > 0, curTime,
+		name, region, req.ExpireTime, req.ExpireTime > 0, signingTime,
 	)
 	if err != nil {
 		req.Error = err
@@ -488,7 +485,7 @@ func SignSDKRequestWithCurrentTime(req *request.Request, curTimeFn func() time.T
 	}
 
 	req.SignedHeaderVals = signedHeaders
-	req.LastSignedAt = curTime
+	req.LastSignedAt = curTimeFn()
 }
 
 const logSignInfoMsg = `DEBUG: Request Signature:
@@ -535,56 +532,39 @@ func (ctx *signingCtx) build(disableHeaderHoisting bool) error {
 	ctx.buildSignature()       // depends on string to sign
 
 	if ctx.isPresign {
-		ctx.Request.URL.RawQuery += "&" + signatureQueryKey + "=" + ctx.signature
+		ctx.Request.URL.RawQuery += "&X-Amz-Signature=" + ctx.signature
 	} else {
 		parts := []string{
 			authHeaderPrefix + " Credential=" + ctx.credValues.AccessKeyID + "/" + ctx.credentialString,
 			"SignedHeaders=" + ctx.signedHeaders,
-			authHeaderSignatureElem + ctx.signature,
+			"Signature=" + ctx.signature,
 		}
-		ctx.Request.Header.Set(authorizationHeader, strings.Join(parts, ", "))
+		ctx.Request.Header.Set("Authorization", strings.Join(parts, ", "))
 	}
 
 	return nil
 }
 
-// GetSignedRequestSignature attempts to extract the signature of the request.
-// Returning an error if the request is unsigned, or unable to extract the
-// signature.
-func GetSignedRequestSignature(r *http.Request) ([]byte, error) {
-
-	if auth := r.Header.Get(authorizationHeader); len(auth) != 0 {
-		ps := strings.Split(auth, ", ")
-		for _, p := range ps {
-			if idx := strings.Index(p, authHeaderSignatureElem); idx >= 0 {
-				sig := p[len(authHeaderSignatureElem):]
-				if len(sig) == 0 {
-					return nil, fmt.Errorf("invalid request signature authorization header")
-				}
-				return hex.DecodeString(sig)
-			}
-		}
-	}
-
-	if sig := r.URL.Query().Get("X-Amz-Signature"); len(sig) != 0 {
-		return hex.DecodeString(sig)
-	}
-
-	return nil, fmt.Errorf("request not signed")
-}
-
 func (ctx *signingCtx) buildTime() {
+	ctx.formattedTime = ctx.Time.UTC().Format(timeFormat)
+	ctx.formattedShortTime = ctx.Time.UTC().Format(shortTimeFormat)
+
 	if ctx.isPresign {
 		duration := int64(ctx.ExpireTime / time.Second)
-		ctx.Query.Set("X-Amz-Date", formatTime(ctx.Time))
+		ctx.Query.Set("X-Amz-Date", ctx.formattedTime)
 		ctx.Query.Set("X-Amz-Expires", strconv.FormatInt(duration, 10))
 	} else {
-		ctx.Request.Header.Set("X-Amz-Date", formatTime(ctx.Time))
+		ctx.Request.Header.Set("X-Amz-Date", ctx.formattedTime)
 	}
 }
 
 func (ctx *signingCtx) buildCredentialString() {
-	ctx.credentialString = buildSigningScope(ctx.Region, ctx.ServiceName, ctx.Time)
+	ctx.credentialString = strings.Join([]string{
+		ctx.formattedShortTime,
+		ctx.Region,
+		ctx.ServiceName,
+		"aws4_request",
+	}, "/")
 
 	if ctx.isPresign {
 		ctx.Query.Set("X-Amz-Credential", ctx.credValues.AccessKeyID+"/"+ctx.credentialString)
@@ -608,7 +588,8 @@ func (ctx *signingCtx) buildCanonicalHeaders(r rule, header http.Header) {
 	var headers []string
 	headers = append(headers, "host")
 	for k, v := range header {
-		if !r.IsValid(k) {
+		canonicalKey := http.CanonicalHeaderKey(k)
+		if !r.IsValid(canonicalKey) {
 			continue // ignored header
 		}
 		if ctx.SignedHeaderVals == nil {
@@ -672,15 +653,19 @@ func (ctx *signingCtx) buildCanonicalString() {
 func (ctx *signingCtx) buildStringToSign() {
 	ctx.stringToSign = strings.Join([]string{
 		authHeaderPrefix,
-		formatTime(ctx.Time),
+		ctx.formattedTime,
 		ctx.credentialString,
-		hex.EncodeToString(hashSHA256([]byte(ctx.canonicalString))),
+		hex.EncodeToString(makeSha256([]byte(ctx.canonicalString))),
 	}, "\n")
 }
 
 func (ctx *signingCtx) buildSignature() {
-	creds := deriveSigningKey(ctx.Region, ctx.ServiceName, ctx.credValues.SecretAccessKey, ctx.Time)
-	signature := hmacSHA256(creds, []byte(ctx.stringToSign))
+	secret := ctx.credValues.SecretAccessKey
+	date := makeHmac([]byte("AWS4"+secret), []byte(ctx.formattedShortTime))
+	region := makeHmac(date, []byte(ctx.Region))
+	service := makeHmac(region, []byte(ctx.ServiceName))
+	credentials := makeHmac(service, []byte("aws4_request"))
+	signature := makeHmac(credentials, []byte(ctx.stringToSign))
 	ctx.signature = hex.EncodeToString(signature)
 }
 
@@ -702,11 +687,7 @@ func (ctx *signingCtx) buildBodyDigest() error {
 			if !aws.IsReaderSeekable(ctx.Body) {
 				return fmt.Errorf("cannot use unseekable request body %T, for signed request with body", ctx.Body)
 			}
-			hashBytes, err := makeSha256Reader(ctx.Body)
-			if err != nil {
-				return err
-			}
-			hash = hex.EncodeToString(hashBytes)
+			hash = hex.EncodeToString(makeSha256Reader(ctx.Body))
 		}
 
 		if includeSHA256Header {
@@ -741,28 +722,22 @@ func (ctx *signingCtx) removePresign() {
 	ctx.Query.Del("X-Amz-SignedHeaders")
 }
 
-func hmacSHA256(key []byte, data []byte) []byte {
+func makeHmac(key []byte, data []byte) []byte {
 	hash := hmac.New(sha256.New, key)
 	hash.Write(data)
 	return hash.Sum(nil)
 }
 
-func hashSHA256(data []byte) []byte {
+func makeSha256(data []byte) []byte {
 	hash := sha256.New()
 	hash.Write(data)
 	return hash.Sum(nil)
 }
 
-func makeSha256Reader(reader io.ReadSeeker) (hashBytes []byte, err error) {
+func makeSha256Reader(reader io.ReadSeeker) []byte {
 	hash := sha256.New()
-	start, err := reader.Seek(0, sdkio.SeekCurrent)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		// ensure error is return if unable to seek back to start of payload.
-		_, err = reader.Seek(start, sdkio.SeekStart)
-	}()
+	start, _ := reader.Seek(0, sdkio.SeekCurrent)
+	defer reader.Seek(start, sdkio.SeekStart)
 
 	// Use CopyN to avoid allocating the 32KB buffer in io.Copy for bodies
 	// smaller than 32KB. Fall back to io.Copy if we fail to determine the size.
@@ -773,13 +748,13 @@ func makeSha256Reader(reader io.ReadSeeker) (hashBytes []byte, err error) {
 		io.CopyN(hash, reader, size)
 	}
 
-	return hash.Sum(nil), nil
+	return hash.Sum(nil)
 }
 
 const doubleSpace = "  "
 
 // stripExcessSpaces will rewrite the passed in slice's string values to not
-// contain multiple side-by-side spaces.
+// contain muliple side-by-side spaces.
 func stripExcessSpaces(vals []string) {
 	var j, k, l, m, spaces int
 	for i, str := range vals {
@@ -818,29 +793,4 @@ func stripExcessSpaces(vals []string) {
 
 		vals[i] = string(buf[:m])
 	}
-}
-
-func buildSigningScope(region, service string, dt time.Time) string {
-	return strings.Join([]string{
-		formatShortTime(dt),
-		region,
-		service,
-		awsV4Request,
-	}, "/")
-}
-
-func deriveSigningKey(region, service, secretKey string, dt time.Time) []byte {
-	kDate := hmacSHA256([]byte("AWS4"+secretKey), []byte(formatShortTime(dt)))
-	kRegion := hmacSHA256(kDate, []byte(region))
-	kService := hmacSHA256(kRegion, []byte(service))
-	signingKey := hmacSHA256(kService, []byte(awsV4Request))
-	return signingKey
-}
-
-func formatShortTime(dt time.Time) string {
-	return dt.UTC().Format(shortTimeFormat)
-}
-
-func formatTime(dt time.Time) string {
-	return dt.UTC().Format(timeFormat)
 }

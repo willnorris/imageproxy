@@ -22,7 +22,6 @@
  *	Authors:
  *		Christian Muehlhaeuser <muesli@gmail.com>
  *		Michael Wendland <michael@michiwend.com>
- *		Bjørn Erik Pedersen <bjorn.erik.pedersen@gmail.com>
  */
 
 /*
@@ -40,9 +39,9 @@ import (
 	"math"
 	"time"
 
-	"github.com/muesli/smartcrop/options"
-
 	"golang.org/x/image/draw"
+
+	"github.com/nfnt/resize"
 )
 
 var (
@@ -96,32 +95,33 @@ type Crop struct {
 	Score Score
 }
 
-// Logger contains a logger.
-type Logger struct {
-	DebugMode bool
-	Log       *log.Logger
+// CropSettings contains options to change cropping behaviour
+type CropSettings struct {
+	InterpolationType resize.InterpolationFunction
+	DebugMode         bool
+	Log               *log.Logger
 }
 
 type smartcropAnalyzer struct {
-	logger Logger
-	options.Resizer
+	cropSettings CropSettings
 }
 
-// NewAnalyzer returns a new Analyzer using the given Resizer.
-func NewAnalyzer(resizer options.Resizer) Analyzer {
-	logger := Logger{
-		DebugMode: false,
+// NewAnalyzer returns a new analyzer with default settings
+func NewAnalyzer() Analyzer {
+	cropSettings := CropSettings{
+		InterpolationType: resize.Bicubic,
+		DebugMode:         false,
 	}
 
-	return NewAnalyzerWithLogger(resizer, logger)
+	return NewAnalyzerWithCropSettings(cropSettings)
 }
 
-// NewAnalyzerWithLogger returns a new analyzer with the given Resizer and Logger.
-func NewAnalyzerWithLogger(resizer options.Resizer, logger Logger) Analyzer {
-	if logger.Log == nil {
-		logger.Log = log.New(ioutil.Discard, "", 0)
+// NewAnalyzerWithCropSettings returns a new analyzer with the given settings
+func NewAnalyzerWithCropSettings(cropSettings CropSettings) Analyzer {
+	if cropSettings.Log == nil {
+		cropSettings.Log = log.New(ioutil.Discard, "", 0)
 	}
-	return &smartcropAnalyzer{Resizer: resizer, logger: logger}
+	return &smartcropAnalyzer{cropSettings: cropSettings}
 }
 
 func (o smartcropAnalyzer) FindBestCrop(img image.Image, width, height int) (image.Rectangle, error) {
@@ -141,29 +141,29 @@ func (o smartcropAnalyzer) FindBestCrop(img image.Image, width, height int) (ima
 		if f := prescaleMin / math.Min(float64(img.Bounds().Dx()), float64(img.Bounds().Dy())); f < 1.0 {
 			prescalefactor = f
 		}
-		o.logger.Log.Println(prescalefactor)
+		o.cropSettings.Log.Println(prescalefactor)
 
-		smallimg := o.Resize(
-			img,
+		smallimg := resize.Resize(
 			uint(float64(img.Bounds().Dx())*prescalefactor),
-			0)
-
+			0,
+			img,
+			o.cropSettings.InterpolationType)
 		lowimg = toRGBA(smallimg)
 	} else {
 		lowimg = toRGBA(img)
 	}
 
-	if o.logger.DebugMode {
+	if o.cropSettings.DebugMode {
 		writeImage("png", lowimg, "./smartcrop_prescale.png")
 	}
 
 	cropWidth, cropHeight := chop(float64(width)*scale*prescalefactor), chop(float64(height)*scale*prescalefactor)
 	realMinScale := math.Min(maxScale, math.Max(1.0/scale, minScale))
 
-	o.logger.Log.Printf("original resolution: %dx%d\n", img.Bounds().Dx(), img.Bounds().Dy())
-	o.logger.Log.Printf("scale: %f, cropw: %f, croph: %f, minscale: %f\n", scale, cropWidth, cropHeight, realMinScale)
+	o.cropSettings.Log.Printf("original resolution: %dx%d\n", img.Bounds().Dx(), img.Bounds().Dy())
+	o.cropSettings.Log.Printf("scale: %f, cropw: %f, croph: %f, minscale: %f\n", scale, cropWidth, cropHeight, realMinScale)
 
-	topCrop, err := analyse(o.logger, lowimg, cropWidth, cropHeight, realMinScale)
+	topCrop, err := analyse(o.cropSettings, lowimg, cropWidth, cropHeight, realMinScale)
 	if err != nil {
 		return topCrop, err
 	}
@@ -249,43 +249,43 @@ func score(output *image.RGBA, crop Crop) Score {
 	return score
 }
 
-func analyse(logger Logger, img *image.RGBA, cropWidth, cropHeight, realMinScale float64) (image.Rectangle, error) {
+func analyse(settings CropSettings, img *image.RGBA, cropWidth, cropHeight, realMinScale float64) (image.Rectangle, error) {
 	o := image.NewRGBA(img.Bounds())
 
 	now := time.Now()
 	edgeDetect(img, o)
-	logger.Log.Println("Time elapsed edge:", time.Since(now))
-	debugOutput(logger.DebugMode, o, "edge")
+	settings.Log.Println("Time elapsed edge:", time.Since(now))
+	debugOutput(settings.DebugMode, o, "edge")
 
 	now = time.Now()
 	skinDetect(img, o)
-	logger.Log.Println("Time elapsed skin:", time.Since(now))
-	debugOutput(logger.DebugMode, o, "skin")
+	settings.Log.Println("Time elapsed skin:", time.Since(now))
+	debugOutput(settings.DebugMode, o, "skin")
 
 	now = time.Now()
 	saturationDetect(img, o)
-	logger.Log.Println("Time elapsed sat:", time.Since(now))
-	debugOutput(logger.DebugMode, o, "saturation")
+	settings.Log.Println("Time elapsed sat:", time.Since(now))
+	debugOutput(settings.DebugMode, o, "saturation")
 
 	now = time.Now()
 	var topCrop Crop
 	topScore := -1.0
 	cs := crops(o, cropWidth, cropHeight, realMinScale)
-	logger.Log.Println("Time elapsed crops:", time.Since(now), len(cs))
+	settings.Log.Println("Time elapsed crops:", time.Since(now), len(cs))
 
 	now = time.Now()
 	for _, crop := range cs {
 		nowIn := time.Now()
 		crop.Score = score(o, crop)
-		logger.Log.Println("Time elapsed single-score:", time.Since(nowIn))
+		settings.Log.Println("Time elapsed single-score:", time.Since(nowIn))
 		if crop.totalScore() > topScore {
 			topCrop = crop
 			topScore = crop.totalScore()
 		}
 	}
-	logger.Log.Println("Time elapsed score:", time.Since(now))
+	settings.Log.Println("Time elapsed score:", time.Since(now))
 
-	if logger.DebugMode {
+	if settings.DebugMode {
 		drawDebugCrop(topCrop, o)
 		debugOutput(true, o, "final")
 	}
@@ -471,4 +471,12 @@ func toRGBA(img image.Image) *image.RGBA {
 	out := image.NewRGBA(img.Bounds())
 	draw.Copy(out, image.Pt(0, 0), img, img.Bounds(), draw.Src, nil)
 	return out
+}
+
+// SmartCrop applies the smartcrop algorithms on the the given image and returns
+// the top crop or an error if something went wrong.
+// This is still here for legacy/backwards-compat reasons
+func SmartCrop(img image.Image, width, height int) (image.Rectangle, error) {
+	analyzer := NewAnalyzer()
+	return analyzer.FindBestCrop(img, width, height)
 }

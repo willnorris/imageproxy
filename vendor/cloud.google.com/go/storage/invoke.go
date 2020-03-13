@@ -1,4 +1,4 @@
-// Copyright 2014 Google LLC
+// Copyright 2014 Google Inc. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,10 +15,9 @@
 package storage
 
 import (
-	"context"
-
 	"cloud.google.com/go/internal"
-	gax "github.com/googleapis/gax-go/v2"
+	gax "github.com/googleapis/gax-go"
+	"golang.org/x/net/context"
 )
 
 // runWithRetry calls the function until it returns nil or a non-retryable error, or
