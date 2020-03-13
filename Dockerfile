@@ -1,4 +1,4 @@
-FROM golang:1.9
+FROM golang:1.13
 MAINTAINER Sevki <s@sevki.org>
 
 ADD . /go/src/willnorris.com/go/imageproxy
