@@ -15,7 +15,7 @@ type TwoTier struct {
 }
 
 // New creates a TwoTier. Both first and second must be non-nil.
-func New(first httpcache.Cache, second httpcache.Cache) *TwoTier {
+func New(first, second httpcache.Cache) *TwoTier {
 	if first == nil || second == nil || first == second {
 		return nil
 	}

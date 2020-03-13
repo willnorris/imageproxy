@@ -197,6 +197,47 @@ func (b *Blob) PutBlockWithLength(blockID string, size uint64, blob io.Reader, o
 	return b.respondCreation(resp, BlobTypeBlock)
 }
 
+// PutBlockFromURLOptions includes the options for a put block from URL operation
+type PutBlockFromURLOptions struct {
+	PutBlockOptions
+
+	SourceContentMD5   string `header:"x-ms-source-content-md5"`
+	SourceContentCRC64 string `header:"x-ms-source-content-crc64"`
+}
+
+// PutBlockFromURL copy data of exactly specified size from specified URL to
+// the block blob with given ID. It is an alternative to PutBlocks where data
+// comes from a remote URL and the offset and length is known in advance.
+//
+// The API rejects requests with size > 100 MiB (but this limit is not
+// checked by the SDK).
+//
+// See https://docs.microsoft.com/en-us/rest/api/storageservices/put-block-from-url
+func (b *Blob) PutBlockFromURL(blockID string, blobURL string, offset int64, size uint64, options *PutBlockFromURLOptions) error {
+	query := url.Values{
+		"comp":    {"block"},
+		"blockid": {blockID},
+	}
+	headers := b.Container.bsc.client.getStandardHeaders()
+	// The value of this header must be set to zero.
+	// When the length is not zero, the operation will fail with the status code 400 (Bad Request).
+	headers["Content-Length"] = "0"
+	headers["x-ms-copy-source"] = blobURL
+	headers["x-ms-source-range"] = fmt.Sprintf("bytes=%d-%d", offset, uint64(offset)+size-1)
+
+	if options != nil {
+		query = addTimeout(query, options.Timeout)
+		headers = mergeHeaders(headers, headersFromStruct(*options))
+	}
+	uri := b.Container.bsc.client.getEndpoint(blobServiceName, b.buildPath(), query)
+
+	resp, err := b.Container.bsc.client.exec(http.MethodPut, uri, headers, nil, b.Container.bsc.auth)
+	if err != nil {
+		return err
+	}
+	return b.respondCreation(resp, BlobTypeBlock)
+}
+
 // PutBlockListOptions includes the options for a put block list operation
 type PutBlockListOptions struct {
 	Timeout           uint
@@ -229,8 +270,8 @@ func (b *Blob) PutBlockList(blocks []Block, options *PutBlockListOptions) error 
 	if err != nil {
 		return err
 	}
-	readAndCloseBody(resp.body)
-	return checkRespCode(resp.statusCode, []int{http.StatusCreated})
+	defer drainRespBody(resp)
+	return checkRespCode(resp, []int{http.StatusCreated})
 }
 
 // GetBlockListOptions includes the options for a get block list operation
@@ -263,8 +304,8 @@ func (b *Blob) GetBlockList(blockType BlockListType, options *GetBlockListOption
 	if err != nil {
 		return out, err
 	}
-	defer resp.body.Close()
+	defer resp.Body.Close()
 
-	err = xmlUnmarshal(resp.body, &out)
+	err = xmlUnmarshal(resp.Body, &out)
 	return out, err
 }

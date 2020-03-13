@@ -58,8 +58,6 @@ func convolve(img image.Image, kernel []float64, options *ConvolveOptions) *imag
 		m = 1
 	case 25:
 		m = 2
-	default:
-		return dst
 	}
 
 	i := 0
@@ -72,8 +70,8 @@ func convolve(img image.Image, kernel []float64, options *ConvolveOptions) *imag
 		}
 	}
 
-	parallel(h, func(partStart, partEnd int) {
-		for y := partStart; y < partEnd; y++ {
+	parallel(0, h, func(ys <-chan int) {
+		for y := range ys {
 			for x := 0; x < w; x++ {
 				var r, g, b float64
 				for _, c := range coefs {
@@ -92,9 +90,10 @@ func convolve(img image.Image, kernel []float64, options *ConvolveOptions) *imag
 					}
 
 					off := iy*src.Stride + ix*4
-					r += float64(src.Pix[off+0]) * c.k
-					g += float64(src.Pix[off+1]) * c.k
-					b += float64(src.Pix[off+2]) * c.k
+					s := src.Pix[off : off+3 : off+3]
+					r += float64(s[0]) * c.k
+					g += float64(s[1]) * c.k
+					b += float64(s[2]) * c.k
 				}
 
 				if options.Abs {
@@ -117,10 +116,11 @@ func convolve(img image.Image, kernel []float64, options *ConvolveOptions) *imag
 
 				srcOff := y*src.Stride + x*4
 				dstOff := y*dst.Stride + x*4
-				dst.Pix[dstOff+0] = clamp(r)
-				dst.Pix[dstOff+1] = clamp(g)
-				dst.Pix[dstOff+2] = clamp(b)
-				dst.Pix[dstOff+3] = src.Pix[srcOff+3]
+				d := dst.Pix[dstOff : dstOff+4 : dstOff+4]
+				d[0] = clamp(r)
+				d[1] = clamp(g)
+				d[2] = clamp(b)
+				d[3] = src.Pix[srcOff+3]
 			}
 		}
 	})

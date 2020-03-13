@@ -27,6 +27,24 @@ const (
 	interopPointer = 0xA005
 )
 
+// A decodeError is returned when the image cannot be decoded as a tiff image.
+type decodeError struct {
+	cause error
+}
+
+func (de decodeError) Error() string {
+	return fmt.Sprintf("exif: decode failed (%v) ", de.cause.Error())
+}
+
+// IsShortReadTagValueError identifies a ErrShortReadTagValue error.
+func IsShortReadTagValueError(err error) bool {
+	de, ok := err.(decodeError)
+	if ok {
+		return de.cause == tiff.ErrShortReadTagValue
+	}
+	return false
+}
+
 // A TagNotPresentError is returned when the requested field is not
 // present in the EXIF.
 type TagNotPresentError FieldName
@@ -126,6 +144,9 @@ var stagePrefix = map[tiffError]string{
 // in x. If parsing a sub-IFD fails, the error is recorded and
 // parsing continues with the remaining sub-IFDs.
 func (p *parser) Parse(x *Exif) error {
+	if len(x.Tiff.Dirs) == 0 {
+		return errors.New("Invalid exif data")
+	}
 	x.LoadTags(x.Tiff.Dirs[0], exifFields, false)
 
 	// thumbnails
@@ -183,14 +204,16 @@ type Exif struct {
 	Raw  []byte
 }
 
-// Decode parses EXIF-encoded data from r and returns a queryable Exif
-// object. After the exif data section is called and the tiff structure
-// decoded, each registered parser is called (in order of registration). If
-// one parser returns an error, decoding terminates and the remaining
-// parsers are not called.
-// The error can be inspected with functions such as IsCriticalError to
-// determine whether the returned object might still be usable.
+// Decode parses EXIF data from r (a TIFF, JPEG, or raw EXIF block)
+// and returns a queryable Exif object. After the EXIF data section is
+// called and the TIFF structure is decoded, each registered parser is
+// called (in order of registration). If one parser returns an error,
+// decoding terminates and the remaining parsers are not called.
+//
+// The error can be inspected with functions such as IsCriticalError
+// to determine whether the returned object might still be usable.
 func Decode(r io.Reader) (*Exif, error) {
+
 	// EXIF data in JPEG is stored in the APP1 marker. EXIF data uses the TIFF
 	// format to store data.
 	// If we're parsing a TIFF image, we don't need to strip away any data.
@@ -198,15 +221,14 @@ func Decode(r io.Reader) (*Exif, error) {
 	// marker and also the EXIF header.
 
 	header := make([]byte, 4)
-	n, err := r.Read(header)
+	n, err := io.ReadFull(r, header)
 	if err != nil {
-		return nil, err
-	}
-	if n < len(header) {
-		return nil, errors.New("exif: short read on header")
+		return nil, fmt.Errorf("exif: error reading 4 byte header, got %d, %v", n, err)
 	}
 
 	var isTiff bool
+	var isRawExif bool
+	var assumeJPEG bool
 	switch string(header) {
 	case "II*\x00":
 		// TIFF - Little endian (Intel)
@@ -214,8 +236,11 @@ func Decode(r io.Reader) (*Exif, error) {
 	case "MM\x00*":
 		// TIFF - Big endian (Motorola)
 		isTiff = true
+	case "Exif":
+		isRawExif = true
 	default:
 		// Not TIFF, assume JPEG
+		assumeJPEG = true
 	}
 
 	// Put the header bytes back into the reader.
@@ -223,9 +248,20 @@ func Decode(r io.Reader) (*Exif, error) {
 	var (
 		er  *bytes.Reader
 		tif *tiff.Tiff
+		sec *appSec
 	)
 
-	if isTiff {
+	switch {
+	case isRawExif:
+		var header [6]byte
+		if _, err := io.ReadFull(r, header[:]); err != nil {
+			return nil, fmt.Errorf("exif: unexpected raw exif header read error")
+		}
+		if got, want := string(header[:]), "Exif\x00\x00"; got != want {
+			return nil, fmt.Errorf("exif: unexpected raw exif header; got %q, want %q", got, want)
+		}
+		fallthrough
+	case isTiff:
 		// Functions below need the IFDs from the TIFF data to be stored in a
 		// *bytes.Reader.  We use TeeReader to get a copy of the bytes as a
 		// side-effect of tiff.Decode() doing its work.
@@ -233,9 +269,8 @@ func Decode(r io.Reader) (*Exif, error) {
 		tr := io.TeeReader(r, b)
 		tif, err = tiff.Decode(tr)
 		er = bytes.NewReader(b.Bytes())
-	} else {
+	case assumeJPEG:
 		// Locate the JPEG APP1 header.
-		var sec *appSec
 		sec, err = newAppSec(jpeg_APP1, r)
 		if err != nil {
 			return nil, err
@@ -249,13 +284,13 @@ func Decode(r io.Reader) (*Exif, error) {
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("exif: decode failed (%v) ", err)
+		return nil, decodeError{cause: err}
 	}
 
 	er.Seek(0, 0)
 	raw, err := ioutil.ReadAll(er)
 	if err != nil {
-		return nil, fmt.Errorf("exif: decode failed (%v) ", err)
+		return nil, decodeError{cause: err}
 	}
 
 	// build an exif structure from the tiff
@@ -350,8 +385,27 @@ func (x *Exif) DateTime() (time.Time, error) {
 	exifTimeLayout := "2006:01:02 15:04:05"
 	dateStr := strings.TrimRight(string(tag.Val), "\x00")
 	// TODO(bradfitz,mpl): look for timezone offset, GPS time, etc.
-	// For now, just always return the time.Local timezone.
-	return time.ParseInLocation(exifTimeLayout, dateStr, time.Local)
+	timeZone := time.Local
+	if tz, _ := x.TimeZone(); tz != nil {
+		timeZone = tz
+	}
+	return time.ParseInLocation(exifTimeLayout, dateStr, timeZone)
+}
+
+func (x *Exif) TimeZone() (*time.Location, error) {
+	// TODO: parse more timezone fields (e.g. Nikon WorldTime).
+	timeInfo, err := x.Get("Canon.TimeInfo")
+	if err != nil {
+		return nil, err
+	}
+	if timeInfo.Count < 2 {
+		return nil, errors.New("Canon.TimeInfo does not contain timezone")
+	}
+	offsetMinutes, err := timeInfo.Int(1)
+	if err != nil {
+		return nil, err
+	}
+	return time.FixedZone("", offsetMinutes*60), nil
 }
 
 func ratFloat(num, dem int64) float64 {
@@ -555,11 +609,15 @@ func newAppSec(marker byte, r io.Reader) (*appSec, error) {
 			continue
 		}
 
-		dataLenBytes, err := br.Peek(2)
-		if err != nil {
-			return nil, err
+		dataLenBytes := make([]byte, 2)
+		for k, _ := range dataLenBytes {
+			c, err := br.ReadByte()
+			if err != nil {
+				return nil, err
+			}
+			dataLenBytes[k] = c
 		}
-		dataLen = int(binary.BigEndian.Uint16(dataLenBytes))
+		dataLen = int(binary.BigEndian.Uint16(dataLenBytes)) - 2
 	}
 
 	// read section data
@@ -573,7 +631,6 @@ func newAppSec(marker byte, r io.Reader) (*appSec, error) {
 		}
 		app.data = append(app.data, s[:n]...)
 	}
-	app.data = app.data[2:] // exclude dataLenBytes
 	return app, nil
 }
 
