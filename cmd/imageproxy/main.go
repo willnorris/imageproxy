@@ -68,7 +68,8 @@ func main() {
 		os.Getenv("DD_AGENT_HOST"),
 		os.Getenv("DD_TRACE_AGENT_PORT"),
 	)
-	tracer.Start(tracer.WithAgentAddr(addrData), tracer.WithServiceName(os.Getenv("DD_SERVICE_NAME")))
+
+	tracer.Start(tracer.WithServiceName(os.Getenv("DD_SERVICE_NAME")), tracer.WithAgentAddr(addrData))
 	defer tracer.Stop()
 
 	flag.Parse()
