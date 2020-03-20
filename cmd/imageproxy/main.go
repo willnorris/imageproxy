@@ -122,6 +122,8 @@ func main() {
 	fmt.Printf("imageproxy listening on %s\n", server.Addr)
 
 	mux := httptrace.NewServeMux(httptrace.WithServiceName(os.Getenv("DD_SERVICE_NAME")))
+	mux.Handle("/", p)
+
 	http.Handle("/", p)
 	log.Fatal(http.ListenAndServe(*addr, mux))
 }
