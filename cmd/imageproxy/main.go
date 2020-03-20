@@ -39,6 +39,7 @@ import (
 	"willnorris.com/go/imageproxy/internal/gcscache"
 	"willnorris.com/go/imageproxy/internal/s3cache"
 
+	httptrace "gopkg.in/DataDog/dd-trace-go.v1/contrib/net/http"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
@@ -118,8 +119,13 @@ func main() {
 		Handler: p,
 	}
 
+	mux := httptrace.NewServeMux()
+	mux.Handle("/", p)
+
 	fmt.Printf("imageproxy listening on %s\n", server.Addr)
-	log.Fatal(server.ListenAndServe())
+
+	http.Handle("/", p)
+	log.Fatal(http.ListenAndServe(*addr, mux))
 }
 
 // tieredCache allows specifying multiple caches via flags, which will create
