@@ -70,7 +70,7 @@ func main() {
 		os.Getenv("DD_TRACE_AGENT_PORT"),
 	)
 
-	tracer.Start(tracer.WithServiceName(os.Getenv("DD_SERVICE_NAME")), tracer.WithAgentAddr(addrData), tracer.WithDebugMode(true))
+	tracer.Start(tracer.WithServiceName(os.Getenv("DD_SERVICE_NAME")), tracer.WithAgentAddr(addrData))
 	// tracer.Stop() not executed until the surrounding function returns
 	defer tracer.Stop()
 
