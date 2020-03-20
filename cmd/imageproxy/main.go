@@ -70,7 +70,7 @@ func main() {
 		os.Getenv("DD_TRACE_AGENT_PORT"),
 	)
 
-	tracer.Start(tracer.WithServiceName(os.Getenv("DD_SERVICE_NAME")), tracer.WithAgentAddr(addrData))
+	tracer.Start(tracer.WithAgentAddr(addrData))
 	// tracer.Stop() not executed until the surrounding function returns
 	defer tracer.Stop()
 
@@ -119,11 +119,9 @@ func main() {
 		Handler: p,
 	}
 
-	mux := httptrace.NewServeMux()
-	mux.Handle("/", p)
-
 	fmt.Printf("imageproxy listening on %s\n", server.Addr)
 
+	mux := httptrace.NewServeMux(httptrace.WithServiceName(os.Getenv("DD_SERVICE_NAME")))
 	http.Handle("/", p)
 	log.Fatal(http.ListenAndServe(*addr, mux))
 }
