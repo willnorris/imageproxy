@@ -36,7 +36,7 @@ require (
 	golang.org/x/image v0.0.0-20171214225156-12117c17ca67
 	golang.org/x/net v0.0.0-20180201232540-b417086c80e9 // indirect
 	golang.org/x/oauth2 v0.0.0-20180126164932-a032972e2806 // indirect
-	golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f // indirect
+	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a // indirect
 	golang.org/x/sys v0.0.0-20200302150141-5c8b2ff67527 // indirect
 	golang.org/x/text v0.0.0-20171227012246-e19ae1496984 // indirect
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect

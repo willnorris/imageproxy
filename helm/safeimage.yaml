@@ -43,6 +43,8 @@ env:
     value: "8126"
   - name: DD_SERVICE_NAME
     value: "safeimage"
+  - name: APM_ENV
+    value: "production"
 
 service:
   enabled: true
