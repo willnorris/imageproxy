@@ -181,6 +181,8 @@ google.golang.org/grpc/status
 google.golang.org/grpc/tap
 google.golang.org/grpc/transport
 # gopkg.in/DataDog/dd-trace-go.v1 v1.22.0
+gopkg.in/DataDog/dd-trace-go.v1/contrib/internal/httputil
+gopkg.in/DataDog/dd-trace-go.v1/contrib/net/http
 gopkg.in/DataDog/dd-trace-go.v1/ddtrace
 gopkg.in/DataDog/dd-trace-go.v1/ddtrace/ext
 gopkg.in/DataDog/dd-trace-go.v1/ddtrace/internal
