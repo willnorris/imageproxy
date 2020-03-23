@@ -114,16 +114,16 @@ func main() {
 	p.ScaleUp = *scaleUp
 	p.Verbose = *verbose
 
+	handler := httptrace.WrapHandler(p, os.Getenv("DD_SERVICE_NAME"), "/")
+
 	server := &http.Server{
 		Addr:    *addr,
-		Handler: p,
+		Handler: handler,
 	}
 
 	fmt.Printf("imageproxy listening on %s\n", server.Addr)
 
-	httptrace.WrapHandler(p, os.Getenv("DD_SERVICE_NAME"), "/")
-
-	http.Handle("/", p)
+	http.Handle("/", handler)
 	log.Fatal(http.ListenAndServe(*addr, nil))
 }
 
