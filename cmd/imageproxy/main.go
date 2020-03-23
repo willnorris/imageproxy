@@ -121,11 +121,10 @@ func main() {
 
 	fmt.Printf("imageproxy listening on %s\n", server.Addr)
 
-	mux := httptrace.NewServeMux(httptrace.WithServiceName(os.Getenv("DD_SERVICE_NAME")))
-	mux.Handle("/", p)
+	httptrace.WrapHandler(p, os.Getenv("DD_SERVICE_NAME"), "/")
 
 	http.Handle("/", p)
-	log.Fatal(http.ListenAndServe(*addr, mux))
+	log.Fatal(http.ListenAndServe(*addr, nil))
 }
 
 // tieredCache allows specifying multiple caches via flags, which will create
