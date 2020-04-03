@@ -7,11 +7,31 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 [Unreleased]: https://github.com/willnorris/imageproxy/compare/v0.9.0...HEAD
+
+## [0.10.0] (2020-04-02)
+[0.10.0]: https://github.com/willnorris/imageproxy/compare/v0.9.0...v0.10.0
+
+### Added
+ - add support for multiple signature keys to support key rotation
+   ([ef09c1b](https://github.com/willnorris/imageproxy/commit/ef09c1b), 
+   [#209](https://github.com/willnorris/imageproxy/pull/209), 
+   [maurociancio](https://github.com/maurociancio))
  - added option to include referer header in remote requests
    ([#216](https://github.com/willnorris/imageproxy/issues/216))
  - added basic support for recording prometheus metrics
    ([#121](https://github.com/willnorris/imageproxy/pull/121)
    [benhaan](https://github.com/benhaan))
+
+### Fixed
+ - improved content type detection for some hosts, particularly S3
+   ([ea95ad9](https://github.com/willnorris/imageproxy/commit/ea95ad9),
+   [shahan312](https://github.com/shahan312))
+ - fix signature verification for some proxied URLs
+   ([3589510](https://github.com/willnorris/imageproxy/commit/3589510),
+   [#212](https://github.com/willnorris/imageproxy/issues/212),
+   ([#215](https://github.com/willnorris/imageproxy/issues/215),
+   thanks to [aaronpk](https://github.com/aaronpk) for helping debug and
+   [fieldistor](https://github.com/fieldistor) for the suggested fix)
 
 ## [0.9.0] (2019-06-10)
 [0.9.0]: https://github.com/willnorris/imageproxy/compare/v0.8.0...v0.9.0
@@ -22,7 +42,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
  - add simple imageproxy-sign tool for calculating signatures
    ([e1558d5](https://github.com/willnorris/imageproxy/commit/e1558d5))
  - allow overriding the Logger used by Proxy
-   ([#174](https://github.com/willnorris/imageproxy/pull/174)
+   ([#174](https://github.com/willnorris/imageproxy/pull/174),
    [hmhealey](https://github.com/hmhealey))
  - allow using environment variables for configuration
    ([50e0d11](https://github.com/willnorris/imageproxy/commit/50e0d11))
