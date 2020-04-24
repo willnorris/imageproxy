@@ -1,4 +1,4 @@
-// Copyright 2013 Google Inc. All rights reserved.
+// Copyright 2013 Google LLC. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,17 +17,35 @@ package imageproxy
 import (
 	"bufio"
 	"bytes"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"image"
 	"image/png"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
 )
+
+func TestPeekContentType(t *testing.T) {
+	// 1 pixel png image, base64 encoded
+	b, _ := base64.StdEncoding.DecodeString("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAEUlEQVR4nGJiYGBgAAQAAP//AA8AA/6P688AAAAASUVORK5CYII=")
+	got := peekContentType(bufio.NewReader(bytes.NewReader(b)))
+	if want := "image/png"; got != want {
+		t.Errorf("peekContentType returned %v, want %v", got, want)
+	}
+
+	// single zero byte
+	got = peekContentType(bufio.NewReader(bytes.NewReader([]byte{0x0})))
+	if want := "application/octet-stream"; got != want {
+		t.Errorf("peekContentType returned %v, want %v", got, want)
+	}
+}
 
 func TestCopyHeader(t *testing.T) {
 	tests := []struct {
@@ -97,8 +115,14 @@ func TestCopyHeader(t *testing.T) {
 }
 
 func TestAllowed(t *testing.T) {
-	whitelist := []string{"good"}
-	key := []byte("c0ffee")
+	allowHosts := []string{"good"}
+	key := [][]byte{
+		[]byte("c0ffee"),
+	}
+	multipleKey := [][]byte{
+		[]byte("c0ffee"),
+		[]byte("beer"),
+	}
 
 	genRequest := func(headers map[string]string) *http.Request {
 		req := &http.Request{Header: make(http.Header)}
@@ -109,42 +133,52 @@ func TestAllowed(t *testing.T) {
 	}
 
 	tests := []struct {
-		url       string
-		options   Options
-		whitelist []string
-		referrers []string
-		key       []byte
-		request   *http.Request
-		allowed   bool
+		url        string
+		options    Options
+		allowHosts []string
+		denyHosts  []string
+		referrers  []string
+		keys       [][]byte
+		request    *http.Request
+		allowed    bool
 	}{
-		// no whitelist or signature key
-		{"http://test/image", emptyOptions, nil, nil, nil, nil, true},
+		// no allowHosts or signature key
+		{"http://test/image", emptyOptions, nil, nil, nil, nil, nil, true},
 
-		// whitelist
-		{"http://good/image", emptyOptions, whitelist, nil, nil, nil, true},
-		{"http://bad/image", emptyOptions, whitelist, nil, nil, nil, false},
+		// allowHosts
+		{"http://good/image", emptyOptions, allowHosts, nil, nil, nil, nil, true},
+		{"http://bad/image", emptyOptions, allowHosts, nil, nil, nil, nil, false},
 
 		// referrer
-		{"http://test/image", emptyOptions, nil, whitelist, nil, genRequest(map[string]string{"Referer": "http://good/foo"}), true},
-		{"http://test/image", emptyOptions, nil, whitelist, nil, genRequest(map[string]string{"Referer": "http://bad/foo"}), false},
-		{"http://test/image", emptyOptions, nil, whitelist, nil, genRequest(map[string]string{"Referer": "MALFORMED!!"}), false},
-		{"http://test/image", emptyOptions, nil, whitelist, nil, genRequest(map[string]string{}), false},
+		{"http://test/image", emptyOptions, nil, nil, allowHosts, nil, genRequest(map[string]string{"Referer": "http://good/foo"}), true},
+		{"http://test/image", emptyOptions, nil, nil, allowHosts, nil, genRequest(map[string]string{"Referer": "http://bad/foo"}), false},
+		{"http://test/image", emptyOptions, nil, nil, allowHosts, nil, genRequest(map[string]string{"Referer": "MALFORMED!!"}), false},
+		{"http://test/image", emptyOptions, nil, nil, allowHosts, nil, genRequest(map[string]string{}), false},
 
 		// signature key
-		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ="}, nil, nil, key, nil, true},
-		{"http://test/image", Options{Signature: "deadbeef"}, nil, nil, key, nil, false},
-		{"http://test/image", emptyOptions, nil, nil, key, nil, false},
+		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ="}, nil, nil, nil, key, nil, true},
+		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ="}, nil, nil, nil, multipleKey, nil, true}, // signed with key "c0ffee"
+		{"http://test/image", Options{Signature: "FWIawYV4SEyI4zKJMeGugM-eJM1eI_jXPEQ20ZgRe4A="}, nil, nil, nil, multipleKey, nil, true}, // signed with key "beer"
+		{"http://test/image", Options{Signature: "deadbeef"}, nil, nil, nil, key, nil, false},
+		{"http://test/image", Options{Signature: "deadbeef"}, nil, nil, nil, multipleKey, nil, false},
+		{"http://test/image", emptyOptions, nil, nil, nil, key, nil, false},
 
-		// whitelist and signature
-		{"http://good/image", emptyOptions, whitelist, nil, key, nil, true},
-		{"http://bad/image", Options{Signature: "gWivrPhXBbsYEwpmWAKjbJEiAEgZwbXbltg95O2tgNI="}, nil, nil, key, nil, true},
-		{"http://bad/image", emptyOptions, whitelist, nil, key, nil, false},
+		// allowHosts and signature
+		{"http://good/image", emptyOptions, allowHosts, nil, nil, key, nil, true},
+		{"http://bad/image", Options{Signature: "gWivrPhXBbsYEwpmWAKjbJEiAEgZwbXbltg95O2tgNI="}, nil, nil, nil, key, nil, true},
+		{"http://bad/image", emptyOptions, allowHosts, nil, nil, key, nil, false},
+
+		// deny requests that match denyHosts, even if signature is valid or also matches allowHosts
+		{"http://test/image", emptyOptions, nil, []string{"test"}, nil, nil, nil, false},
+		{"http://test/image", emptyOptions, []string{"test"}, []string{"test"}, nil, nil, nil, false},
+		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ="}, nil, []string{"test"}, nil, key, nil, false},
 	}
 
 	for _, tt := range tests {
 		p := NewProxy(nil, nil)
-		p.Whitelist = tt.whitelist
-		p.SignatureKey = tt.key
+		p.AllowHosts = tt.allowHosts
+		p.DenyHosts = tt.denyHosts
+		p.SignatureKeys = tt.keys
 		p.Referrers = tt.referrers
 
 		u, err := url.Parse(tt.url)
@@ -158,8 +192,8 @@ func TestAllowed(t *testing.T) {
 	}
 }
 
-func TestValidHost(t *testing.T) {
-	whitelist := []string{"a.test", "*.b.test", "*c.test"}
+func TestHostMatches(t *testing.T) {
+	hosts := []string{"a.test", "*.b.test", "*c.test"}
 
 	tests := []struct {
 		url   string
@@ -182,8 +216,30 @@ func TestValidHost(t *testing.T) {
 		if err != nil {
 			t.Errorf("error parsing url %q: %v", tt.url, err)
 		}
-		if got, want := validHost(whitelist, u), tt.valid; got != want {
-			t.Errorf("validHost(%v, %q) returned %v, want %v", whitelist, u, got, want)
+		if got, want := hostMatches(hosts, u), tt.valid; got != want {
+			t.Errorf("hostMatches(%v, %q) returned %v, want %v", hosts, u, got, want)
+		}
+	}
+}
+
+func TestReferrerMatches(t *testing.T) {
+	hosts := []string{"a.test"}
+
+	tests := []struct {
+		referrer string
+		valid    bool
+	}{
+		{"", false},
+		{"%", false},
+		{"http://a.test/", true},
+		{"http://b.test/", false},
+	}
+
+	for _, tt := range tests {
+		r, _ := http.NewRequest("GET", "/", nil)
+		r.Header.Set("Referer", tt.referrer)
+		if got, want := referrerMatches(hosts, r), tt.valid; got != want {
+			t.Errorf("referrerMatches(%v, %v) returned %v, want %v", hosts, r, got, want)
 		}
 	}
 }
@@ -199,6 +255,12 @@ func TestValidSignature(t *testing.T) {
 		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ="}, true},
 		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ"}, true},
 		{"http://test/image", emptyOptions, false},
+		// url-only signature with options
+		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ", Rotate: 90}, true},
+		// signature calculated from url plus options
+		{"http://test/image", Options{Signature: "ZGTzEm32o4iZ7qcChls3EVYaWyrDd9u0etySo0-WkF8=", Rotate: 90}, true},
+		// invalid base64 encoded signature
+		{"http://test/image", Options{Signature: "!!"}, false},
 	}
 
 	for _, tt := range tests {
@@ -208,7 +270,7 @@ func TestValidSignature(t *testing.T) {
 		}
 		req := &Request{u, tt.options, &http.Request{}}
 		if got, want := validSignature(key, req), tt.valid; got != want {
-			t.Errorf("validSignature(%v, %q) returned %v, want %v", key, u, got, want)
+			t.Errorf("validSignature(%v, %v) returned %v, want %v", key, req, got, want)
 		}
 	}
 }
@@ -299,7 +361,7 @@ func (t testTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	var raw string
 
 	switch req.URL.Path {
-	case "/ok":
+	case "/plain":
 		raw = "HTTP/1.1 200 OK\n\n"
 	case "/error":
 		return nil, errors.New("http protocol error")
@@ -312,7 +374,7 @@ func (t testTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		img := new(bytes.Buffer)
 		png.Encode(img, m)
 
-		raw = fmt.Sprintf("HTTP/1.1 200 OK\nContent-Length: %d\n\n%s", len(img.Bytes()), img.Bytes())
+		raw = fmt.Sprintf("HTTP/1.1 200 OK\nContent-Length: %d\nContent-Type: image/png\n\n%s", len(img.Bytes()), img.Bytes())
 	default:
 		raw = "HTTP/1.1 404 Not Found\n\n"
 	}
@@ -326,7 +388,8 @@ func TestProxy_ServeHTTP(t *testing.T) {
 		Client: &http.Client{
 			Transport: testTransport{},
 		},
-		Whitelist: []string{"good.test"},
+		AllowHosts:   []string{"good.test"},
+		ContentTypes: []string{"image/*"},
 	}
 
 	tests := []struct {
@@ -338,8 +401,12 @@ func TestProxy_ServeHTTP(t *testing.T) {
 		{"/http://bad.test/", http.StatusForbidden},                 // Disallowed host
 		{"/http://good.test/error", http.StatusInternalServerError}, // HTTP protocol error
 		{"/http://good.test/nocontent", http.StatusNoContent},       // non-OK response
+		{"/100/http://good.test/png", http.StatusOK},
+		{"/100/http://good.test/plain", http.StatusForbidden}, // non-image response
 
-		{"/100/http://good.test/ok", http.StatusOK},
+		// health-check URLs
+		{"/", http.StatusOK},
+		{"/health-check", http.StatusOK},
 	}
 
 	for _, tt := range tests {
@@ -371,6 +438,52 @@ func TestProxy_ServeHTTP_is304(t *testing.T) {
 	}
 	if got, want := resp.Header().Get("Etag"), `"tag"`; got != want {
 		t.Errorf("ServeHTTP(%v) returned etag header %v, want %v", req, got, want)
+	}
+}
+
+func TestProxy_log(t *testing.T) {
+	var b strings.Builder
+
+	p := &Proxy{
+		Logger: log.New(&b, "", 0),
+	}
+	p.log("Test")
+
+	if got, want := b.String(), "Test\n"; got != want {
+		t.Errorf("log wrote %s, want %s", got, want)
+	}
+
+	b.Reset()
+	p.logf("Test %v", 123)
+
+	if got, want := b.String(), "Test 123\n"; got != want {
+		t.Errorf("logf wrote %s, want %s", got, want)
+	}
+}
+
+func TestProxy_log_default(t *testing.T) {
+	var b strings.Builder
+
+	defer func(flags int) {
+		log.SetOutput(os.Stderr)
+		log.SetFlags(flags)
+	}(log.Flags())
+
+	log.SetOutput(&b)
+	log.SetFlags(0)
+
+	p := &Proxy{}
+	p.log("Test")
+
+	if got, want := b.String(), "Test\n"; got != want {
+		t.Errorf("log wrote %s, want %s", got, want)
+	}
+
+	b.Reset()
+	p.logf("Test %v", 123)
+
+	if got, want := b.String(), "Test 123\n"; got != want {
+		t.Errorf("logf wrote %s, want %s", got, want)
 	}
 }
 
@@ -408,6 +521,54 @@ func TestTransformingTransport(t *testing.T) {
 		}
 		if got, want := resp.StatusCode, tt.code; got != want {
 			t.Errorf("RoundTrip(%v) returned status code %d, want %d", tt.url, got, want)
+		}
+	}
+}
+
+func TestContentTypeMatches(t *testing.T) {
+	tests := []struct {
+		patterns    []string
+		contentType string
+		valid       bool
+	}{
+		// no patterns
+		{nil, "", true},
+		{nil, "text/plain", true},
+		{[]string{}, "", true},
+		{[]string{}, "text/plain", true},
+
+		// empty pattern
+		{[]string{""}, "", true},
+		{[]string{""}, "text/plain", false},
+
+		// exact match
+		{[]string{"text/plain"}, "", false},
+		{[]string{"text/plain"}, "text", false},
+		{[]string{"text/plain"}, "text/html", false},
+		{[]string{"text/plain"}, "text/plain", true},
+		{[]string{"text/plain"}, "text/plaintext", false},
+		{[]string{"text/plain"}, "text/plain+foo", false},
+
+		// wildcard match
+		{[]string{"text/*"}, "", false},
+		{[]string{"text/*"}, "text", false},
+		{[]string{"text/*"}, "text/html", true},
+		{[]string{"text/*"}, "text/plain", true},
+		{[]string{"text/*"}, "image/jpeg", false},
+
+		{[]string{"image/svg*"}, "image/svg", true},
+		{[]string{"image/svg*"}, "image/svg+html", true},
+
+		// complete wildcard does not match
+		{[]string{"*"}, "text/foobar", false},
+
+		// multiple patterns
+		{[]string{"text/*", "image/*"}, "image/jpeg", true},
+	}
+	for _, tt := range tests {
+		got := contentTypeMatches(tt.patterns, tt.contentType)
+		if want := tt.valid; got != want {
+			t.Errorf("contentTypeMatches(%q, %q) returned %v, want %v", tt.patterns, tt.contentType, got, want)
 		}
 	}
 }

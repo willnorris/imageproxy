@@ -1,4 +1,4 @@
-// Copyright 2013 Google Inc. All rights reserved.
+// Copyright 2013 Google LLC. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,10 +32,11 @@ import (
 	"github.com/PaulARoy/azurestoragecache"
 	"github.com/die-net/lrucache"
 	"github.com/die-net/lrucache/twotier"
-	"github.com/diegomarangoni/gcscache"
 	"github.com/garyburd/redigo/redis"
+	"github.com/gorilla/mux"
 	"github.com/gregjones/httpcache/diskcache"
 	rediscache "github.com/gregjones/httpcache/redis"
+	"github.com/jamiealquiza/envy"
 	"github.com/peterbourgon/diskv"
 	"willnorris.com/go/imageproxy"
 )
@@ -43,42 +44,43 @@ import (
 const defaultMemorySize = 100
 
 var addr = flag.String("addr", "localhost:8080", "TCP address to listen on")
-var whitelist = flag.String("whitelist", "", "comma separated list of allowed remote hosts")
+var allowHosts = flag.String("allowHosts", "", "comma separated list of allowed remote hosts")
+var denyHosts = flag.String("denyHosts", "", "comma separated list of denied remote hosts")
 var referrers = flag.String("referrers", "", "comma separated list of allowed referring hosts")
+var includeReferer = flag.Bool("includeReferer", false, "include referer header in remote requests")
 var baseURL = flag.String("baseURL", "", "default base URL for relative remote URLs")
 var cache tieredCache
-var signatureKey = flag.String("signatureKey", "", "HMAC key used in calculating request signatures")
+var signatureKeys signatureKeyList
 var scaleUp = flag.Bool("scaleUp", false, "allow images to scale beyond their original dimensions")
 var timeout = flag.Duration("timeout", 0, "time limit for requests served by this proxy")
 var verbose = flag.Bool("verbose", false, "print verbose logging messages")
 var version = flag.Bool("version", false, "Deprecated: this flag does nothing")
+var contentTypes = flag.String("contentTypes", "image/*", "comma separated list of allowed content types")
+var userAgent = flag.String("userAgent", "willnorris/imageproxy", "specify the user-agent used by imageproxy when fetching images from origin website")
 
 func init() {
 	flag.Var(&cache, "cache", "location to cache images (see https://github.com/willnorris/imageproxy#cache)")
+	flag.Var(&signatureKeys, "signatureKey", "HMAC key used in calculating request signatures")
 }
 
 func main() {
+	envy.Parse("IMAGEPROXY")
 	flag.Parse()
 
 	p := imageproxy.NewProxy(nil, cache.Cache)
-	if *whitelist != "" {
-		p.Whitelist = strings.Split(*whitelist, ",")
+	if *allowHosts != "" {
+		p.AllowHosts = strings.Split(*allowHosts, ",")
+	}
+	if *denyHosts != "" {
+		p.DenyHosts = strings.Split(*denyHosts, ",")
 	}
 	if *referrers != "" {
 		p.Referrers = strings.Split(*referrers, ",")
 	}
-	if *signatureKey != "" {
-		key := []byte(*signatureKey)
-		if strings.HasPrefix(*signatureKey, "@") {
-			file := strings.TrimPrefix(*signatureKey, "@")
-			var err error
-			key, err = ioutil.ReadFile(file)
-			if err != nil {
-				log.Fatalf("error reading signature file: %v", err)
-			}
-		}
-		p.SignatureKey = key
+	if *contentTypes != "" {
+		p.ContentTypes = strings.Split(*contentTypes, ",")
 	}
+	p.SignatureKeys = signatureKeys
 	if *baseURL != "" {
 		var err error
 		p.DefaultBaseURL, err = url.Parse(*baseURL)
@@ -87,17 +89,43 @@ func main() {
 		}
 	}
 
+	p.IncludeReferer = *includeReferer
 	p.Timeout = *timeout
 	p.ScaleUp = *scaleUp
 	p.Verbose = *verbose
+	p.UserAgent = *userAgent
 
 	server := &http.Server{
 		Addr:    *addr,
 		Handler: p,
 	}
 
+	r := mux.NewRouter().SkipClean(true).UseEncodedPath()
+	r.PathPrefix("/").Handler(p)
 	fmt.Printf("imageproxy listening on %s\n", server.Addr)
-	log.Fatal(server.ListenAndServe())
+	log.Fatal(http.ListenAndServe(*addr, r))
+}
+
+type signatureKeyList [][]byte
+
+func (skl *signatureKeyList) String() string {
+	return fmt.Sprint(*skl)
+}
+
+func (skl *signatureKeyList) Set(value string) error {
+	for _, v := range strings.Fields(value) {
+		key := []byte(v)
+		if strings.HasPrefix(v, "@") {
+			file := strings.TrimPrefix(v, "@")
+			var err error
+			key, err = ioutil.ReadFile(file)
+			if err != nil {
+				log.Fatalf("error reading signature file: %v", err)
+			}
+		}
+		*skl = append(*skl, key)
+	}
+	return nil
 }
 
 // tieredCache allows specifying multiple caches via flags, which will create
@@ -111,15 +139,17 @@ func (tc *tieredCache) String() string {
 }
 
 func (tc *tieredCache) Set(value string) error {
-	c, err := parseCache(value)
-	if err != nil {
-		return err
-	}
+	for _, v := range strings.Fields(value) {
+		c, err := parseCache(v)
+		if err != nil {
+			return err
+		}
 
-	if tc.Cache == nil {
-		tc.Cache = c
-	} else {
-		tc.Cache = twotier.New(tc.Cache, c)
+		if tc.Cache == nil {
+			tc.Cache = c
+		} else {
+			tc.Cache = twotier.New(tc.Cache, c)
+		}
 	}
 	return nil
 }
@@ -143,7 +173,7 @@ func parseCache(c string) (imageproxy.Cache, error) {
 	case "azure":
 		return azurestoragecache.New("", "", u.Host)
 	case "gcs":
-		return gcscache.New(u.String()), nil
+		return gcscache.New(u.Host, strings.TrimPrefix(u.Path, "/"))
 	case "memory":
 		return lruCache(u.Opaque)
 	case "redis":
@@ -155,9 +185,9 @@ func parseCache(c string) (imageproxy.Cache, error) {
 		//	case "s3":
 		//		return s3cache.New(u.String())
 	case "file":
-		fallthrough
-	default:
 		return diskCache(u.Path), nil
+	default:
+		return diskCache(c), nil
 	}
 }
 

@@ -1,0 +1,18 @@
+on:
+  push:
+    tags:
+    - '*'
+name: docker-publish
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: docker/build-push-action@v1
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        repository: willnorris/imageproxy
+        tag_with_ref: true
