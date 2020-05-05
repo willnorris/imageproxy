@@ -324,7 +324,7 @@ a look at [this GitHub repo](https://github.com/oreillymedia/prototype-imageprox
 
 ### Docker ###
 
-A docker image is available at [`willnorris/imageproxy`](https://registry.hub.docker.com/u/willnorris/imageproxy/dockerfile/).
+A docker image is available at [`willnorris/imageproxy`](https://registry.hub.docker.com/r/willnorris/imageproxy).
 
 You can run it by
 ```
