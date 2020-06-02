@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"runtime"
 	"strings"
 	"time"
 
@@ -125,6 +126,7 @@ func NewProxy(transport http.RoundTripper, cache Cache) *Proxy {
 		Transport: &TransformingTransport{
 			Transport:     transport,
 			CachingClient: client,
+			limiter:       make(chan struct{}, runtime.NumCPU()),
 			log: func(format string, v ...any) {
 				if proxy.Verbose {
 					proxy.logf(format, v...)
@@ -557,6 +559,9 @@ type TransformingTransport struct {
 	// responses are properly cached.
 	CachingClient *http.Client
 
+	// limiter limits the number of concurrent transformations being processed.
+	limiter chan struct{}
+
 	log func(format string, v ...any)
 
 	updateCacheHeaders func(hdr http.Header)
@@ -596,6 +601,15 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 			StatusCode: http.StatusNotModified,
 			Body:       http.NoBody,
 		}, nil
+	}
+
+	// enforce limiter after we've checked if we can early return a 304 response,
+	// but before we read the response body and perform transformations.
+	if t.limiter != nil {
+		t.limiter <- struct{}{}
+		defer func() {
+			<-t.limiter
+		}()
 	}
 
 	b, err := io.ReadAll(resp.Body)
