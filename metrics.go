@@ -29,6 +29,11 @@ var (
 		Name:      "request_duration_seconds",
 		Help:      "Request response times",
 	})
+	metricRequestsInFlight = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: "http",
+		Name:      "requests_in_flight",
+		Help:      "Number of requests in flight",
+	})
 )
 
 func init() {
@@ -36,4 +41,5 @@ func init() {
 	prometheus.MustRegister(metricServedFromCache)
 	prometheus.MustRegister(metricRemoteErrors)
 	prometheus.MustRegister(metricRequestDuration)
+	prometheus.MustRegister(metricRequestsInFlight)
 }
