@@ -153,7 +153,12 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	timer := prometheus.NewTimer(metricRequestDuration)
-	defer timer.ObserveDuration()
+	metricRequestsInFlight.Inc()
+	defer func() {
+		timer.ObserveDuration()
+		metricRequestsInFlight.Dec()
+	}()
+
 	h.ServeHTTP(w, r)
 }
 
