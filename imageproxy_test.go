@@ -172,6 +172,7 @@ func TestAllowed(t *testing.T) {
 		{"http://test/image", emptyOptions, nil, []string{"test"}, nil, nil, nil, false},
 		{"http://test/image", emptyOptions, []string{"test"}, []string{"test"}, nil, nil, nil, false},
 		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ="}, nil, []string{"test"}, nil, key, nil, false},
+		{"http://127.0.0.1/image", emptyOptions, nil, []string{"127.0.0.0/8"}, nil, nil, nil, false},
 	}
 
 	for _, tt := range tests {

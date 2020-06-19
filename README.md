@@ -208,9 +208,11 @@ Alternately, try running:
 Reloading the [codercat URL][] will still return an error message.
 
 You can specify multiple hosts as a comma separated list to either flag, or
-prefix a host value with `*.` to allow or deny all sub-domains as well.
+prefix a host value with `*.` to allow or deny all sub-domains. You can
+also specify a netblock in CIDR notation (`127.0.0.0/8`) -- this is useful for
+blocking reserved ranges like `127.0.0.0/8`, `192.168.0.0/16`, etc.
 
-If a host matches both an allowed an a denied host, the request will be denied.
+If a host matches both an allowed a denied host, the request will be denied.
 
 ### Allowed Content-Type List ###
 
