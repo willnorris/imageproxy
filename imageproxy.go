@@ -330,7 +330,7 @@ func hostMatches(hosts []string, u *url.URL) bool {
 			// Checks whether our current host is a CIDR
 			if _, ipnet, err := net.ParseCIDR(host); err == nil {
 				// Checks if our host contains the IP in u
-				if ok := ipnet.Contains(ip) == true; ok {
+				if ipnet.Contains(ip) {
 					return true
 				}
 			}
