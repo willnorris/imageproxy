@@ -63,6 +63,9 @@ type Proxy struct {
 	// is included in remote requests.
 	IncludeReferer bool
 
+	// FollowRedirects controls whether imageproxy will follow redirects or not.
+	FollowRedirects bool
+
 	// DefaultBaseURL is the URL that relative remote URLs are resolved in
 	// reference to.  If nil, all remote URLs specified in requests must be
 	// absolute.
@@ -185,6 +188,11 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	if p.IncludeReferer {
 		// pass along the referer header from the original request
 		copyHeader(actualReq.Header, r.Header, "referer")
+	}
+	if !p.FollowRedirects {
+		p.Client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		}
 	}
 	resp, err := p.Client.Do(actualReq)
 
