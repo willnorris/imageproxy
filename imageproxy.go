@@ -189,8 +189,19 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 		// pass along the referer header from the original request
 		copyHeader(actualReq.Header, r.Header, "referer")
 	}
-	if !p.FollowRedirects {
-		p.Client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+	if p.FollowRedirects {
+		// FollowRedirects is true (default), ensure that the redirected host is allowed
+		p.Client.CheckRedirect = func(newreq *http.Request, via []*http.Request) error {
+			fmt.Printf("%v", newreq.URL)
+			if hostMatches(p.DenyHosts, newreq.URL) || hostMatches(p.AllowHosts, newreq.URL) {
+				http.Error(w, msgNotAllowedInRedirect, http.StatusForbidden)
+				return errNotAllowed
+			}
+			return nil
+		}
+	} else {
+		// FollowRedirects is false, don't follow redirects
+		p.Client.CheckRedirect = func(newreq *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		}
 	}
@@ -278,6 +289,7 @@ var (
 	errNotAllowed = errors.New("request does not contain an allowed host or valid signature")
 
 	msgNotAllowed = "requested URL is not allowed"
+	msgNotAllowedInRedirect = "requested URL in redirect is not allowed"
 )
 
 // allowed determines whether the specified request contains an allowed
