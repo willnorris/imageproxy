@@ -287,7 +287,7 @@ var (
 	errDeniedHost = errors.New("request contains a denied host")
 	errNotAllowed = errors.New("request does not contain an allowed host or valid signature")
 
-	msgNotAllowed = "requested URL is not allowed"
+	msgNotAllowed           = "requested URL is not allowed"
 	msgNotAllowedInRedirect = "requested URL in redirect is not allowed"
 )
 
