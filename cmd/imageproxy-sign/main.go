@@ -54,7 +54,9 @@ func sign(key string, s string, urlOnly bool) ([]byte, error) {
 	}
 
 	mac := hmac.New(sha256.New, []byte(k))
-	mac.Write([]byte(u.String()))
+	if _, err := mac.Write([]byte(u.String())); err != nil {
+		return nil, err
+	}
 	return mac.Sum(nil), nil
 }
 

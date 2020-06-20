@@ -234,7 +234,9 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	w.WriteHeader(resp.StatusCode)
-	io.Copy(w, resp.Body)
+	if _, err := io.Copy(w, resp.Body); err != nil {
+		p.logf("error copying response: %v", err)
+	}
 }
 
 // peekContentType peeks at the first 512 bytes of p, and attempts to detect
@@ -365,7 +367,7 @@ func validSignature(key []byte, r *Request) bool {
 
 	// check signature with URL only
 	mac := hmac.New(sha256.New, key)
-	mac.Write([]byte(r.URL.String()))
+	_, _ = mac.Write([]byte(r.URL.String()))
 	want := mac.Sum(nil)
 	if hmac.Equal(got, want) {
 		return true
@@ -377,7 +379,7 @@ func validSignature(key []byte, r *Request) bool {
 	u.Fragment = opt.String()
 
 	mac = hmac.New(sha256.New, key)
-	mac.Write([]byte(u.String()))
+	_, _ = mac.Write([]byte(u.String()))
 	want = mac.Sum(nil)
 	return hmac.Equal(got, want)
 }
@@ -482,11 +484,13 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 	// replay response with transformed image and updated content length
 	buf := new(bytes.Buffer)
 	fmt.Fprintf(buf, "%s %s\n", resp.Proto, resp.Status)
-	resp.Header.WriteSubset(buf, map[string]bool{
+	if err := resp.Header.WriteSubset(buf, map[string]bool{
 		"Content-Length": true,
 		// exclude Content-Type header if the format may have changed during transformation
 		"Content-Type": opt.Format != "" || resp.Header.Get("Content-Type") == "image/webp" || resp.Header.Get("Content-Type") == "image/tiff",
-	})
+	}); err != nil {
+		t.log("error copying headers: %v", err)
+	}
 	fmt.Fprintf(buf, "Content-Length: %d\n\n", len(img))
 	buf.Write(img)
 

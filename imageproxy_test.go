@@ -375,7 +375,7 @@ func (t testTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	case "/png":
 		m := image.NewNRGBA(image.Rect(0, 0, 1, 1))
 		img := new(bytes.Buffer)
-		png.Encode(img, m)
+		_ = png.Encode(img, m)
 
 		raw = fmt.Sprintf("HTTP/1.1 200 OK\nContent-Length: %d\nContent-Type: image/png\n\n%s", len(img.Bytes()), img.Bytes())
 	default:

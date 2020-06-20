@@ -44,7 +44,7 @@ var (
 func newImage(w, h int, pixels ...color.Color) image.Image {
 	m := image.NewNRGBA(image.Rect(0, 0, w, h))
 	if len(pixels) == 1 {
-		draw.Draw(m, m.Bounds(), &image.Uniform{pixels[0]}, image.ZP, draw.Src)
+		draw.Draw(m, m.Bounds(), &image.Uniform{pixels[0]}, image.Point{}, draw.Src)
 	} else {
 		for i, p := range pixels {
 			m.Set(i%w, i/w, p)
@@ -106,22 +106,26 @@ func TestTransform(t *testing.T) {
 	src := newImage(2, 2, red, green, blue, yellow)
 
 	buf := new(bytes.Buffer)
-	png.Encode(buf, src)
+	if err := png.Encode(buf, src); err != nil {
+		t.Errorf("error encoding reference image: %v", err)
+	}
 
 	tests := []struct {
 		name        string
-		encode      func(io.Writer, image.Image)
+		encode      func(io.Writer, image.Image) error
 		exactOutput bool // whether input and output should match exactly
 	}{
-		{"bmp", func(w io.Writer, m image.Image) { bmp.Encode(w, m) }, true},
-		{"gif", func(w io.Writer, m image.Image) { gif.Encode(w, m, nil) }, true},
-		{"jpeg", func(w io.Writer, m image.Image) { jpeg.Encode(w, m, nil) }, false},
-		{"png", func(w io.Writer, m image.Image) { png.Encode(w, m) }, true},
+		{"bmp", func(w io.Writer, m image.Image) error { return bmp.Encode(w, m) }, true},
+		{"gif", func(w io.Writer, m image.Image) error { return gif.Encode(w, m, nil) }, true},
+		{"jpeg", func(w io.Writer, m image.Image) error { return jpeg.Encode(w, m, nil) }, false},
+		{"png", func(w io.Writer, m image.Image) error { return png.Encode(w, m) }, true},
 	}
 
 	for _, tt := range tests {
 		buf := new(bytes.Buffer)
-		tt.encode(buf, src)
+		if err := tt.encode(buf, src); err != nil {
+			t.Errorf("error encoding image: %v", err)
+		}
 		in := buf.Bytes()
 
 		out, err := Transform(in, emptyOptions)
@@ -152,7 +156,9 @@ func TestTransform(t *testing.T) {
 func TestTransform_InvalidFormat(t *testing.T) {
 	src := newImage(2, 2, red, green, blue, yellow)
 	buf := new(bytes.Buffer)
-	png.Encode(buf, src)
+	if err := png.Encode(buf, src); err != nil {
+		t.Errorf("error encoding reference image: %v", err)
+	}
 
 	_, err := Transform(buf.Bytes(), Options{Format: "invalid"})
 	if err == nil {

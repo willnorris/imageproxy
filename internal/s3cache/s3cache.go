@@ -75,7 +75,7 @@ func (c *cache) Delete(key string) {
 
 func keyToFilename(key string) string {
 	h := md5.New()
-	io.WriteString(h, key)
+	_, _ = io.WriteString(h, key)
 	return hex.EncodeToString(h.Sum(nil))
 }
 
