@@ -28,6 +28,7 @@ import (
 	"io/ioutil"
 	"log"
 	"mime"
+	"net"
 	"net/http"
 	"net/url"
 	"path"
@@ -323,6 +324,16 @@ func hostMatches(hosts []string, u *url.URL) bool {
 		}
 		if strings.HasPrefix(host, "*.") && strings.HasSuffix(u.Host, host[2:]) {
 			return true
+		}
+		// Checks whether the host in u is an IP
+		if ip := net.ParseIP(u.Host); ip != nil {
+			// Checks whether our current host is a CIDR
+			if _, ipnet, err := net.ParseCIDR(host); err == nil {
+				// Checks if our host contains the IP in u
+				if ipnet.Contains(ip) {
+					return true
+				}
+			}
 		}
 	}
 
