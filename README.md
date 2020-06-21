@@ -2,7 +2,7 @@
 
 [![GoDoc](https://img.shields.io/static/v1?label=godoc&message=reference&color=blue)](https://pkg.go.dev/willnorris.com/go/imageproxy)
 [![Test Status](https://github.com/willnorris/imageproxy/workflows/tests/badge.svg)](https://github.com/willnorris/imageproxy/actions?query=workflow%3Atests)
-[![Test Coverage](https://codecov.io/gh/willnorris/imageproxy/branch/master/graph/badge.svg)](https://codecov.io/gh/willnorris/imageproxy)
+[![Test Coverage](https://codecov.io/gh/willnorris/imageproxy/branch/main/graph/badge.svg)](https://codecov.io/gh/willnorris/imageproxy)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/2611/badge)](https://bestpractices.coreinfrastructure.org/projects/2611)
 
 imageproxy is a caching image proxy server written in go.  It features:

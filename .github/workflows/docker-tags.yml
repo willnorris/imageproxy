@@ -2,7 +2,7 @@ on:
   push:
     tags:
     - '*'
-name: docker-publish
+name: docker-publish-tags
 
 jobs:
   docker:
