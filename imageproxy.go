@@ -319,14 +319,14 @@ func contentTypeMatches(patterns []string, contentType string) bool {
 // hostMatches returns whether the host in u matches one of hosts.
 func hostMatches(hosts []string, u *url.URL) bool {
 	for _, host := range hosts {
-		if u.Host == host {
+		if u.Hostname() == host {
 			return true
 		}
-		if strings.HasPrefix(host, "*.") && strings.HasSuffix(u.Host, host[2:]) {
+		if strings.HasPrefix(host, "*.") && strings.HasSuffix(u.Hostname(), host[2:]) {
 			return true
 		}
 		// Checks whether the host in u is an IP
-		if ip := net.ParseIP(u.Host); ip != nil {
+		if ip := net.ParseIP(u.Hostname()); ip != nil {
 			// Checks whether our current host is a CIDR
 			if _, ipnet, err := net.ParseCIDR(host); err == nil {
 				// Checks if our host contains the IP in u
