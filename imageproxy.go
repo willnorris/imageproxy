@@ -192,7 +192,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	if p.FollowRedirects {
 		// FollowRedirects is true (default), ensure that the redirected host is allowed
 		p.Client.CheckRedirect = func(newreq *http.Request, via []*http.Request) error {
-			if hostMatches(p.DenyHosts, newreq.URL) || hostMatches(p.AllowHosts, newreq.URL) {
+			if hostMatches(p.DenyHosts, newreq.URL) || (len(p.AllowHosts) > 0 && !hostMatches(p.AllowHosts, newreq.URL)) {
 				http.Error(w, msgNotAllowedInRedirect, http.StatusForbidden)
 				return errNotAllowed
 			}
