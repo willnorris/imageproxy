@@ -10,3 +10,5 @@ vendor/**/CONTRIBUTORS
 vendor/**/Makefile
 vendor/**/*_ZH.md
 vendor/**/*.sh
+
+cmd/imageproxy*/imageproxy*

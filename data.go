@@ -41,6 +41,7 @@ const (
 	optCropWidth       = "cw"
 	optCropHeight      = "ch"
 	optSmartCrop       = "sc"
+	optValidUntil      = "vu"
 )
 
 // URLError reports a malformed URL error.
@@ -91,6 +92,9 @@ type Options struct {
 
 	// Automatically find good crop points based on image content.
 	SmartCrop bool
+
+	// Check if the URL is still valid in conjunction with a signature you can not change validity of a request.
+	ValidUntil int
 }
 
 func (o Options) String() string {
@@ -134,7 +138,12 @@ func (o Options) String() string {
 	if o.SmartCrop {
 		opts = append(opts, optSmartCrop)
 	}
+	if o.ValidUntil > 0 {
+		opts = append(opts, fmt.Sprintf("%s%d", optValidUntil, o.ValidUntil))
+	}
+
 	sort.Strings(opts)
+
 	return strings.Join(opts, ",")
 }
 
@@ -230,6 +239,11 @@ func (o Options) transform() bool {
 // See https://github.com/willnorris/imageproxy/blob/master/docs/url-signing.md
 // for examples of generating signatures.
 //
+// Validity
+//
+// The "vu{date}" option specifies a date until the request is valid. Please keep in mind
+// to not harm your browser caching TTL settings.
+//
 // Examples
 //
 // 	0x0         - no resizing
@@ -283,6 +297,9 @@ func ParseOptions(str string) Options {
 		case strings.HasPrefix(opt, optCropHeight):
 			value := strings.TrimPrefix(opt, optCropHeight)
 			options.CropHeight, _ = strconv.ParseFloat(value, 64)
+		case strings.HasPrefix(opt, optValidUntil):
+			value := strings.TrimPrefix(opt, optValidUntil)
+			options.ValidUntil, _ = strconv.Atoi(value)
 		case strings.Contains(opt, optSizeDelimiter):
 			size := strings.SplitN(opt, optSizeDelimiter, 2)
 			if w := size[0]; w != "" {
