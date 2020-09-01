@@ -60,6 +60,13 @@ const (
 	optIndicatorSize15pk = "15pk"
 	optIndicatorSize18pk = "18pk"
 	optIndicatorSize24pk = "24pk"
+	optIndicatorSize12case = "12case"
+	optIndicatorSize15case = "15case"
+	optIndicatorSize18case = "18case"
+	optIndicatorSize24case = "24case"
+	optIndicatorSize28case = "28case"
+	optIndicatorSize30case = "30case"
+	optIndicatorSize36case = "36case"
 	optIndicatorSizeSixthKeg = "sixthKeg"
 	optIndicatorSizeFourthKeg = "fourthKeg"
 	optIndicatorSizeHalfKeg = "halfKeg"
@@ -350,6 +357,27 @@ func ParseOptions(str string) Options {
 			options.Square = true
 		case opt == optIndicatorSize24pk:
 			options.IndicatorSize = optIndicatorSize24pk
+			options.Square = true
+		case opt == optIndicatorSize12case:
+			options.IndicatorSize = optIndicatorSize12case
+			options.Square = true
+		case opt == optIndicatorSize15case:
+			options.IndicatorSize = optIndicatorSize15case
+			options.Square = true
+		case opt == optIndicatorSize18case:
+			options.IndicatorSize = optIndicatorSize18case
+			options.Square = true
+		case opt == optIndicatorSize24case:
+			options.IndicatorSize = optIndicatorSize24case
+			options.Square = true
+		case opt == optIndicatorSize28case:
+			options.IndicatorSize = optIndicatorSize28case
+			options.Square = true
+		case opt == optIndicatorSize30case:
+			options.IndicatorSize = optIndicatorSize30case
+			options.Square = true
+		case opt == optIndicatorSize36case:
+			options.IndicatorSize = optIndicatorSize36case
 			options.Square = true
 		case opt == optIndicatorSizeSixthKeg:
 			options.IndicatorSize = optIndicatorSizeSixthKeg
