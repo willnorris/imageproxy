@@ -49,6 +49,20 @@ const (
 	optIndicatorSize300ml = "300ml"
 	optIndicatorSize375ml = "375ml"
 	optIndicatorSize500ml = "500ml"
+	optIndicatorSize2pk = "2pk"
+	optIndicatorSize3pk = "3pk"
+	optIndicatorSize4pk = "4pk"
+	optIndicatorSize6pk = "6pk"
+	optIndicatorSize8pk = "8pk"
+	optIndicatorSize9pk = "9pk"
+	optIndicatorSize10pk = "10pk"
+	optIndicatorSize12pk = "12pk"
+	optIndicatorSize15pk = "15pk"
+	optIndicatorSize18pk = "18pk"
+	optIndicatorSize24pk = "24pk"
+	optIndicatorSizeSixthKeg = "sixthKeg"
+	optIndicatorSizeFourthKeg = "fourthKeg"
+	optIndicatorSizeHalfKeg = "halfKeg"
 )
 
 // URLError reports a malformed URL error.
@@ -303,6 +317,48 @@ func ParseOptions(str string) Options {
 			options.Square = true
 		case opt == optIndicatorSize500ml:
 			options.IndicatorSize = optIndicatorSize500ml
+			options.Square = true
+		case opt == optIndicatorSize2pk:
+			options.IndicatorSize = optIndicatorSize2pk
+			options.Square = true
+		case opt == optIndicatorSize3pk:
+			options.IndicatorSize = optIndicatorSize3pk
+			options.Square = true
+		case opt == optIndicatorSize4pk:
+			options.IndicatorSize = optIndicatorSize4pk
+			options.Square = true
+		case opt == optIndicatorSize6pk:
+			options.IndicatorSize = optIndicatorSize6pk
+			options.Square = true
+		case opt == optIndicatorSize8pk:
+			options.IndicatorSize = optIndicatorSize8pk
+			options.Square = true
+		case opt == optIndicatorSize9pk:
+			options.IndicatorSize = optIndicatorSize9pk
+			options.Square = true
+		case opt == optIndicatorSize10pk:
+			options.IndicatorSize = optIndicatorSize10pk
+			options.Square = true
+		case opt == optIndicatorSize12pk:
+			options.IndicatorSize = optIndicatorSize12pk
+			options.Square = true
+		case opt == optIndicatorSize15pk:
+			options.IndicatorSize = optIndicatorSize15pk
+			options.Square = true
+		case opt == optIndicatorSize18pk:
+			options.IndicatorSize = optIndicatorSize18pk
+			options.Square = true
+		case opt == optIndicatorSize24pk:
+			options.IndicatorSize = optIndicatorSize24pk
+			options.Square = true
+		case opt == optIndicatorSizeSixthKeg:
+			options.IndicatorSize = optIndicatorSizeSixthKeg
+			options.Square = true
+		case opt == optIndicatorSizeFourthKeg:
+			options.IndicatorSize = optIndicatorSizeFourthKeg
+			options.Square = true
+		case opt == optIndicatorSizeHalfKeg:
+			options.IndicatorSize = optIndicatorSizeHalfKeg
 			options.Square = true
 		case strings.HasPrefix(opt, optRotatePrefix):
 			value := strings.TrimPrefix(opt, optRotatePrefix)
