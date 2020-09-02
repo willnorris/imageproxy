@@ -24,45 +24,52 @@ import (
 )
 
 const (
-	optFit                = "fit"
-	optFlipVertical       = "fv"
-	optFlipHorizontal     = "fh"
-	optFormatJPEG         = "jpeg"
-	optFormatPNG          = "png"
-	optFormatTIFF         = "tiff"
-	optFormatWebp         = "webp"
-	optRotatePrefix       = "r"
-	optQualityPrefix      = "q"
-	optSignaturePrefix    = "s"
-	optSizeDelimiter      = "x"
-	optScaleUp            = "scaleUp"
-	optCropX              = "cx"
-	optCropY              = "cy"
-	optCropWidth          = "cw"
-	optCropHeight         = "ch"
-	optSmartCrop          = "sc"
-	optSquare             = "sq"
-	optIndicatorSize50ml  = "50ml"
-	optIndicatorSize100ml = "100ml"
-	optIndicatorSize187ml = "187ml"
-	optIndicatorSize200ml = "200ml"
-	optIndicatorSize300ml = "300ml"
-	optIndicatorSize375ml = "375ml"
-	optIndicatorSize500ml = "500ml"
-	optIndicatorSize2pk = "2pk"
-	optIndicatorSize3pk = "3pk"
-	optIndicatorSize4pk = "4pk"
-	optIndicatorSize6pk = "6pk"
-	optIndicatorSize8pk = "8pk"
-	optIndicatorSize9pk = "9pk"
-	optIndicatorSize10pk = "10pk"
-	optIndicatorSize12pk = "12pk"
-	optIndicatorSize15pk = "15pk"
-	optIndicatorSize18pk = "18pk"
-	optIndicatorSize24pk = "24pk"
-	optIndicatorSizeSixthKeg = "sixthKeg"
-	optIndicatorSizeFourthKeg = "fourthKeg"
-	optIndicatorSizeHalfKeg = "halfKeg"
+	optFit                       = "fit"
+	optFlipVertical              = "fv"
+	optFlipHorizontal            = "fh"
+	optFormatJPEG                = "jpeg"
+	optFormatPNG                 = "png"
+	optFormatTIFF                = "tiff"
+	optFormatWebp                = "webp"
+	optRotatePrefix              = "r"
+	optQualityPrefix             = "q"
+	optSignaturePrefix           = "s"
+	optSizeDelimiter             = "x"
+	optScaleUp                   = "scaleUp"
+	optCropX                     = "cx"
+	optCropY                     = "cy"
+	optCropWidth                 = "cw"
+	optCropHeight                = "ch"
+	optSmartCrop                 = "sc"
+	optSquare                    = "sq"
+	optIndicatorSize50ml         = "50ml"
+	optIndicatorSize100ml        = "100ml"
+	optIndicatorSize187ml        = "187ml"
+	optIndicatorSize200ml        = "200ml"
+	optIndicatorSize300ml        = "300ml"
+	optIndicatorSize375ml        = "375ml"
+	optIndicatorSize500ml        = "500ml"
+	optIndicatorSize2pack        = "2pk"
+	optIndicatorSize3pack        = "3pk"
+	optIndicatorSize4pack        = "4pk"
+	optIndicatorSize6pack        = "6pk"
+	optIndicatorSize8pack        = "8pk"
+	optIndicatorSize9pack        = "9pk"
+	optIndicatorSize10pack       = "10pk"
+	optIndicatorSize12pack       = "12pk"
+	optIndicatorSize15pack       = "15pk"
+	optIndicatorSize18pack       = "18pk"
+	optIndicatorSize24pack       = "24pk"
+	optIndicatorSize12case       = "12ca"
+	optIndicatorSize15case       = "15ca"
+	optIndicatorSize18case       = "18ca"
+	optIndicatorSize24case       = "24ca"
+	optIndicatorSize28case       = "28ca"
+	optIndicatorSize30case       = "30ca"
+	optIndicatorSize36case       = "36ca"
+	optIndicatorSizeOneSixthKeg  = "16keg"
+	optIndicatorSizeOneFourthKeg = "14keg"
+	optIndicatorSizeOneHalfKeg   = "12keg"
 )
 
 // URLError reports a malformed URL error.
@@ -318,47 +325,68 @@ func ParseOptions(str string) Options {
 		case opt == optIndicatorSize500ml:
 			options.IndicatorSize = optIndicatorSize500ml
 			options.Square = true
-		case opt == optIndicatorSize2pk:
-			options.IndicatorSize = optIndicatorSize2pk
+		case opt == optIndicatorSize2pack:
+			options.IndicatorSize = optIndicatorSize2pack
 			options.Square = true
-		case opt == optIndicatorSize3pk:
-			options.IndicatorSize = optIndicatorSize3pk
+		case opt == optIndicatorSize3pack:
+			options.IndicatorSize = optIndicatorSize3pack
 			options.Square = true
-		case opt == optIndicatorSize4pk:
-			options.IndicatorSize = optIndicatorSize4pk
+		case opt == optIndicatorSize4pack:
+			options.IndicatorSize = optIndicatorSize4pack
 			options.Square = true
-		case opt == optIndicatorSize6pk:
-			options.IndicatorSize = optIndicatorSize6pk
+		case opt == optIndicatorSize6pack:
+			options.IndicatorSize = optIndicatorSize6pack
 			options.Square = true
-		case opt == optIndicatorSize8pk:
-			options.IndicatorSize = optIndicatorSize8pk
+		case opt == optIndicatorSize8pack:
+			options.IndicatorSize = optIndicatorSize8pack
 			options.Square = true
-		case opt == optIndicatorSize9pk:
-			options.IndicatorSize = optIndicatorSize9pk
+		case opt == optIndicatorSize9pack:
+			options.IndicatorSize = optIndicatorSize9pack
 			options.Square = true
-		case opt == optIndicatorSize10pk:
-			options.IndicatorSize = optIndicatorSize10pk
+		case opt == optIndicatorSize10pack:
+			options.IndicatorSize = optIndicatorSize10pack
 			options.Square = true
-		case opt == optIndicatorSize12pk:
-			options.IndicatorSize = optIndicatorSize12pk
+		case opt == optIndicatorSize12pack:
+			options.IndicatorSize = optIndicatorSize12pack
 			options.Square = true
-		case opt == optIndicatorSize15pk:
-			options.IndicatorSize = optIndicatorSize15pk
+		case opt == optIndicatorSize15pack:
+			options.IndicatorSize = optIndicatorSize15pack
 			options.Square = true
-		case opt == optIndicatorSize18pk:
-			options.IndicatorSize = optIndicatorSize18pk
+		case opt == optIndicatorSize18pack:
+			options.IndicatorSize = optIndicatorSize18pack
 			options.Square = true
-		case opt == optIndicatorSize24pk:
-			options.IndicatorSize = optIndicatorSize24pk
+		case opt == optIndicatorSize24pack:
+			options.IndicatorSize = optIndicatorSize24pack
 			options.Square = true
-		case opt == optIndicatorSizeSixthKeg:
-			options.IndicatorSize = optIndicatorSizeSixthKeg
+		case opt == optIndicatorSize12case:
+			options.IndicatorSize = optIndicatorSize12case
 			options.Square = true
-		case opt == optIndicatorSizeFourthKeg:
-			options.IndicatorSize = optIndicatorSizeFourthKeg
+		case opt == optIndicatorSize15case:
+			options.IndicatorSize = optIndicatorSize15case
 			options.Square = true
-		case opt == optIndicatorSizeHalfKeg:
-			options.IndicatorSize = optIndicatorSizeHalfKeg
+		case opt == optIndicatorSize18case:
+			options.IndicatorSize = optIndicatorSize18case
+			options.Square = true
+		case opt == optIndicatorSize24case:
+			options.IndicatorSize = optIndicatorSize24case
+			options.Square = true
+		case opt == optIndicatorSize28case:
+			options.IndicatorSize = optIndicatorSize28case
+			options.Square = true
+		case opt == optIndicatorSize30case:
+			options.IndicatorSize = optIndicatorSize30case
+			options.Square = true
+		case opt == optIndicatorSize36case:
+			options.IndicatorSize = optIndicatorSize36case
+			options.Square = true
+		case opt == optIndicatorSizeOneSixthKeg:
+			options.IndicatorSize = optIndicatorSizeOneSixthKeg
+			options.Square = true
+		case opt == optIndicatorSizeOneFourthKeg:
+			options.IndicatorSize = optIndicatorSizeOneFourthKeg
+			options.Square = true
+		case opt == optIndicatorSizeOneHalfKeg:
+			options.IndicatorSize = optIndicatorSizeOneHalfKeg
 			options.Square = true
 		case strings.HasPrefix(opt, optRotatePrefix):
 			value := strings.TrimPrefix(opt, optRotatePrefix)
