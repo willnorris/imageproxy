@@ -1,5 +1,5 @@
 FROM golang:1.14 as build
-MAINTAINER Will Norris <will@willnorris.com>
+LABEL maintainer="Will Norris <will@willnorris.com>"
 
 RUN useradd -u 1001 go
 
