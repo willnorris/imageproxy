@@ -1,36 +1,48 @@
 module willnorris.com/go/imageproxy
 
 require (
-	cloud.google.com/go v0.37.1
-	contrib.go.opencensus.io/exporter/ocagent v0.4.9 // indirect
-	github.com/Azure/azure-sdk-for-go v26.5.0+incompatible // indirect
-	github.com/Azure/go-autorest v11.5.2+incompatible // indirect
+	cloud.google.com/go v0.65.0
+	cloud.google.com/go/storage v1.11.0
+	contrib.go.opencensus.io/exporter/ocagent v0.7.0 // indirect
+	git.apache.org/thrift.git v0.12.0 // indirect
+	github.com/Azure/azure-sdk-for-go v46.1.0+incompatible // indirect
+	github.com/Azure/go-autorest/autorest v0.11.5 // indirect
+	github.com/Azure/go-autorest/autorest/adal v0.9.3 // indirect
 	github.com/PaulARoy/azurestoragecache v0.0.0-20170906084534-3c249a3ba788
-	github.com/aws/aws-sdk-go v1.19.0
+	github.com/aws/aws-sdk-go v1.34.20
+	github.com/census-instrumentation/opencensus-proto v0.3.0 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
-	github.com/die-net/lrucache v0.0.0-20181227122439-19a39ef22a11
-	github.com/disintegration/imaging v1.6.0
+	github.com/die-net/lrucache v0.0.0-20190707192454-883874fe3947
+	github.com/disintegration/imaging v1.6.2
 	github.com/dnaeon/go-vcr v1.0.1 // indirect
-	github.com/garyburd/redigo v1.6.0
+	github.com/garyburd/redigo v1.6.2
+	github.com/golang/lint v0.0.0-20180702182130-06c8688daad7 // indirect
 	github.com/gomodule/redigo v2.0.0+incompatible // indirect
 	github.com/google/btree v1.0.0 // indirect
-	github.com/gorilla/mux v1.6.2
-	github.com/gregjones/httpcache v0.0.0-20190212212710-3befbb6ad0cc
-	github.com/grpc-ecosystem/grpc-gateway v1.8.5 // indirect
+	github.com/gorilla/mux v1.8.0
+	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
+	github.com/grpc-ecosystem/grpc-gateway v1.14.8 // indirect
 	github.com/hashicorp/golang-lru v0.5.1 // indirect
 	github.com/jamiealquiza/envy v1.1.0
 	github.com/marstr/guid v0.0.0-20170427235115-8bdf7d1a087c // indirect
-	github.com/muesli/smartcrop v0.2.1-0.20181030220600-548bbf0c0965
+	github.com/muesli/smartcrop v0.3.0
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
 	github.com/peterbourgon/diskv v0.0.0-20171120014656-2973218375c3
-	github.com/prometheus/client_golang v1.4.1
+	github.com/prometheus/client_golang v1.7.1
+	github.com/prometheus/common v0.13.0 // indirect
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
 	github.com/satori/go.uuid v0.0.0-20180103174451-36e9d2ebbde5 // indirect
-	go.opencensus.io v0.19.2 // indirect
-	golang.org/x/image v0.0.0-20190321063152-3fc05d484e9f
-	golang.org/x/oauth2 v0.0.0-20190319182350-c85d3e98c914 // indirect
-	google.golang.org/appengine v1.5.0 // indirect
-	google.golang.org/genproto v0.0.0-20190321212433-e79c0c59cdb5 // indirect
+	golang.org/x/build v0.0.0-20190314133821-5284462c4bec // indirect
+	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a // indirect
+	golang.org/x/image v0.0.0-20200801110659-972c09e46d76
+	golang.org/x/net v0.0.0-20200904194848-62affa334b73 // indirect
+	golang.org/x/oauth2 v0.0.0-20200902213428-5d25da1a8d43 // indirect
+	golang.org/x/sys v0.0.0-20200909081042-eff7692f9009 // indirect
+	golang.org/x/tools v0.0.0-20200909210914-44a2922940c2 // indirect
+	google.golang.org/api v0.31.0 // indirect
+	google.golang.org/genproto v0.0.0-20200904004341-0bd0a958aa1d // indirect
+	google.golang.org/grpc v1.32.0 // indirect
+	google.golang.org/protobuf v1.25.0 // indirect
 	willnorris.com/go/gifresize v1.0.0
 )
 
