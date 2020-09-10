@@ -249,8 +249,7 @@ func ParseOptions(str string) Options {
 
 	for _, opt := range strings.Split(str, ",") {
 		switch {
-		case len(opt) == 0:
-			break
+		case len(opt) == 0: // do nothing
 		case opt == optFit:
 			options.Fit = true
 		case opt == optFlipVertical:
