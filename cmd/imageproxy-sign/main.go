@@ -53,7 +53,7 @@ func sign(key string, s string, urlOnly bool) ([]byte, error) {
 		return nil, fmt.Errorf("error parsing key: %v", err)
 	}
 
-	mac := hmac.New(sha256.New, []byte(k))
+	mac := hmac.New(sha256.New, k)
 	if _, err := mac.Write([]byte(u.String())); err != nil {
 		return nil, err
 	}
