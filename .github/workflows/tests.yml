@@ -24,13 +24,6 @@ jobs:
         key: ${{ runner.os }}-go-${{ hashFiles('go.sum') }}
         restore-keys: ${{ runner.os }}-go-
 
-    - name: Run go fmt
-      if: runner.os != 'Windows'
-      run: diff -u <(echo -n) <(gofmt -d -s .)
-
-    - name: Run go vet
-      run: go vet ./...
-
     - name: Run go test
       run: go test -v -race -coverprofile coverage.txt -covermode atomic ./...
 
