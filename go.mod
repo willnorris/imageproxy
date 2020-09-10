@@ -11,8 +11,7 @@ require (
 	github.com/die-net/lrucache v0.0.0-20190707192454-883874fe3947
 	github.com/disintegration/imaging v1.6.2
 	github.com/dnaeon/go-vcr v1.0.1 // indirect
-	github.com/garyburd/redigo v1.6.2
-	github.com/gomodule/redigo v2.0.0+incompatible // indirect
+	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/gorilla/mux v1.8.0
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 	github.com/jamiealquiza/envy v1.1.0

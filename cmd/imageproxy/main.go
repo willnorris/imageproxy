@@ -30,7 +30,7 @@ import (
 	"github.com/PaulARoy/azurestoragecache"
 	"github.com/die-net/lrucache"
 	"github.com/die-net/lrucache/twotier"
-	"github.com/garyburd/redigo/redis"
+	"github.com/gomodule/redigo/redis"
 	"github.com/gorilla/mux"
 	"github.com/gregjones/httpcache/diskcache"
 	rediscache "github.com/gregjones/httpcache/redis"
