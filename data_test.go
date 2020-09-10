@@ -209,5 +209,4 @@ func TestNewRequest_BaseURL(t *testing.T) {
 	if got := r.String(); got != want {
 		t.Errorf("NewRequest(%v, %v) returned %q, want %q", req, base, got, want)
 	}
-
 }

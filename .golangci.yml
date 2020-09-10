@@ -1,0 +1,6 @@
+linters:
+  enable:
+    - goimports
+    - stylecheck
+    - misspell
+    - whitespace

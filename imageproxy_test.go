@@ -110,7 +110,6 @@ func TestCopyHeader(t *testing.T) {
 		if !reflect.DeepEqual(got, tt.want) {
 			t.Errorf("copyHeader(%v, %v, %v) returned %v, want %v", tt.dst, tt.src, tt.keys, got, tt.want)
 		}
-
 	}
 }
 
