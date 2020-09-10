@@ -63,6 +63,9 @@ type Proxy struct {
 	// is included in remote requests.
 	IncludeReferer bool
 
+	// FollowRedirects controls whether imageproxy will follow redirects or not.
+	FollowRedirects bool
+
 	// DefaultBaseURL is the URL that relative remote URLs are resolved in
 	// reference to.  If nil, all remote URLs specified in requests must be
 	// absolute.
@@ -186,6 +189,21 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 		// pass along the referer header from the original request
 		copyHeader(actualReq.Header, r.Header, "referer")
 	}
+	if p.FollowRedirects {
+		// FollowRedirects is true (default), ensure that the redirected host is allowed
+		p.Client.CheckRedirect = func(newreq *http.Request, via []*http.Request) error {
+			if hostMatches(p.DenyHosts, newreq.URL) || (len(p.AllowHosts) > 0 && !hostMatches(p.AllowHosts, newreq.URL)) {
+				http.Error(w, msgNotAllowedInRedirect, http.StatusForbidden)
+				return errNotAllowed
+			}
+			return nil
+		}
+	} else {
+		// FollowRedirects is false, don't follow redirects
+		p.Client.CheckRedirect = func(newreq *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		}
+	}
 	resp, err := p.Client.Do(actualReq)
 
 	if err != nil {
@@ -271,7 +289,8 @@ var (
 	errDeniedHost = errors.New("request contains a denied host")
 	errNotAllowed = errors.New("request does not contain an allowed host or valid signature")
 
-	msgNotAllowed = "requested URL is not allowed"
+	msgNotAllowed           = "requested URL is not allowed"
+	msgNotAllowedInRedirect = "requested URL in redirect is not allowed"
 )
 
 // allowed determines whether the specified request contains an allowed
