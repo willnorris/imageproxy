@@ -63,6 +63,7 @@ const (
 	optIndicatorSize12case       = "12ca"
 	optIndicatorSize15case       = "15ca"
 	optIndicatorSize18case       = "18ca"
+	optIndicatorSize20case       = "20ca"
 	optIndicatorSize24case       = "24ca"
 	optIndicatorSize28case       = "28ca"
 	optIndicatorSize30case       = "30ca"
@@ -366,6 +367,9 @@ func ParseOptions(str string) Options {
 			options.Square = true
 		case opt == optIndicatorSize18case:
 			options.IndicatorSize = optIndicatorSize18case
+			options.Square = true
+		case opt == optIndicatorSize20case:
+			options.IndicatorSize = optIndicatorSize20case
 			options.Square = true
 		case opt == optIndicatorSize24case:
 			options.IndicatorSize = optIndicatorSize24case
