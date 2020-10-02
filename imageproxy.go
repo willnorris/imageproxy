@@ -26,7 +26,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"mime"
 	"net"
 	"net/http"
@@ -34,6 +34,8 @@ import (
 	"path"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/fcjr/aia-transport-go"
 	"github.com/gregjones/httpcache"
@@ -120,7 +122,7 @@ func NewProxy(transport http.RoundTripper, cache Cache) *Proxy {
 			CachingClient: client,
 			log: func(format string, v ...interface{}) {
 				if proxy.Verbose {
-					proxy.logf(format, v...)
+					log.Info(fmt.Sprintf(format, v...))
 				}
 			},
 		},
@@ -135,6 +137,11 @@ func NewProxy(transport http.RoundTripper, cache Cache) *Proxy {
 
 // ServeHTTP handles incoming requests.
 func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Ensure every request has a unique, traceable ID
+	requestId := uuid.New().String()
+	r.Header.Set("X-Request-ID", requestId) // write it to the incoming request for use in log messages
+	w.Header().Set("X-Request-Id", requestId)
+
 	if r.URL.Path == "/favicon.ico" {
 		return // ignore favicon requests
 	}
@@ -165,13 +172,14 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	req, err := NewRequest(r, p.DefaultBaseURL)
 	if err != nil {
 		msg := fmt.Sprintf("invalid request URL: %v", err)
-		p.log(msg)
+		log.WithField("transactionId", w.Header().Get("X-Request-Id")).Warn(msg)
 		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 
 	if err := p.allowed(req); err != nil {
-		p.logf("%s: %v", err, req)
+		log.WithField("transactionId", w.Header().Get("X-Request-Id")).Warn(
+			fmt.Sprintf("%s: %v", err, req))
 		http.Error(w, msgNotAllowed, http.StatusForbidden)
 		return
 	}
@@ -180,6 +188,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	req.Options.ScaleUp = p.ScaleUp
 
 	actualReq, _ := http.NewRequest("GET", req.String(), nil)
+	actualReq.Header.Set("X-Request-Id", w.Header().Get("X-Request-Id"))
 	if p.UserAgent != "" {
 		actualReq.Header.Set("User-Agent", p.UserAgent)
 	}
@@ -209,7 +218,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		msg := fmt.Sprintf("error fetching remote image: %v", err)
-		p.log(msg)
+		log.WithField("transactionId", w.Header().Get("X-Request-Id")).Warn(msg)
 		http.Error(w, msg, http.StatusInternalServerError)
 		metricRemoteErrors.Inc()
 		return
@@ -219,7 +228,8 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 
 	cached := resp.Header.Get(httpcache.XFromCache) == "1"
 	if p.Verbose {
-		p.logf("request: %+v (served from cache: %t)", *actualReq, cached)
+		log.WithField("transactionId", w.Header().Get("X-Request-Id")).Info(
+			fmt.Sprintf("request: %+v (served from cache: %t)", *actualReq, cached))
 	}
 
 	if cached {
@@ -241,7 +251,8 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 		contentType = peekContentType(b)
 	}
 	if resp.ContentLength != 0 && !contentTypeMatches(p.ContentTypes, contentType) {
-		p.logf("content-type not allowed: %q", contentType)
+		log.WithField("transactionId", w.Header().Get("X-Request-Id")).Warn(
+			fmt.Sprintf("content-type not allowed: %q", contentType))
 		http.Error(w, msgNotAllowed, http.StatusForbidden)
 		return
 	}
@@ -254,7 +265,8 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(resp.StatusCode)
 	if _, err := io.Copy(w, resp.Body); err != nil {
-		p.logf("error copying response: %v", err)
+		log.WithField("transactionId", w.Header().Get("X-Request-Id")).Warn(
+			fmt.Sprintf("error copying response: %v", err))
 	}
 }
 
@@ -431,22 +443,6 @@ func should304(req *http.Request, resp *http.Response) bool {
 	return false
 }
 
-func (p *Proxy) log(v ...interface{}) {
-	if p.Logger != nil {
-		p.Logger.Print(v...)
-	} else {
-		log.Print(v...)
-	}
-}
-
-func (p *Proxy) logf(format string, v ...interface{}) {
-	if p.Logger != nil {
-		p.Logger.Printf(format, v...)
-	} else {
-		log.Printf(format, v...)
-	}
-}
-
 // TransformingTransport is an implementation of http.RoundTripper that
 // optionally transforms images using the options specified in the request URL
 // fragment.
@@ -467,9 +463,8 @@ type TransformingTransport struct {
 func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if req.URL.Fragment == "" {
 		// normal requests pass through
-		if t.log != nil {
-			t.log("fetching remote URL: %v", req.URL)
-		}
+		log.WithField("transactionId", req.Header.Get("X-Request-Id")).Info(
+			fmt.Sprintf("fetching remote URL: %v", req.URL))
 		return t.Transport.RoundTrip(req)
 	}
 
@@ -494,10 +489,12 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 	}
 
 	opt := ParseOptions(req.URL.Fragment)
+	opt.TransactionId = req.Header.Get("X-Request-Id")
 
 	img, err := Transform(b, opt)
 	if err != nil {
-		log.Printf("error transforming image %s: %v", req.URL.String(), err)
+		log.WithField("transactionId", req.Header.Get("X-Request-Id")).Info(
+			fmt.Sprintf("error transforming image %s: %v", req.URL.String(), err))
 		img = b
 	}
 
@@ -509,7 +506,8 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 		// exclude Content-Type header if the format may have changed during transformation
 		"Content-Type": opt.Format != "" || resp.Header.Get("Content-Type") == "image/webp" || resp.Header.Get("Content-Type") == "image/tiff",
 	}); err != nil {
-		t.log("error copying headers: %v", err)
+		log.WithField("transactionId", req.Header.Get("X-Request-Id")).Info(
+			fmt.Sprintf("error copying headers: %v", err))
 	}
 	fmt.Fprintf(buf, "Content-Length: %d\n\n", len(img))
 	buf.Write(img)

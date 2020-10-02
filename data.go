@@ -91,6 +91,9 @@ type Options struct {
 
 	// Automatically find good crop points based on image content.
 	SmartCrop bool
+
+	// Generated transaction ID for logging identification
+	TransactionId string
 }
 
 func (o Options) String() string {

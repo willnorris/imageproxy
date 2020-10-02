@@ -22,7 +22,7 @@ import (
 	"image/jpeg"
 	"image/png"
 	"io"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"math"
 
 	"github.com/disintegration/imaging"
@@ -182,7 +182,8 @@ func cropParams(m image.Image, opt Options) image.Rectangle {
 		h := evaluateFloat(opt.Height, imgH)
 		r, err := smartcropAnalyzer.FindBestCrop(m, w, h)
 		if err != nil {
-			log.Printf("smartcrop error finding best crop: %v", err)
+			log.WithField("transactionId", opt.TransactionId).Info(
+				fmt.Sprintf("smartcrop error finding best crop: %v", err))
 		} else {
 			return r
 		}
