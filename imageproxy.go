@@ -223,7 +223,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	if req.Options.IndicatorSize != "" {
 		surrogateKey = surrogateKey + " " + req.Options.IndicatorSize
 	}
-	w.Header().Set("Surrogate-Key:", surrogateKey)
+	w.Header().Set("Surrogate-Key", surrogateKey)
 
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body)
