@@ -255,6 +255,9 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	// Add a Content-Security-Policy to prevent stored-XSS attacks via SVG files
 	w.Header().Set("Content-Security-Policy", "script-src 'none'")
 
+	// Disable Content-Type sniffing
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+
 	w.WriteHeader(resp.StatusCode)
 	if _, err := io.Copy(w, resp.Body); err != nil {
 		p.logf("error copying response: %v", err)
