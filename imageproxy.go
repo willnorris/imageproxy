@@ -239,7 +239,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 		resp.Body = ioutil.NopCloser(b)
 		contentType = peekContentType(b)
 	}
-	if resp.ContentLength != 0 && !contentTypeMatches(p.ContentTypes, contentType) {
+	if (resp.ContentLength != 0 && !contentTypeMatches(p.ContentTypes, contentType)) || strings.Contains(contentType, "svg") {
 		p.logf("content-type not allowed: %q", contentType)
 		http.Error(w, msgNotAllowed, http.StatusForbidden)
 		return
