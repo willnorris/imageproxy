@@ -246,7 +246,10 @@ func (o Options) transform() bool {
 // 	cx10,cy20,cw100,ch200 - crop image starting at (10,20) is 100px wide and 200px tall
 func ParseOptions(str string) Options {
 	var options Options
-
+	s, err := url.QueryUnescape(str)
+	if err == nil {
+		str = s
+	}
 	for _, opt := range strings.Split(str, ",") {
 		switch {
 		case len(opt) == 0: // do nothing
@@ -375,5 +378,9 @@ var reCleanedURL = regexp.MustCompile(`^(https?):/+([^/])`)
 // path.Clean or a webserver that collapses multiple slashes.
 func parseURL(s string) (*url.URL, error) {
 	s = reCleanedURL.ReplaceAllString(s, "$1://$2")
+	s, err := url.QueryUnescape(s)
+	if err != nil {
+		return nil, err
+	}
 	return url.Parse(s)
 }
