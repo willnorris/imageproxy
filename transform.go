@@ -16,6 +16,7 @@ package imageproxy
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"image"
 	_ "image/gif" // register gif format
@@ -52,6 +53,18 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 	if !opt.transform() {
 		// bail if no transformation was requested
 		return img, nil
+	}
+
+	// decode image metadata
+	imageMeta, _, err := image.DecodeConfig(bytes.NewReader(img))
+	if err != nil {
+		return nil, err
+	}
+
+	// prevent pixel flooding attacks
+	// accept no larger than a 10,000 x 10,000 image
+	if imageMeta.Width*imageMeta.Height > 100000000 {
+		return nil, errors.New("image too large")
 	}
 
 	// decode image
