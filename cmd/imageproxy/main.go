@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -30,7 +31,7 @@ import (
 
 const defaultMemorySize = 100
 
-var addr = flag.String("addr", "localhost:8080", "TCP address to listen on")
+var addr = flag.String("addr", "localhost:8080", "address to listen on, either a TCP address or a Unix domain socket path prefixed with unix:")
 var allowHosts = flag.String("allowHosts", "", "comma separated list of allowed remote hosts")
 var denyHosts = flag.String("denyHosts", "", "comma separated list of denied remote hosts")
 var referrers = flag.String("referrers", "", "comma separated list of allowed referring hosts")
@@ -92,6 +93,18 @@ func main() {
 	p.MinimumCacheDuration = *minCacheDuration
 	p.ForceCache = *forceCache
 
+	var ln net.Listener
+	var err error
+
+	if path, ok := strings.CutPrefix(*addr, "unix:"); ok {
+		ln, err = net.Listen("unix", path)
+	} else {
+		ln, err = net.Listen("tcp", *addr)
+	}
+	if err != nil {
+		log.Fatalf("listen failed: %v", err)
+	}
+
 	server := &http.Server{
 		Addr:    *addr,
 		Handler: p,
@@ -101,8 +114,8 @@ func main() {
 		IdleTimeout:  120 * time.Second,
 	}
 
-	fmt.Printf("imageproxy listening on %s\n", server.Addr)
-	log.Fatal(server.ListenAndServe())
+	fmt.Printf("imageproxy listening on %s\n", *addr)
+	log.Fatal(server.Serve(ln))
 }
 
 type signatureKeyList [][]byte
