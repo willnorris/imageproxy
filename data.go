@@ -336,6 +336,7 @@ func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 	req := &Request{Original: r}
 
 	path := r.URL.EscapedPath()[1:] // strip leading slash
+	path, err = decodeUrl(path)
 	req.URL, err = parseURL(path)
 	if err != nil || !req.URL.IsAbs() {
 		// first segment should be options
@@ -377,4 +378,15 @@ var reCleanedURL = regexp.MustCompile(`^(https?):/+([^/])`)
 func parseURL(s string) (*url.URL, error) {
 	s = reCleanedURL.ReplaceAllString(s, "$1://$2")
 	return url.Parse(s)
+}
+
+var reIsEncodedUrl = regexp.MustCompile(`^https?%`)
+
+func decodeUrl(s string) (string, error) {
+    var isUrlEncoded = reIsEncodedUrl.MatchString(s)
+    if isUrlEncoded {
+        return url.QueryUnescape(s)
+    } else {
+        return s, nil
+    }
 }
