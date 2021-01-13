@@ -7,7 +7,7 @@ require (
 	github.com/Azure/go-autorest/autorest/adal v0.9.3 // indirect
 	github.com/Azure/go-autorest/autorest/to v0.4.0 // indirect
 	github.com/PaulARoy/azurestoragecache v0.0.0-20170906084534-3c249a3ba788
-	github.com/aws/aws-sdk-go v1.34.20
+	github.com/aws/aws-sdk-go v1.36.26
 	github.com/die-net/lrucache v0.0.0-20190707192454-883874fe3947
 	github.com/disintegration/imaging v1.6.2
 	github.com/dnaeon/go-vcr v1.0.1 // indirect
@@ -25,7 +25,6 @@ require (
 	github.com/satori/go.uuid v0.0.0-20180103174451-36e9d2ebbde5 // indirect
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a // indirect
 	golang.org/x/image v0.0.0-20200801110659-972c09e46d76
-	golang.org/x/sys v0.0.0-20200909081042-eff7692f9009 // indirect
 	willnorris.com/go/gifresize v1.0.0
 )
 
