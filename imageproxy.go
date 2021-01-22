@@ -257,6 +257,9 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 
 	// Disable Content-Type sniffing
 	w.Header().Set("X-Content-Type-Options", "nosniff")
+	
+	// Block potential XSS attacks especially in legacy browsers which do not support CSP
+	w.Header().Set("X-XSS-Protection", "1; mode=block")
 
 	w.WriteHeader(resp.StatusCode)
 	if _, err := io.Copy(w, resp.Body); err != nil {
