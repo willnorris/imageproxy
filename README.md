@@ -322,7 +322,14 @@ don't have much experience with them personally.
 ### Heroku ###
 
 It's easy to vendorize the dependencies with `Godep` and deploy to Heroku. Take
-a look at [this GitHub repo](https://github.com/oreillymedia/prototype-imageproxy)
+a look at [this GitHub repo](https://github.com/oreillymedia/prototype-imageproxy/tree/heroku)
+(make sure you use the `heroku` branch).
+
+### AWS Elastic Beanstalk ###
+
+[O’Reilly Media](https://github.com/oreillymedia) set up [a repository](https://github.com/oreillymedia/prototype-imageproxy)
+with everything you need to deploy imageproxy to Elastic Beanstalk. Just follow the instructions
+in the [README](https://github.com/oreillymedia/prototype-imageproxy/blob/master/Readme.md).
 
 ### Docker ###
 
