@@ -13,6 +13,7 @@ require (
 	github.com/dnaeon/go-vcr v1.0.1 // indirect
 	github.com/fcjr/aia-transport-go v1.2.1
 	github.com/gomodule/redigo v2.0.0+incompatible
+	github.com/google/uuid v1.1.2
 	github.com/gorilla/mux v1.8.0
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 	github.com/jamiealquiza/envy v1.1.0
@@ -22,6 +23,7 @@ require (
 	github.com/prometheus/client_golang v1.9.0
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
 	github.com/satori/go.uuid v0.0.0-20180103174451-36e9d2ebbde5 // indirect
+	github.com/sirupsen/logrus v1.7.0
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a // indirect
 	golang.org/x/image v0.0.0-20200801110659-972c09e46d76
 	willnorris.com/go/gifresize v1.0.0

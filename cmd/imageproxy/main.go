@@ -19,7 +19,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
 	"os"
@@ -55,6 +55,7 @@ var signatureKeys signatureKeyList
 var scaleUp = flag.Bool("scaleUp", false, "allow images to scale beyond their original dimensions")
 var timeout = flag.Duration("timeout", 0, "time limit for requests served by this proxy")
 var verbose = flag.Bool("verbose", false, "print verbose logging messages")
+var logFormat = flag.String("logFormat", "ascii", "format to output logs in, ascii or json")
 var _ = flag.Bool("version", false, "Deprecated: this flag does nothing")
 var contentTypes = flag.String("contentTypes", "image/*", "comma separated list of allowed content types")
 var userAgent = flag.String("userAgent", "willnorris/imageproxy", "specify the user-agent used by imageproxy when fetching images from origin website")
@@ -67,6 +68,11 @@ func init() {
 func main() {
 	envy.Parse("IMAGEPROXY")
 	flag.Parse()
+
+	if *logFormat == "json" {
+		// Log as JSON instead of the default ASCII formatter.
+		log.SetFormatter(&log.JSONFormatter{})
+	}
 
 	p := imageproxy.NewProxy(nil, cache.Cache)
 	if *allowHosts != "" {
