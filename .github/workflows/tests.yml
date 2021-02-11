@@ -7,26 +7,35 @@ jobs:
   test:
     strategy:
       matrix:
-        go-version: [1.x, 1.13.x]
+        go-version:
+          # support the two most recent major go versions
+          - 1.x
+          - 1.14.x
         platform: [ubuntu-latest, windows-latest]
+        include:
+          # minimum go version that works. This is not necessarily supported in
+          # any way, and will be bumped up without notice as needed.  But it at
+          # least lets us know what go version should work.
+          - go-version: 1.11
+            platform: ubuntu-latest
     runs-on: ${{ matrix.platform }}
 
     steps:
-    - uses: actions/setup-go@v1
-      with:
-        go-version: ${{ matrix.go-version }}
-    - uses: actions/checkout@v2
+      - uses: actions/setup-go@v1
+        with:
+          go-version: ${{ matrix.go-version }}
+      - uses: actions/checkout@v2
 
-    - name: Cache go modules
-      uses: actions/cache@v1
-      with:
-        path: ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('go.sum') }}
-        restore-keys: ${{ runner.os }}-go-
+      - name: Cache go modules
+        uses: actions/cache@v1
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('go.sum') }}
+          restore-keys: ${{ runner.os }}-go-
 
-    - name: Run go test
-      run: go test -v -race -coverprofile coverage.txt -covermode atomic ./...
+      - name: Run go test
+        run: go test -v -race -coverprofile coverage.txt -covermode atomic ./...
 
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v1
-      timeout-minutes: 2
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+        timeout-minutes: 2
