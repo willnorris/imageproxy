@@ -3,8 +3,7 @@ updates:
 - package-ecosystem: gomod
   directory: "/"
   schedule:
-    interval: weekly
-    time: "13:00"
+    interval: monthly
   open-pull-requests-limit: 10
   assignees:
   - willnorris
