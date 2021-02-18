@@ -10,7 +10,7 @@ jobs:
         go-version:
           # support the two most recent major go versions
           - 1.x
-          - 1.14.x
+          - 1.15.x
         platform: [ubuntu-latest, windows-latest]
         include:
           # minimum go version that works. This is not necessarily supported in
