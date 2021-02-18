@@ -11,7 +11,7 @@ require (
 	github.com/die-net/lrucache v0.0.0-20190707192454-883874fe3947
 	github.com/disintegration/imaging v1.6.2
 	github.com/dnaeon/go-vcr v1.0.1 // indirect
-	github.com/fcjr/aia-transport-go v1.2.1
+	github.com/fcjr/aia-transport-go v1.2.2
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/gorilla/mux v1.8.0
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
