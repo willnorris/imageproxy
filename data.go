@@ -347,7 +347,14 @@ func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 		}
 
 		var err error
-		req.URL, err = parseURL(parts[1])
+
+		remote_url := parts[1]
+		s, err := url.QueryUnescape(remote_url)
+		if err == nil {
+			remote_url = s
+		}
+
+		req.URL, err = parseURL(remote_url)
 		if err != nil {
 			return nil, URLError{fmt.Sprintf("unable to parse remote URL: %v", err), r.URL}
 		}
@@ -367,8 +374,9 @@ func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 		return nil, URLError{"remote URL must have http or https scheme", r.URL}
 	}
 
-	// query string is always part of the remote URL
-	req.URL.RawQuery = r.URL.RawQuery
+	if req.URL.RawQuery == "" {
+		req.URL.RawQuery = r.URL.RawQuery
+	}
 	return req, nil
 }
 
