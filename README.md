@@ -380,5 +380,7 @@ to alter the precedence order by setting:
 
 ## License ##
 
-imageproxy is copyright Google, but is not an official Google product.  It is
-available under the [Apache 2.0 License](./LICENSE).
+imageproxy is copyright its respective authors. All of my personal work on
+imageproxy through 2020 (which accounts for the majority of the code) is
+copyright Google, my employer at the time.  It is available under the [Apache
+2.0 License](./LICENSE).

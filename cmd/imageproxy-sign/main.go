@@ -1,3 +1,6 @@
+// Copyright 2013 The imageproxy authors.
+// SPDX-License-Identifier: Apache-2.0
+
 // The imageproxy-sign tool creates signature values for a provided URL and
 // signing key.
 package main

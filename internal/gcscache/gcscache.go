@@ -1,3 +1,6 @@
+// Copyright 2013 The imageproxy authors.
+// SPDX-License-Identifier: Apache-2.0
+
 // Package gcscache provides an httpcache.Cache implementation that stores
 // cached values on Google Cloud Storage.
 package gcscache
