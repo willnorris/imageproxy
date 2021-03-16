@@ -349,7 +349,7 @@ func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 		var err error
 
 		remote_url := parts[1]
-		s, err := url.QueryUnescape(remote_url)
+		s, err := url.PathUnescape(remote_url)
 		if err == nil {
 			remote_url = s
 		}
@@ -386,7 +386,7 @@ var reCleanedURL = regexp.MustCompile(`^(https?):/+([^/])`)
 // path.Clean or a webserver that collapses multiple slashes.
 func parseURL(s string) (*url.URL, error) {
 	s = reCleanedURL.ReplaceAllString(s, "$1://$2")
-	s, err := url.QueryUnescape(s)
+	s, err := url.PathUnescape(s)
 	if err != nil {
 		return nil, err
 	}
