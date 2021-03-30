@@ -4,7 +4,9 @@
 package imageproxy
 
 import (
+	"errors"
 	"fmt"
+	"image/color"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -30,6 +32,7 @@ const (
 	optCropWidth       = "cw"
 	optCropHeight      = "ch"
 	optSmartCrop       = "sc"
+	optBackgroundColor = "bg"
 )
 
 // URLError reports a malformed URL error.
@@ -40,6 +43,47 @@ type URLError struct {
 
 func (e URLError) Error() string {
 	return fmt.Sprintf("malformed URL %q: %s", e.URL, e.Message)
+}
+
+var errInvalidFormat = errors.New("invalid format")
+
+// ParseHexColor parses a web color given by its hex RGB format.
+// See https://en.wikipedia.org/wiki/Web_colors for input format.
+//
+// For details, see https://stackoverflow.com/a/54200713/1705598
+func ParseHexColor(s string) (c color.RGBA, err error) {
+	c.A = 0xff
+
+	hexToByte := func(b byte) byte {
+		switch {
+		case b >= '0' && b <= '9':
+			return b - '0'
+		case b >= 'a' && b <= 'f':
+			return b - 'a' + 10
+		case b >= 'A' && b <= 'F':
+			return b - 'A' + 10
+		}
+		err = errInvalidFormat
+		return 0
+	}
+
+	switch len(s) {
+	case 6:
+		c.R = hexToByte(s[0])<<4 + hexToByte(s[1])
+		c.G = hexToByte(s[2])<<4 + hexToByte(s[3])
+		c.B = hexToByte(s[4])<<4 + hexToByte(s[5])
+	case 3:
+		c.R = hexToByte(s[0]) * 17
+		c.G = hexToByte(s[1]) * 17
+		c.B = hexToByte(s[2]) * 17
+	default:
+		err = errInvalidFormat
+	}
+	return
+}
+
+func ColorToHex(c color.RGBA) (s string) {
+	return fmt.Sprintf("%X%X%X", c.R, c.G, c.B)
 }
 
 // Options specifies transformations to be performed on the requested image.
@@ -80,6 +124,9 @@ type Options struct {
 
 	// Automatically find good crop points based on image content.
 	SmartCrop bool
+
+	// For transparent images, set the background color. Specified as HEX value, i.e. #FFAA00
+	BackgroundColor color.RGBA
 }
 
 func (o Options) String() string {
@@ -122,6 +169,9 @@ func (o Options) String() string {
 	}
 	if o.SmartCrop {
 		opts = append(opts, optSmartCrop)
+	}
+	if (o.BackgroundColor != color.RGBA{}) {
+		opts = append(opts, fmt.Sprintf("%s%s", optBackgroundColor, ColorToHex(o.BackgroundColor)))
 	}
 	sort.Strings(opts)
 	return strings.Join(opts, ",")
@@ -278,6 +328,12 @@ func ParseOptions(str string) Options {
 			}
 			if h := size[1]; h != "" {
 				options.Height, _ = strconv.ParseFloat(h, 64)
+			}
+		case strings.HasPrefix(opt, optBackgroundColor):
+			valueStr := strings.TrimPrefix(opt, optBackgroundColor)
+			c, err := ParseHexColor(valueStr)
+			if err == nil {
+				options.BackgroundColor = c
 			}
 		default:
 			if size, err := strconv.ParseFloat(opt, 64); err == nil {

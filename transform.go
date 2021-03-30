@@ -7,6 +7,8 @@ import (
 	"bytes"
 	"fmt"
 	"image"
+	"image/color"
+	"image/draw"
 	_ "image/gif" // register gif format
 	"image/jpeg"
 	"image/png"
@@ -47,6 +49,14 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 	m, format, err := image.Decode(bytes.NewReader(img))
 	if err != nil {
 		return nil, err
+	}
+
+	if (opt.BackgroundColor != color.RGBA{} && format == "png" || format == "tiff") && opt.Format == "jpeg" {
+		ni := image.NewRGBA(m.Bounds())
+		bi := image.NewUniform(opt.BackgroundColor)
+		draw.Draw(ni, m.Bounds(), bi, image.Point{}, draw.Src)
+		draw.Draw(ni, m.Bounds(), m, image.Point{}, draw.Over)
+		m = ni
 	}
 
 	// apply EXIF orientation for jpeg and tiff source images. Read at most
