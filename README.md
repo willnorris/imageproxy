@@ -12,7 +12,7 @@ imageproxy is a caching image proxy server written in go.  It features:
  - support for jpeg, png, webp (decode only), tiff, and gif image formats
    (including animated gifs)
  - caching in-memory, on disk, or with Amazon S3, Google Cloud Storage, Azure
-   Storage, or Redis
+   Storage, Aliyun OSS, or Redis
  - easy deployment, since it's pure go
 
 Personally, I use it primarily to dynamically resize images hosted on my own
@@ -123,7 +123,7 @@ enabled using the `-cache` flag.  It supports the following values:
  - directory on local disk (e.g. `/tmp/imageproxy`) - will cache images
    on disk
 
- - s3 URL (e.g. `s3://region/bucket-name/optional-path-prefix`) - will cache
+ - `s3` URL (e.g. `s3://region/bucket-name/optional-path-prefix`) - will cache
    images on Amazon S3.  This requires either an IAM role and instance profile
    with access to your your bucket or `AWS_ACCESS_KEY_ID` and `AWS_SECRET_KEY`
    environmental variables be set. (Additional methods of loading credentials
@@ -149,13 +149,14 @@ enabled using the `-cache` flag.  It supports the following values:
 
    [aws-options]: https://docs.aws.amazon.com/sdk-for-go/api/aws/#Config
 
- - gcs URL (e.g. `gcs://bucket-name/optional-path-prefix`) - will cache images
+ - `gcs` URL (e.g. `gcs://bucket-name/optional-path-prefix`) - will cache images
    on Google Cloud Storage. Authentication is documented in Google's
    [Application Default Credentials
    docs](https://cloud.google.com/docs/authentication/production#providing_credentials_to_your_application).
- - azure URL (e.g. `azure://container-name/`) - will cache images on
+ - `azure` URL (e.g. `azure://container-name/`) - will cache images on
    Azure Storage.  This requires `AZURESTORAGE_ACCOUNT_NAME` and
    `AZURESTORAGE_ACCESS_KEY` environment variables to bet set.
+ - `oss` URL (e.g. `oss://bucket-name/folder?endpoint=oss-cn-hangzhou.aliyuncs.com`) - will cache images on [Aliyun OSS](https://www.aliyun.com/product/oss). This requires `ALIYUN_ACCESS_KEY_ID` and `ALIYUN_ACCESS_KEY_SECRET` environment variables to bet set.
  - redis URL (e.g. `redis://hostname/`) - will cache images on
    the specified redis host. The full URL syntax is defined by the [redis URI
    registration](https://www.iana.org/assignments/uri-schemes/prov/redis).
