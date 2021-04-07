@@ -142,7 +142,7 @@ enabled using the `-cache` flag.  It supports the following values:
 
        s3://fake-region/bucket/folder?endpoint=minio:9000&disableSSL=1&s3ForcePathStyle=1
 
-   Similarly, for [Digital Ocean Spaces](https://www.digitalocean.com/products/spaces/), 
+   Similarly, for [Digital Ocean Spaces](https://www.digitalocean.com/products/spaces/),
    provide a dummy region value and the appropriate endpoint for your space:
 
        s3://fake-region/bucket/folder?endpoint=sfo2.digitaloceanspaces.com
@@ -228,6 +228,14 @@ flag. By default, this is set to `image/*`, meaning that imageproxy will
 process any image types. You can specify multiple content types as a comma
 separated list, and suffix values with `*` to perform a wildcard match. Set the
 flag to an empty string to proxy all requests, regardless of content type.
+
+### Allowed Transformation Options ###
+
+You can limit that transformation options by using the `allowTransforms` flag.
+By default, this is empty to allows any options, meaning that imageproxy will
+process any image transformation options.
+
+    imageproxy -allowTransforms 200,600x
 
 ### Signed Requests ###
 
