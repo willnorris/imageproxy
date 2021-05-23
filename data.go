@@ -319,15 +319,22 @@ func (r Request) String() string {
 // 	http://localhost/100x200,r90/http://example.com/image.jpg?foo=bar
 // 	http://localhost//http://example.com/image.jpg
 // 	http://localhost/http://example.com/image.jpg
-func NewRequest(r *http.Request, baseURL *url.URL, allowTransforms []string) (*Request, error) {
+func NewRequest(r *http.Request, baseURL *url.URL, allowTransforms []string, defaultTransform string) (*Request, error) {
 	var err error
 	req := &Request{Original: r}
 
 	path := r.URL.EscapedPath()[1:] // strip leading slash
+
+	// ensure leading slash
+	if strings.HasPrefix(path, "http") {
+		path = "/" + path
+	}
+
 	req.URL, err = parseURL(path)
 	if err != nil || !req.URL.IsAbs() {
 		// first segment should be options
 		parts := strings.SplitN(path, "/", 2)
+
 		if len(parts) != 2 {
 			return nil, URLError{"too few path segments", r.URL}
 		}
@@ -339,6 +346,12 @@ func NewRequest(r *http.Request, baseURL *url.URL, allowTransforms []string) (*R
 		}
 
 		var transformOption = parts[0]
+
+		// use defaultTransform
+		if transformOption == "" {
+			transformOption = defaultTransform
+		}
+
 		if len(allowTransforms) > 0 {
 			if !containsString(allowTransforms, transformOption) {
 				return nil, URLError{"transformation option is not allowed", r.URL}
@@ -362,6 +375,7 @@ func NewRequest(r *http.Request, baseURL *url.URL, allowTransforms []string) (*R
 
 	// query string is always part of the remote URL
 	req.URL.RawQuery = r.URL.RawQuery
+
 	return req, nil
 }
 

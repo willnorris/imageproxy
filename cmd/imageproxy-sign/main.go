@@ -81,7 +81,7 @@ func parseURL(s string) *url.URL {
 
 	// first try to parse this as an imageproxy URL, containing
 	// transformation options and the remote URL embedded
-	if r, err := imageproxy.NewRequest(&http.Request{URL: u}, nil, nil); err == nil {
+	if r, err := imageproxy.NewRequest(&http.Request{URL: u}, nil, nil, ""); err == nil {
 		r.Options.Signature = ""
 		r.URL.Fragment = r.Options.String()
 		return r.URL

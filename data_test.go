@@ -166,7 +166,7 @@ func TestNewRequest(t *testing.T) {
 			continue
 		}
 
-		r, err := NewRequest(req, nil, nil)
+		r, err := NewRequest(req, nil, nil, "")
 		if tt.ExpectError {
 			if err == nil {
 				t.Errorf("NewRequest(%v) did not return expected error", req)
@@ -190,7 +190,7 @@ func TestNewRequest_BaseURL(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/x/path", nil)
 	base, _ := url.Parse("https://example.com/")
 
-	r, err := NewRequest(req, base, nil)
+	r, err := NewRequest(req, base, nil, "")
 	if err != nil {
 		t.Errorf("NewRequest(%v, %v) returned unexpected error: %v", req, base, err)
 	}
@@ -201,6 +201,79 @@ func TestNewRequest_BaseURL(t *testing.T) {
 	}
 }
 
+func TestNewRequest_DefaultTransform(t *testing.T) {
+	var defaultOptions = Options{
+		Width:  640,
+		Height: 480,
+	}
+	tests := []struct {
+		URL         string  // input URL to parse as an imageproxy request
+		RemoteURL   string  // expected URL of remote image parsed from input
+		Options     Options // expected options parsed from input
+		ExpectError bool    // whether an error is expected from NewRequest
+	}{
+		// invalid URLs
+		{"http://localhost/", "", emptyOptions, true},
+		{"http://localhost/1/", "", emptyOptions, true},
+		{"http://localhost//example.com/foo", "", emptyOptions, true},
+		{"http://localhost//ftp://example.com/foo", "", emptyOptions, true},
+
+		// invalid options.  These won't return errors, but will not fully parse the options
+		{
+			"http://localhost/s/http://example.com/",
+			"http://example.com/", emptyOptions, false,
+		},
+		{
+			"http://localhost/1xs/http://example.com/",
+			"http://example.com/", Options{Width: 1}, false,
+		},
+
+		// valid URLs
+		{
+			"http://localhost/http://example.com/foo",
+			"http://example.com/foo", defaultOptions, false,
+		},
+		{
+			"http://localhost//http://example.com/foo",
+			"http://example.com/foo", defaultOptions, false,
+		},
+		{
+			"http://localhost//https://example.com/foo",
+			"https://example.com/foo", defaultOptions, false,
+		},
+		{
+			"http://localhost/1x2/http://example.com/foo",
+			"http://example.com/foo", Options{Width: 1, Height: 2}, false,
+		},
+	}
+
+	for _, tt := range tests {
+		req, err := http.NewRequest("GET", tt.URL, nil)
+		if err != nil {
+			t.Errorf("http.NewRequest(%q) returned error: %v", tt.URL, err)
+			continue
+		}
+
+		r, err := NewRequest(req, nil, nil, "640x480")
+		if tt.ExpectError {
+			if err == nil {
+				t.Errorf("NewRequest(%v) did not return expected error", req)
+			}
+			continue
+		} else if err != nil {
+			t.Errorf("NewRequest(%v) return unexpected error: %v", req, err)
+			continue
+		}
+
+		if got, want := r.URL.String(), tt.RemoteURL; got != want {
+			t.Errorf("NewRequest(%q) request URL = %v, want %v", tt.URL, got, want)
+		}
+		if got, want := r.Options, tt.Options; got != want {
+			t.Errorf("NewRequest(%q) request options = %v, want %v", tt.URL, got, want)
+		}
+	}
+}
+
 func TestNewRequest_AllowTransforms(t *testing.T) {
 	var allowTransforms = []string{"200x", "100x150"}
 	base, _ := url.Parse("https://example.com/")
@@ -208,20 +281,20 @@ func TestNewRequest_AllowTransforms(t *testing.T) {
 	for _, transform := range allowTransforms {
 		req, _ := http.NewRequest("GET", fmt.Sprintf("/%s/path", transform), nil)
 
-		_, err := NewRequest(req, base, allowTransforms)
+		_, err := NewRequest(req, base, allowTransforms, "")
 		if err != nil {
 			t.Errorf("NewRequest(%v, %v) returned unexpected error: %v", req, base, err)
 		}
 	}
 
 	req, _ := http.NewRequest("GET", "/300/path", nil)
-	_, err := NewRequest(req, base, allowTransforms)
+	_, err := NewRequest(req, base, allowTransforms, "")
 	if err == nil {
 		t.Errorf("NewRequest(%v, %v) returned expect error", req, base)
 	}
 
 	req, _ = http.NewRequest("GET", "/200x200/path", nil)
-	_, err = NewRequest(req, base, allowTransforms)
+	_, err = NewRequest(req, base, allowTransforms, "")
 	if err == nil {
 		t.Errorf("NewRequest(%v, %v) returned expect error", req, base)
 	}

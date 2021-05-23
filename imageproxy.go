@@ -74,6 +74,9 @@ type Proxy struct {
 	// Allow transformation options. An empty list means no limit.
 	AllowTransforms []string
 
+	// Default transform option, if request transform part is empt.
+	DefaultTransform string
+
 	// Timeout specifies a time limit for requests served by this Proxy.
 	// If a call runs for longer than its time limit, a 504 Gateway Timeout
 	// response is returned.  A Timeout of zero means no timeout.
@@ -154,7 +157,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // serveImage handles incoming requests for proxied images.
 func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
-	req, err := NewRequest(r, p.DefaultBaseURL, p.AllowTransforms)
+	req, err := NewRequest(r, p.DefaultBaseURL, p.AllowTransforms, p.DefaultTransform)
 	if err != nil {
 		msg := fmt.Sprintf("invalid request URL: %v", err)
 		p.log(msg)
