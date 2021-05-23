@@ -44,7 +44,7 @@ var cache tieredCache
 var signatureKeys signatureKeyList
 var scaleUp = flag.Bool("scaleUp", false, "allow images to scale beyond their original dimensions")
 var allowTransforms = flag.String("allowTransforms", "", "comma separated list of allowed transformation options, leave blank to allow all")
-var defaultTrasnform = flag.String("defaultTransform", "", "default transform option, if request transform option is empty")
+var defaultTransform = flag.String("defaultTransform", "", "default transform option, if request transform option is empty")
 var timeout = flag.Duration("timeout", 0, "time limit for requests served by this proxy")
 var verbose = flag.Bool("verbose", false, "print verbose logging messages")
 var _ = flag.Bool("version", false, "Deprecated: this flag does nothing")
@@ -76,8 +76,8 @@ func main() {
 	if *allowTransforms != "" {
 		p.AllowTransforms = strings.Split(*allowTransforms, ",")
 	}
-	if *defaultTrasnform != "" {
-		p.DefaultTransform = *defaultTrasnform
+	if *defaultTransform != "" {
+		p.DefaultTransform = *defaultTransform
 	}
 	p.SignatureKeys = signatureKeys
 	if *baseURL != "" {
