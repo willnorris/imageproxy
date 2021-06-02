@@ -325,6 +325,9 @@ func NewRequest(r *http.Request, baseURL *url.URL, allowTransforms []string, def
 
 	path := r.URL.EscapedPath()[1:] // strip leading slash
 
+	// fix http%3A// -> http://
+	path = strings.Replace(path, "%3A//", "://", 1)
+
 	// ensure leading slash
 	if strings.HasPrefix(path, "http") {
 		path = "/" + path
