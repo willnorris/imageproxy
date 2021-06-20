@@ -1,4 +1,10 @@
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - '**'
 name: tests
 env:
   GO111MODULE: on
@@ -11,13 +17,18 @@ jobs:
           # support the two most recent major go versions
           - 1.x
           - 1.15.x
-        platform: [ubuntu-latest, windows-latest]
+        platform: [ubuntu-latest]
         include:
           # minimum go version that works. This is not necessarily supported in
           # any way, and will be bumped up without notice as needed.  But it at
           # least lets us know what go version should work.
           - go-version: 1.12
             platform: ubuntu-latest
+
+          # include windows, but only with the latest Go version, since there
+          # is very little in the library that is platform specific
+          - go-version: 1.x
+            platform: windows-latest
 
           # only update test coverage stats with most recent go version on linux
           - go-version: 1.x
