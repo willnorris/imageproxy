@@ -2,15 +2,16 @@ module willnorris.com/go/imageproxy
 
 require (
 	cloud.google.com/go/storage v1.15.0
-	github.com/Azure/azure-sdk-for-go v51.1.0+incompatible // indirect
-	github.com/Azure/go-autorest/autorest v0.11.18 // indirect
+	github.com/Azure/azure-sdk-for-go v55.3.0+incompatible // indirect
+	github.com/Azure/go-autorest/autorest v0.11.19 // indirect
 	github.com/Azure/go-autorest/autorest/to v0.4.0 // indirect
 	github.com/PaulARoy/azurestoragecache v0.0.0-20170906084534-3c249a3ba788
 	github.com/aws/aws-sdk-go v1.38.64
 	github.com/die-net/lrucache v0.0.0-20190707192454-883874fe3947
 	github.com/disintegration/imaging v1.6.2
-	github.com/dnaeon/go-vcr v1.0.1 // indirect
+	github.com/dnaeon/go-vcr v1.2.0 // indirect
 	github.com/fcjr/aia-transport-go v1.2.2
+	github.com/gofrs/uuid v4.0.0+incompatible // indirect
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/gorilla/mux v1.8.0
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
@@ -20,8 +21,6 @@ require (
 	github.com/peterbourgon/diskv v0.0.0-20171120014656-2973218375c3
 	github.com/prometheus/client_golang v1.11.0
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
-	github.com/satori/go.uuid v0.0.0-20180103174451-36e9d2ebbde5 // indirect
-	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad // indirect
 	golang.org/x/image v0.0.0-20201208152932-35266b937fa6
 	willnorris.com/go/gifresize v1.0.0
 )
