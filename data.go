@@ -308,38 +308,35 @@ func (r Request) String() string {
 
 // NewRequest parses an http.Request into an imageproxy Request.  Options and
 // the remote image URL are specified in the request path, formatted as:
-// /{options}/{remote_url}.  Options may be omitted, so a request path may
-// simply contain /{remote_url}.  The remote URL must be an absolute "http" or
-// "https" URL, should not be URL encoded, and may contain a query string.
+// /{options}/{remote_url}.  Options may not be omitted, but `x` or `0x0` can
+// be used as noop option (/x/{remote_url}).
+// The remote URL must be an absolute "http(s)" URL unless BaseURL is set.
+// The remote URL may be URL encoded.
 //
 // Assuming an imageproxy server running on localhost, the following are all
 // valid imageproxy requests:
 //
 // 	http://localhost/100x200/http://example.com/image.jpg
 // 	http://localhost/100x200,r90/http://example.com/image.jpg?foo=bar
-// 	http://localhost//http://example.com/image.jpg
-// 	http://localhost/http://example.com/image.jpg
+// 	http://localhost/x/http://example.com/image.jpg
+// 	http://localhost/x/http%3A%2F%2Fexample.com%2Fimage.jpg
 func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 	var err error
 	req := &Request{Original: r}
 
 	path := r.URL.EscapedPath()[1:] // strip leading slash
-	req.URL, err = parseURL(path)
-	if err != nil || !req.URL.IsAbs() {
-		// first segment should be options
-		parts := strings.SplitN(path, "/", 2)
-		if len(parts) != 2 {
-			return nil, URLError{"too few path segments", r.URL}
-		}
-
-		var err error
-		req.URL, err = parseURL(parts[1])
-		if err != nil {
-			return nil, URLError{fmt.Sprintf("unable to parse remote URL: %v", err), r.URL}
-		}
-
-		req.Options = ParseOptions(parts[0])
+	// first segment should be options
+	parts := strings.SplitN(path, "/", 2)
+	if len(parts) != 2 {
+		return nil, URLError{"too few path segments", r.URL}
 	}
+
+	req.URL, err = parseURL(parts[1])
+	if err != nil {
+		return nil, URLError{fmt.Sprintf("unable to parse remote URL: %v", err), r.URL}
+	}
+
+	req.Options = ParseOptions(parts[0])
 
 	if baseURL != nil {
 		req.URL = baseURL.ResolveReference(req.URL)
@@ -353,8 +350,16 @@ func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 		return nil, URLError{"remote URL must have http or https scheme", r.URL}
 	}
 
-	// query string is always part of the remote URL
-	req.URL.RawQuery = r.URL.RawQuery
+	// only append original (unencoded) query string
+	// if we don't have one already. Example:
+	// http://localhost/x/https%3A%2F%2Fexample.com%2Ffoo%2Fbar%3Fhello%3Dworld?more=query
+	// should be https://example.com/foo/bar?hello=world
+	// not https://example.com/foo/bar?more=query
+	if len(r.URL.RawQuery) > 0 && len(req.URL.RawQuery) == 0 {
+		// query string is always part of the remote URL
+		req.URL.RawQuery = r.URL.RawQuery
+	}
+
 	return req, nil
 }
 
@@ -363,6 +368,42 @@ var reCleanedURL = regexp.MustCompile(`^(https?):/+([^/])`)
 // parseURL parses s as a URL, handling URLs that have been munged by
 // path.Clean or a webserver that collapses multiple slashes.
 func parseURL(s string) (*url.URL, error) {
+	var err error
+
+	// convert http:/example.com to http://example.com
 	s = reCleanedURL.ReplaceAllString(s, "$1://$2")
+
+	s, err = decodeURL(s)
+	if err != nil {
+		return nil, err
+	}
+
 	return url.Parse(s)
+}
+
+var reAbsURL = regexp.MustCompile(`^https?`)
+var reDecodedURL = regexp.MustCompile(`^https?://`)
+
+func decodeURL(s string) (string, error) {
+	var err error
+	// don't try to decode unless looks like abs url
+	if !reAbsURL.MatchString(s) {
+		return s, nil
+	}
+
+	// preserve original value in case we are not able to decode
+	decodedURL := s
+	maxDecodeAttempts := 3
+	for i := 0; !reDecodedURL.MatchString(decodedURL) && i < maxDecodeAttempts; i++ {
+		decodedURL, err = url.QueryUnescape(decodedURL)
+		if err != nil {
+			return "", URLError{"remote URL could not be decoded", nil}
+		}
+	}
+	if reDecodedURL.MatchString(decodedURL) {
+		return decodedURL, nil
+	} else {
+		// return original value. might be relative url (e.g. https/foo.jpg)
+		return s, nil
+	}
 }

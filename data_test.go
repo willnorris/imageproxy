@@ -113,6 +113,9 @@ func TestNewRequest(t *testing.T) {
 		{"http://localhost//example.com/foo", "", emptyOptions, true},
 		{"http://localhost//ftp://example.com/foo", "", emptyOptions, true},
 
+		// invalid URL because options now required
+		{"http://localhost/http://example.com/foo", "", emptyOptions, true},
+
 		// invalid options.  These won't return errors, but will not fully parse the options
 		{
 			"http://localhost/s/http://example.com/",
@@ -125,15 +128,19 @@ func TestNewRequest(t *testing.T) {
 
 		// valid URLs
 		{
-			"http://localhost/http://example.com/foo",
-			"http://example.com/foo", emptyOptions, false,
-		},
-		{
 			"http://localhost//http://example.com/foo",
 			"http://example.com/foo", emptyOptions, false,
 		},
 		{
-			"http://localhost//https://example.com/foo",
+			"http://localhost/x/http://example.com/foo",
+			"http://example.com/foo", emptyOptions, false,
+		},
+		{
+			"http://localhost/x/http://example.com/foo",
+			"http://example.com/foo", emptyOptions, false,
+		},
+		{
+			"http://localhost/0x0/https://example.com/foo",
 			"https://example.com/foo", emptyOptions, false,
 		},
 		{
@@ -141,20 +148,45 @@ func TestNewRequest(t *testing.T) {
 			"http://example.com/foo", Options{Width: 1, Height: 2}, false,
 		},
 		{
-			"http://localhost//http://example.com/foo?bar",
+			"http://localhost/0x0/http://example.com/foo?bar",
 			"http://example.com/foo?bar", emptyOptions, false,
 		},
 		{
-			"http://localhost/http:/example.com/foo",
+			"http://localhost/x/http:/example.com/foo",
 			"http://example.com/foo", emptyOptions, false,
 		},
 		{
-			"http://localhost/http:///example.com/foo",
+			"http://localhost/x/http:///example.com/foo",
 			"http://example.com/foo", emptyOptions, false,
 		},
 		{ // escaped path
-			"http://localhost/http://example.com/%2C",
+			"http://localhost/x/http://example.com/%2C",
 			"http://example.com/%2C", emptyOptions, false,
+		},
+		// unescaped querystring
+		{
+			"http://localhost/x/http://example.com/foo/bar?hello=world",
+			"http://example.com/foo/bar?hello=world", emptyOptions, false,
+		},
+		// escaped remote including querystring
+		{
+			"http://localhost/x/http%3A%2F%2Fexample.com%2Ffoo%2Fbar%3Fhello%3Dworld",
+			"http://example.com/foo/bar?hello=world", emptyOptions, false,
+		},
+		{
+			"http://localhost/x/https%3A%2F%2Fexample.com%2Ffoo%2Fbar%3Fhello%3Dworld",
+			"https://example.com/foo/bar?hello=world", emptyOptions, false,
+		},
+		// multi-escaped remote
+		{
+			"http://localhost/x/https%25253A%25252F%25252Fexample.com%25252Ffoo%25252Fbar%25253Fhello%25253Dworld",
+			"https://example.com/foo/bar?hello=world", emptyOptions, false,
+		},
+		// escaped remote containing double escaped url as param
+		// test that we don't over-decode remote url breaking parameters
+		{
+			"http://localhost/x/http%3A%2F%2Fexample.com%2Ffoo%2Fbar%3Fhello%3Dworld%26url%3Dhttps%253A%252F%252Fwww.example.com%252F%253Ffoo%253Dbar%2526hello%253Dworld",
+			"http://example.com/foo/bar?hello=world&url=https%3A%2F%2Fwww.example.com%2F%3Ffoo%3Dbar%26hello%3Dworld", emptyOptions, false,
 		},
 	}
 
@@ -186,16 +218,72 @@ func TestNewRequest(t *testing.T) {
 }
 
 func TestNewRequest_BaseURL(t *testing.T) {
-	req, _ := http.NewRequest("GET", "/x/path", nil)
-	base, _ := url.Parse("https://example.com/")
-
-	r, err := NewRequest(req, base)
-	if err != nil {
-		t.Errorf("NewRequest(%v, %v) returned unexpected error: %v", req, base, err)
+	tests := []struct {
+		BaseURL     string  // base url to use
+		URL         string  // input URL to parse as an imageproxy request
+		RemoteURL   string  // expected URL of remote image parsed from input
+		Options     Options // expected options parsed from input
+		ExpectError bool    // whether an error is expected from NewRequest
+	}{
+		{
+			"http://example.com/",
+			"http://localhost/x/foo",
+			"http://example.com/foo", emptyOptions, false,
+		},
+		{
+			"http://example.com/hello",
+			"http://localhost/x//foo/bar",
+			"http://example.com/foo/bar", emptyOptions, false,
+		},
+		// if BaseURL doesn't have trailing slash
+		// URL.ResolveReference will strip last directory
+		{
+			"http://example.com/hello/",
+			"http://localhost/x/foo/bar",
+			"http://example.com/hello/foo/bar", emptyOptions, false,
+		},
+		{
+			"http://example.com/hello/",
+			"http://localhost/x/../foo/bar",
+			"http://example.com/foo/bar", emptyOptions, false,
+		},
+		// relative remote urls should not have URL Decoding even if
+		// they start with http... (dirname)
+		{
+			"http://example.com/hello/",
+			"http://localhost/x/httpdir/rela%20tive",
+			"http://example.com/hello/httpdir/rela%20tive", emptyOptions, false,
+		},
 	}
 
-	want := "https://example.com/path#0x0"
-	if got := r.String(); got != want {
-		t.Errorf("NewRequest(%v, %v) returned %q, want %q", req, base, got, want)
+	for _, tt := range tests {
+		req, err := http.NewRequest("GET", tt.URL, nil)
+		if err != nil {
+			t.Errorf("http.NewRequest(%q) returned error: %v", tt.URL, err)
+			continue
+		}
+		base, err := url.Parse(tt.BaseURL)
+		if err != nil {
+			t.Errorf("url.Parse(%q) returned error: %v", tt.BaseURL, err)
+			continue
+		}
+
+		r, err := NewRequest(req, base)
+		if tt.ExpectError {
+			if err == nil {
+				t.Errorf("NewRequest(%v, %v) did not return expected error", req, base)
+			}
+			continue
+		} else if err != nil {
+			t.Errorf("NewRequest(%v, %v) returned unexpected error: %v", req, base, err)
+			continue
+		}
+
+		if got, want := r.URL.String(), tt.RemoteURL; got != want {
+			t.Errorf("NewRequest(%q, %q) request URL = %v, want %v", tt.URL, tt.BaseURL, got, want)
+		}
+		if got, want := r.Options, tt.Options; got != want {
+			t.Errorf("NewRequest(%q, %q) request options = %v, want %v", tt.URL, tt.BaseURL, got, want)
+		}
 	}
 }
