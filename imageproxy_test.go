@@ -483,6 +483,7 @@ func TestTransformingTransport(t *testing.T) {
 	tr := &TransformingTransport{
 		Transport:     testTransport{},
 		CachingClient: client,
+		limiter:       make(chan struct{}, 1),
 	}
 	client.Transport = tr
 
