@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -32,7 +33,7 @@ import (
 
 const defaultMemorySize = 100
 
-var addr = flag.String("addr", "localhost:8080", "TCP address to listen on")
+var addr = flag.String("addr", "localhost:8080", "address to listen on, could be either a TCP address or a UNIX domain socket path prefixed with unix:")
 var allowHosts = flag.String("allowHosts", "", "comma separated list of allowed remote hosts")
 var denyHosts = flag.String("denyHosts", "", "comma separated list of denied remote hosts")
 var referrers = flag.String("referrers", "", "comma separated list of allowed referring hosts")
@@ -86,15 +87,25 @@ func main() {
 	p.Verbose = *verbose
 	p.UserAgent = *userAgent
 
-	server := &http.Server{
-		Addr:    *addr,
-		Handler: p,
-	}
-
 	r := mux.NewRouter().SkipClean(true).UseEncodedPath()
 	r.PathPrefix("/").Handler(p)
-	fmt.Printf("imageproxy listening on %s\n", server.Addr)
-	log.Fatal(http.ListenAndServe(*addr, r))
+
+	fmt.Printf("imageproxy listening on %s\n", *addr)
+
+	var listener net.Listener
+	var err error
+
+	if strings.HasPrefix(*addr, "unix:") {
+		listener, err = net.Listen("unix", (*addr)[5:])
+	} else {
+		listener, err = net.Listen("tcp", *addr)
+	}
+
+	if err != nil {
+		log.Fatalf("listen failed: %v", err)
+	}
+
+	log.Fatal(http.Serve(listener, r))
 }
 
 type signatureKeyList [][]byte
