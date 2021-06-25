@@ -42,6 +42,7 @@ var baseURL = flag.String("baseURL", "", "default base URL for relative remote U
 var cache tieredCache
 var signatureKeys signatureKeyList
 var scaleUp = flag.Bool("scaleUp", false, "allow images to scale beyond their original dimensions")
+var allowTransforms = flag.String("allowTransforms", "", "comma separated list of allowed transformation options, leave blank to allow all")
 var timeout = flag.Duration("timeout", 0, "time limit for requests served by this proxy")
 var verbose = flag.Bool("verbose", false, "print verbose logging messages")
 var _ = flag.Bool("version", false, "Deprecated: this flag does nothing")
@@ -69,6 +70,9 @@ func main() {
 	}
 	if *contentTypes != "" {
 		p.ContentTypes = strings.Split(*contentTypes, ",")
+	}
+	if *allowTransforms != "" {
+		p.AllowTransforms = strings.Split(*allowTransforms, ",")
 	}
 	p.SignatureKeys = signatureKeys
 	if *baseURL != "" {

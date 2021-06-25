@@ -4,6 +4,7 @@
 package imageproxy
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"testing"
@@ -165,7 +166,7 @@ func TestNewRequest(t *testing.T) {
 			continue
 		}
 
-		r, err := NewRequest(req, nil)
+		r, err := NewRequest(req, nil, nil)
 		if tt.ExpectError {
 			if err == nil {
 				t.Errorf("NewRequest(%v) did not return expected error", req)
@@ -189,7 +190,7 @@ func TestNewRequest_BaseURL(t *testing.T) {
 	req, _ := http.NewRequest("GET", "/x/path", nil)
 	base, _ := url.Parse("https://example.com/")
 
-	r, err := NewRequest(req, base)
+	r, err := NewRequest(req, base, nil)
 	if err != nil {
 		t.Errorf("NewRequest(%v, %v) returned unexpected error: %v", req, base, err)
 	}
@@ -197,5 +198,31 @@ func TestNewRequest_BaseURL(t *testing.T) {
 	want := "https://example.com/path#0x0"
 	if got := r.String(); got != want {
 		t.Errorf("NewRequest(%v, %v) returned %q, want %q", req, base, got, want)
+	}
+}
+
+func TestNewRequest_AllowTransforms(t *testing.T) {
+	var allowTransforms = []string{"200x", "100x150"}
+	base, _ := url.Parse("https://example.com/")
+
+	for _, transform := range allowTransforms {
+		req, _ := http.NewRequest("GET", fmt.Sprintf("/%s/path", transform), nil)
+
+		_, err := NewRequest(req, base, allowTransforms)
+		if err != nil {
+			t.Errorf("NewRequest(%v, %v) returned unexpected error: %v", req, base, err)
+		}
+	}
+
+	req, _ := http.NewRequest("GET", "/300/path", nil)
+	_, err := NewRequest(req, base, allowTransforms)
+	if err == nil {
+		t.Errorf("NewRequest(%v, %v) returned expect error", req, base)
+	}
+
+	req, _ = http.NewRequest("GET", "/200x200/path", nil)
+	_, err = NewRequest(req, base, allowTransforms)
+	if err == nil {
+		t.Errorf("NewRequest(%v, %v) returned expect error", req, base)
 	}
 }

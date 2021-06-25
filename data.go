@@ -319,7 +319,7 @@ func (r Request) String() string {
 // 	http://localhost/100x200,r90/http://example.com/image.jpg?foo=bar
 // 	http://localhost//http://example.com/image.jpg
 // 	http://localhost/http://example.com/image.jpg
-func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
+func NewRequest(r *http.Request, baseURL *url.URL, allowTransforms []string) (*Request, error) {
 	var err error
 	req := &Request{Original: r}
 
@@ -338,7 +338,14 @@ func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 			return nil, URLError{fmt.Sprintf("unable to parse remote URL: %v", err), r.URL}
 		}
 
-		req.Options = ParseOptions(parts[0])
+		var transformOption = parts[0]
+		if len(allowTransforms) > 0 {
+			if !containsString(allowTransforms, transformOption) {
+				return nil, URLError{"transformation option is not allowed", r.URL}
+			}
+		}
+
+		req.Options = ParseOptions(transformOption)
 	}
 
 	if baseURL != nil {
@@ -365,4 +372,13 @@ var reCleanedURL = regexp.MustCompile(`^(https?):/+([^/])`)
 func parseURL(s string) (*url.URL, error) {
 	s = reCleanedURL.ReplaceAllString(s, "$1://$2")
 	return url.Parse(s)
+}
+
+func containsString(strs []string, str string) bool {
+	for _, s := range strs {
+		if s == str {
+			return true
+		}
+	}
+	return false
 }
