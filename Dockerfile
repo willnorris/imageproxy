@@ -1,5 +1,4 @@
-FROM golang:1.9 as build
-MAINTAINER Will Norris <will@willnorris.com>
+FROM golang:1.15 as build
 
 WORKDIR /go/src/willnorris.com/go/imageproxy
 ADD . .
@@ -8,7 +7,7 @@ WORKDIR /go/src/willnorris.com/go/imageproxy/cmd/imageproxy
 RUN go-wrapper download
 RUN CGO_ENABLED=0 GOOS=linux go-wrapper install
 
-FROM alpine:3.8
+FROM alpine:3.14
 RUN apk update && apk add pngquant jpegoptim libwebp-tools
 
 WORKDIR /go/bin
