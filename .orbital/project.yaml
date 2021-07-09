@@ -1,0 +1,12 @@
+---
+schema_version: 1
+
+default_environment: staging
+
+artifacts:
+  imageproxy:
+    build_steps:
+      - type: docker_image
+        spec_type: Dockerfile
+        image_name: gcr.io/covalent-project/imageproxy
+        source_path: "."

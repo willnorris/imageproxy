@@ -1,0 +1,10 @@
+---
+apiVersion: appctl.gke.io/v1beta1
+format: KustomizeFormat
+kind: Config
+creationTimestamp: null
+
+application_name: imageproxy
+app_repo_url: https://github.com/covalenthq/imageproxy
+config_path: .appctl/config
+delivery_path: .appctl/delivery
