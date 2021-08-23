@@ -4,6 +4,7 @@
 package imageproxy
 
 import (
+	"encoding/base64"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -317,6 +318,7 @@ func (r Request) String() string {
 //
 // 	http://localhost/100x200/http://example.com/image.jpg
 // 	http://localhost/100x200,r90/http://example.com/image.jpg?foo=bar
+// 	http://localhost/100x200,r90/http://example.com/image.jpg@query-Zm9vPWJhcg==
 // 	http://localhost//http://example.com/image.jpg
 // 	http://localhost/http://example.com/image.jpg
 func NewRequest(r *http.Request, baseURL *url.URL, allowTransforms []string, defaultTransform string) (*Request, error) {
@@ -324,6 +326,12 @@ func NewRequest(r *http.Request, baseURL *url.URL, allowTransforms []string, def
 	req := &Request{Original: r}
 
 	path := r.URL.EscapedPath()[1:] // strip leading slash
+
+	newPath, rawQuery, changed := base64DecodeRawQuery(path)
+	if changed {
+		path = newPath
+		r.URL.RawQuery = rawQuery
+	}
 
 	// fix http%3A// -> http://
 	path = strings.Replace(path, "%3A//", "://", 1)
@@ -398,4 +406,33 @@ func containsString(strs []string, str string) bool {
 		}
 	}
 	return false
+}
+
+// base64DecodeRawQuery for support Aliyun OSS ProxyMirror cache to storage as a file.
+// It try to decode the query part of the URL that has @query- prefix, if not exist @query- prefix do nothing.
+// https://foo.com/2021/07/16/e47ae22d9d558b2e149a33f95d5c98af.png@query-aW1hZ2VWaWV3Mi8yL3cvMTEyMC9xLzkwL2ludGVybGFjZS8xL2lnbm9yZS1lcnJvci8x
+// https://foo.com/2021/07/16/e47ae22d9d558b2e149a33f95d5c98af.png?imageView2/2/w/1120/q/90/interlace/1/ignore-error/1
+func base64DecodeRawQuery(path string) (newPath string, rawQuery string, changed bool) {
+	pathParts := strings.Split(strings.TrimSpace(path), "/")
+	lastPart := pathParts[len(pathParts)-1]
+
+	// foo-bar.jpg@query-Z2V0P2NvZGU9TkRRME9UYzNPR00yTWpWaE5HRTNNR0psTVRobU5tTTRPREJtWldKbU1tSXNNVFl5T1RVek5UTTFPVEkzTXclM0QlM0Q=
+	// foo-bar.jpg?imageView2/2/w/1120/q/90/interlace/1/ignore-error/1
+	var re = regexp.MustCompile(`(?i)@query-`)
+	queryParts := re.Split(lastPart, -1)
+	if len(queryParts) == 2 {
+		queryBase64Part := queryParts[1]
+		rawBytes, err := base64.StdEncoding.DecodeString(queryBase64Part)
+		if err != nil {
+			// If invalid return raw path
+			return path, "", false
+		}
+		lastPart = queryParts[0]
+		rawQuery = string(rawBytes)
+	}
+
+	pathParts[len(pathParts)-1] = lastPart
+	newPath = strings.Join(pathParts, "/")
+
+	return newPath, rawQuery, true
 }

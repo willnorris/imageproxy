@@ -35,6 +35,16 @@ can see the go versions that are tested against in
 
 imageproxy URLs are of the form `http://localhost/{options}/{remote_url}`.
 
+### Safe URL
+
+In some case, raw URL may have a complex query string, so you can use base64 query like this:
+
+http://localhost/https://foo.com/bar/dar.jpg@query-Zm9vPWJhcg==
+
+Is same as:
+
+http://localhost/https://foo.com/bar/dar.jpg?foo=bar
+
 ### Options
 
 Options are available for cropping, resizing, rotation, flipping, and digital

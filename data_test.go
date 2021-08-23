@@ -303,3 +303,42 @@ func TestNewRequest_AllowTransforms(t *testing.T) {
 		t.Errorf("NewRequest(%v, %v) returned expect error", req, base)
 	}
 }
+
+func Test_base64DecodeRawQuery(t *testing.T) {
+	newPath, _, changed := base64DecodeRawQuery("/foo/bar.jpg?a=1")
+	if changed {
+		t.Errorf("Expect no change")
+	}
+	if newPath != "/foo/bar.jpg?a=1" {
+		t.Errorf("Expect return same")
+	}
+
+	newPath, _, changed = base64DecodeRawQuery("https://google.com/foo/bar.jpg?a=1")
+	if changed {
+		t.Errorf("Expect no change")
+	}
+	if newPath != "https://google.com/foo/bar.jpg?a=1" {
+		t.Errorf("Expect return same")
+	}
+
+	path := "https://foo.com/image/Z2V0P2NvZGU9TkRRME9UYzNPR00yTWpWaE5HRTNNR0psTVRobU5tTTRPREJtWldKbU1tSXNNVFl5T1RVek5UTTFPVEkzTXclM0QlM0Q="
+	newPath, _, changed = base64DecodeRawQuery(path)
+	if changed {
+		t.Errorf("Expect no change")
+	}
+	if path != newPath {
+		t.Errorf("Expect return same")
+	}
+
+	path = "https://foo.com/2021/07/16/e47ae22d9d558b2e149a33f95d5c98af.png@query-aW1hZ2VWaWV3Mi8yL3cvMTEyMC9xLzkwL2ludGVybGFjZS8xL2lnbm9yZS1lcnJvci8x"
+	out, rawQuery, changed := base64DecodeRawQuery(path)
+	if !changed {
+		t.Errorf("Expect change")
+	}
+	if out != "https://foo.com/2021/07/16/e47ae22d9d558b2e149a33f95d5c98af.png" {
+		t.Errorf("Error got %s", out)
+	}
+	if rawQuery != "imageView2/2/w/1120/q/90/interlace/1/ignore-error/1" {
+		t.Errorf("Error got %s", rawQuery)
+	}
+}
