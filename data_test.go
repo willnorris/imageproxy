@@ -330,7 +330,7 @@ func Test_base64DecodeRawQuery(t *testing.T) {
 		t.Errorf("Expect return same")
 	}
 
-	path = "https://foo.com/2021/07/16/e47ae22d9d558b2e149a33f95d5c98af.png@query-aW1hZ2VWaWV3Mi8yL3cvMTEyMC9xLzkwL2ludGVybGFjZS8xL2lnbm9yZS1lcnJvci8x"
+	path = "https://foo.com/2021/07/16/e47ae22d9d558b2e149a33f95d5c98af.png/query-aW1hZ2VWaWV3Mi8yL3cvMTEyMC9xLzkwL2ludGVybGFjZS8xL2lnbm9yZS1lcnJvci8x"
 	out, rawQuery, changed := base64DecodeRawQuery(path)
 	if !changed {
 		t.Errorf("Expect change")

@@ -39,7 +39,7 @@ imageproxy URLs are of the form `http://localhost/{options}/{remote_url}`.
 
 In some case, raw URL may have a complex query string, so you can use base64 query like this:
 
-http://localhost/https://foo.com/bar/dar.jpg@query-Zm9vPWJhcg==
+http://localhost/https://foo.com/bar/dar.jpg/query-Zm9vPWJhcg==
 
 Is same as:
 
