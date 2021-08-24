@@ -426,7 +426,7 @@ func base64DecodeRawQuery(path string) (newPath string, rawQuery string, changed
 	}
 
 	queryBase64Part := re.ReplaceAllString(lastPart, "")
-	rawBytes, err := base64.StdEncoding.DecodeString(queryBase64Part)
+	rawBytes, err := base64.RawURLEncoding.DecodeString(queryBase64Part)
 	if err != nil {
 		// If invalid return raw path
 		return path, "", false

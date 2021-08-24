@@ -341,4 +341,16 @@ func Test_base64DecodeRawQuery(t *testing.T) {
 	if rawQuery != "imageView2/2/w/1120/q/90/interlace/1/ignore-error/1" {
 		t.Errorf("Error got %s", rawQuery)
 	}
+
+	path = "https://p1-tt.byteimg.com/origin/pgc-image/75c0212c48374e93809ed2b6f58994a3/query-ZnJvbT1wYw"
+	out, rawQuery, changed = base64DecodeRawQuery(path)
+	if !changed {
+		t.Errorf("Expect change")
+	}
+	if out != "https://p1-tt.byteimg.com/origin/pgc-image/75c0212c48374e93809ed2b6f58994a3" {
+		t.Errorf("Error got %s", out)
+	}
+	if rawQuery != "from=pc" {
+		t.Errorf("Error got %s", rawQuery)
+	}
 }
