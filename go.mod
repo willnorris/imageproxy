@@ -1,7 +1,7 @@
 module willnorris.com/go/imageproxy
 
 require (
-	cloud.google.com/go/storage v1.15.0
+	cloud.google.com/go/storage v1.16.1
 	github.com/Azure/azure-sdk-for-go v55.3.0+incompatible // indirect
 	github.com/Azure/go-autorest/autorest v0.11.19 // indirect
 	github.com/Azure/go-autorest/autorest/to v0.4.0 // indirect
