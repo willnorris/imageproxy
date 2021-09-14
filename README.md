@@ -22,7 +22,7 @@ additional image adjustment options.
 
 I aim to keep imageproxy compatible with the two [most recent major go
 releases][]. I also keep track of the minimum go version that still works
-(currently go1.11 with modules enabled), but that might change at any time. You
+(currently go1.13 with modules enabled), but that might change at any time. You
 can see the go versions that are tested against in
 [.github/workflows/tests.yml][].
 
