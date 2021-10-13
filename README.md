@@ -358,6 +358,10 @@ the container is running as a user that has write permission to the mounted host
 directory.  See more details in
 [#198](https://github.com/willnorris/imageproxy/issues/198).
 
+Note that all configuration options can be set using [environment
+variables](#environment-variables), which is often the preferred approach for
+containers.
+
 ### nginx ###
 
 Use the `proxy_pass` directive to send requests to your imageproxy instance.
