@@ -98,7 +98,7 @@ image][material-animation] resized to 200px square and rotated 270 degrees:
 
 Install the package using:
 
-    go get willnorris.com/go/imageproxy/cmd/imageproxy
+    go install willnorris.com/go/imageproxy/cmd/imageproxy@latest
 
 Once installed, ensure `$GOPATH/bin` is in your `$PATH`, then run the proxy
 using:
@@ -340,11 +340,11 @@ in the [README](https://github.com/oreillymedia/prototype-imageproxy/blob/master
 
 ### Docker ###
 
-A docker image is available at [`willnorris/imageproxy`](https://registry.hub.docker.com/r/willnorris/imageproxy).
+A docker image is available at [`ghcr.io/willnorris/imageproxy`](https://github.com/willnorris/imageproxy/pkgs/container/imageproxy).
 
 You can run it by
 ```
-docker run -p 8080:8080 willnorris/imageproxy -addr 0.0.0.0:8080
+docker run -p 8080:8080 ghcr.io/willnorris/imageproxy -addr 0.0.0.0:8080
 ```
 
 Or in your Dockerfile:
