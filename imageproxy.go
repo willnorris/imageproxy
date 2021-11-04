@@ -85,6 +85,10 @@ type Proxy struct {
 
 	// The User-Agent used by imageproxy when requesting origin image
 	UserAgent string
+
+	// PassRequestHeaders identifies HTTP headers to pass from inbound
+	// requests to the proxied server.
+	PassRequestHeaders []string
 }
 
 // NewProxy constructs a new proxy.  The provided http RoundTripper will be
@@ -178,6 +182,9 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	if p.IncludeReferer {
 		// pass along the referer header from the original request
 		copyHeader(actualReq.Header, r.Header, "referer")
+	}
+	if len(p.PassRequestHeaders) != 0 {
+		copyHeader(actualReq.Header, r.Header, p.PassRequestHeaders...)
 	}
 	if p.FollowRedirects {
 		// FollowRedirects is true (default), ensure that the redirected host is allowed
