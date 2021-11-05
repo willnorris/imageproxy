@@ -39,6 +39,7 @@ var referrers = flag.String("referrers", "", "comma separated list of allowed re
 var includeReferer = flag.Bool("includeReferer", false, "include referer header in remote requests")
 var followRedirects = flag.Bool("followRedirects", true, "follow redirects")
 var baseURL = flag.String("baseURL", "", "default base URL for relative remote URLs")
+var passRequestHeader = flag.String("passRequestHeader", "", "default authentication header")
 var cache tieredCache
 var signatureKeys signatureKeyList
 var scaleUp = flag.Bool("scaleUp", false, "allow images to scale beyond their original dimensions")
@@ -79,6 +80,7 @@ func main() {
 		}
 	}
 
+	p.DefaultPassRequestHeader = *passRequestHeader
 	p.IncludeReferer = *includeReferer
 	p.FollowRedirects = *followRedirects
 	p.Timeout = *timeout

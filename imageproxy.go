@@ -53,6 +53,10 @@ type Proxy struct {
 	// is included in remote requests.
 	IncludeReferer bool
 
+	// IncludeReferer controls whether the original Referer request header
+	// is included in remote requests.
+	DefaultPassRequestHeader string
+
 	// FollowRedirects controls whether imageproxy will follow redirects or not.
 	FollowRedirects bool
 
@@ -149,22 +153,6 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.ServeHTTP(w, r)
 }
 
-//get authorization header value when query param authHeaderKey exists
-func getAuthHeader(r *http.Request) string {
-	if len(r.URL.Query()) > 0 && len(r.URL.Query()["authHeaderKey"]) > 0 {
-		authHeaderKey := getAuthHeaderKey(r)
-		if len(r.Header.Get(authHeaderKey)) > 0 {
-			return r.Header.Get(authHeaderKey)
-		}
-	}
-	return ""
-}
-
-func getAuthHeaderKey(r *http.Request) string {
-	authHeaderKey := r.URL.Query().Get("authHeaderKey")
-	return authHeaderKey
-}
-
 // serveImage handles incoming requests for proxied images.
 func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	req, err := NewRequest(r, p.DefaultBaseURL)
@@ -195,9 +183,8 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 		// pass along the referer header from the original request
 		copyHeader(actualReq.Header, r.Header, "referer")
 	}
-	authHeader := getAuthHeader(r)
-	if authHeader != "" {
-		actualReq.Header.Set(getAuthHeaderKey(r), authHeader)
+	if p.DefaultPassRequestHeader != "" {
+		actualReq.Header.Set(p.DefaultPassRequestHeader, r.Header.Get(p.DefaultPassRequestHeader))
 	}
 	if p.FollowRedirects {
 		// FollowRedirects is true (default), ensure that the redirected host is allowed
