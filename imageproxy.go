@@ -138,7 +138,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.URL.Path == "/metrics" {
-		var h http.Handler = promhttp.Handler()
+		var h = promhttp.Handler()
 		h.ServeHTTP(w, r)
 		return
 	}
