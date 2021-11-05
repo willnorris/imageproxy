@@ -63,28 +63,10 @@ func TestCopyHeader(t *testing.T) {
 
 		// copy headers
 		{
-			dst:  http.Header{},
-			src:  http.Header{"A": []string{"a"}},
-			keys: nil,
-			want: http.Header{"A": []string{"a"}},
-		},
-		{
-			dst:  http.Header{"A": []string{"a"}},
-			src:  http.Header{"B": []string{"b"}},
-			keys: nil,
-			want: http.Header{"A": []string{"a"}, "B": []string{"b"}},
-		},
-		{
 			dst:  http.Header{"A": []string{"a"}},
 			src:  http.Header{"B": []string{"b"}, "C": []string{"c"}},
 			keys: []string{"B"},
 			want: http.Header{"A": []string{"a"}, "B": []string{"b"}},
-		},
-		{
-			dst:  http.Header{"A": []string{"a1"}},
-			src:  http.Header{"A": []string{"a2"}},
-			keys: nil,
-			want: http.Header{"A": []string{"a1", "a2"}},
 		},
 	}
 

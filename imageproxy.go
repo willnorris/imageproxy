@@ -273,17 +273,11 @@ func peekContentType(p *bufio.Reader) string {
 	return http.DetectContentType(byt)
 }
 
-// copyHeader copies header values from src to dst, adding to any existing
-// values with the same header name.  If keys is not empty, only those header
-// keys will be copied.
-func copyHeader(dst, src http.Header, keys ...string) {
-	if len(keys) == 0 {
-		for k := range src {
-			keys = append(keys, k)
-		}
-	}
-	for _, key := range keys {
-		k := http.CanonicalHeaderKey(key)
+// copyHeader copies values for specified headers from src to dst, adding to
+// any existing values with the same header name.
+func copyHeader(dst, src http.Header, headerNames ...string) {
+	for _, name := range headerNames {
+		k := http.CanonicalHeaderKey(name)
 		for _, v := range src[k] {
 			dst.Add(k, v)
 		}
