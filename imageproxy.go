@@ -31,6 +31,9 @@ import (
 	tphttp "willnorris.com/go/imageproxy/third_party/http"
 )
 
+// Maximum number of redirection-followings allowed.
+const maxRedirects = 10
+
 // Proxy serves image requests.
 type Proxy struct {
 	Client *http.Client // client used to fetch remote URLs
@@ -189,6 +192,12 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	if p.FollowRedirects {
 		// FollowRedirects is true (default), ensure that the redirected host is allowed
 		p.Client.CheckRedirect = func(newreq *http.Request, via []*http.Request) error {
+			if len(via) > maxRedirects {
+				if p.Verbose {
+					p.logf("followed too many redirects (%d).", len(via))
+				}
+				return errTooManyRedirects
+			}
 			if hostMatches(p.DenyHosts, newreq.URL) || (len(p.AllowHosts) > 0 && !hostMatches(p.AllowHosts, newreq.URL)) {
 				http.Error(w, msgNotAllowedInRedirect, http.StatusForbidden)
 				return errNotAllowed
@@ -285,9 +294,10 @@ func copyHeader(dst, src http.Header, headerNames ...string) {
 }
 
 var (
-	errReferrer   = errors.New("request does not contain an allowed referrer")
-	errDeniedHost = errors.New("request contains a denied host")
-	errNotAllowed = errors.New("request does not contain an allowed host or valid signature")
+	errReferrer         = errors.New("request does not contain an allowed referrer")
+	errDeniedHost       = errors.New("request contains a denied host")
+	errNotAllowed       = errors.New("request does not contain an allowed host or valid signature")
+	errTooManyRedirects = errors.New("too many redirects")
 
 	msgNotAllowed           = "requested URL is not allowed"
 	msgNotAllowedInRedirect = "requested URL in redirect is not allowed"
