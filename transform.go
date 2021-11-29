@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"fmt"
 	"image"
+	"image/color"
 	_ "image/gif" // register gif format
 	"image/jpeg"
 	"image/png"
@@ -318,6 +319,15 @@ func transformImage(m image.Image, opt Options) image.Image {
 	}
 	if opt.FlipHorizontal {
 		m = imaging.FlipH(m)
+	}
+
+	if opt.Pad {
+		originalWidth := m.Bounds().Max.X
+		newCenter := (w / 2) - (originalWidth / 2)
+
+		m2 := imaging.New(w, h, color.NRGBA{255, 255, 255, 255})
+		m2 = imaging.Paste(m2, m, image.Pt(newCenter, 0))
+		m = m2
 	}
 
 	return m
