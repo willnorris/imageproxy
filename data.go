@@ -26,6 +26,7 @@ import (
 
 const (
 	optFit             = "fit"
+	optPad             = "pad"
 	optFlipVertical    = "fv"
 	optFlipHorizontal  = "fh"
 	optFormatJPEG      = "jpeg"
@@ -63,6 +64,9 @@ type Options struct {
 	// will not be cropped, and aspect ratio will be maintained.
 	Fit bool
 
+	// If true we will pad the image to requested dimensions
+	Pad bool
+
 	// Rotate image the specified degrees counter-clockwise.  Valid values
 	// are 90, 180, 270.
 	Rotate int
@@ -97,6 +101,9 @@ func (o Options) String() string {
 	opts := []string{fmt.Sprintf("%v%s%v", o.Width, optSizeDelimiter, o.Height)}
 	if o.Fit {
 		opts = append(opts, optFit)
+	}
+	if o.Pad {
+		opts = append(opts, optPad)
 	}
 	if o.Rotate != 0 {
 		opts = append(opts, fmt.Sprintf("%s%d", optRotatePrefix, o.Rotate))
@@ -255,6 +262,8 @@ func ParseOptions(str string) Options {
 		case len(opt) == 0: // do nothing
 		case opt == optFit:
 			options.Fit = true
+		case opt == optPad:
+			options.Pad = true
 		case opt == optFlipVertical:
 			options.FlipVertical = true
 		case opt == optFlipHorizontal:
