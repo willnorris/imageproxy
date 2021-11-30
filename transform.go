@@ -289,10 +289,15 @@ func transformImage(m image.Image, opt Options) image.Image {
 	if !m.Bounds().Eq(rect) {
 		m = imaging.Crop(m, rect)
 	}
+
 	// resize if needed
 	if resize {
 		if opt.Fit {
-			m = imaging.Fit(m, w, h, resampleFilter)
+			if (h > 0 && h > m.Bounds().Max.Y) {
+				m = imaging.Resize(m, 0, h, resampleFilter)
+			} else {
+				m = imaging.Fit(m, w, h, resampleFilter)
+			}
 		} else {
 			if w == 0 || h == 0 {
 				m = imaging.Resize(m, w, h, resampleFilter)
