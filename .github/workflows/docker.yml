@@ -17,6 +17,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
 
     steps:
     - uses: actions/checkout@v2
@@ -46,3 +47,13 @@ jobs:
         push: ${{ github.event_name != 'pull_request' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
+
+    # Sign the Docker image
+    - name: Install cosign
+      if: github.event_name != 'pull_request'
+      uses: sigstore/cosign-installer@e5c096a9feb091d8afe0168547370270986f2f71 #v1.3.1
+    - name: Sign the published Docker image
+      if: github.event_name != 'pull_request'
+      env:
+        COSIGN_EXPERIMENTAL: "true"
+      run: cosign sign ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build-and-push.outputs.digest }}
