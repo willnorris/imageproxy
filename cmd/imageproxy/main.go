@@ -161,7 +161,7 @@ func parseCache(c string) (imageproxy.Cache, error) {
 
 	u, err := url.Parse(c)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing cache flag: %v", err)
+		return nil, fmt.Errorf("error parsing cache flag: %w", err)
 	}
 
 	switch u.Scheme {
