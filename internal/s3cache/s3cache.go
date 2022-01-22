@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"crypto/md5"
 	"encoding/hex"
+	"errors"
 	"io"
 	"io/ioutil"
 	"log"
@@ -36,7 +37,8 @@ func (c *cache) Get(key string) ([]byte, bool) {
 
 	resp, err := c.GetObject(input)
 	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok && aerr.Code() != "NoSuchKey" {
+		var aerr awserr.Error
+		if errors.As(err, &aerr) && aerr.Code() != "NoSuchKey" {
 			log.Printf("error fetching from s3: %v", aerr)
 		}
 		return nil, false
