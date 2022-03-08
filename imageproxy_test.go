@@ -382,10 +382,10 @@ func TestProxy_ServeHTTP(t *testing.T) {
 		code int    // expected response status code
 	}{
 		{"/favicon.ico", http.StatusOK},
-		{"//foo", http.StatusBadRequest},                            // invalid request URL
-		{"/http://bad.test/", http.StatusForbidden},                 // Disallowed host
-		{"/http://good.test/error", http.StatusInternalServerError}, // HTTP protocol error
-		{"/http://good.test/nocontent", http.StatusNoContent},       // non-OK response
+		{"/x/foo", http.StatusBadRequest},                             // invalid request URL
+		{"/x/http://bad.test/", http.StatusForbidden},                 // Disallowed host
+		{"/x/http://good.test/error", http.StatusInternalServerError}, // HTTP protocol error
+		{"/x/http://good.test/nocontent", http.StatusNoContent},       // non-OK response
 		{"/100/http://good.test/png", http.StatusOK},
 		{"/100/http://good.test/plain", http.StatusForbidden}, // non-image response
 
@@ -413,7 +413,7 @@ func TestProxy_ServeHTTP_is304(t *testing.T) {
 		},
 	}
 
-	req, _ := http.NewRequest("GET", "http://localhost/http://good.test/etag", nil)
+	req, _ := http.NewRequest("GET", "http://localhost/x/http://good.test/etag", nil)
 	req.Header.Add("If-None-Match", `"tag"`)
 	resp := httptest.NewRecorder()
 	p.ServeHTTP(resp, req)
