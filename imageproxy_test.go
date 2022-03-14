@@ -444,7 +444,7 @@ func TestProxy_ServeHTTP_maxRedirects(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		req, _ := http.NewRequest("GET", "http://localhost"+tt.url, nil)
+		req, _ := http.NewRequest("GET", "http://localhost/x"+tt.url, nil)
 		resp := httptest.NewRecorder()
 		p.ServeHTTP(resp, req)
 
