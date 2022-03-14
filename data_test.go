@@ -247,12 +247,12 @@ func TestNewRequest_BaseURL(t *testing.T) {
 			"http://localhost/x/../foo/bar",
 			"http://example.com/foo/bar", emptyOptions, false,
 		},
-		// relative remote urls should not have URL Decoding even if
-		// they start with http... (dirname)
+		// relative remote urls (baseURL set) should not have URL Decoding even if
+		// they start with http
 		{
 			"http://example.com/hello/",
-			"http://localhost/x/httpdir/rela%20tive",
-			"http://example.com/hello/httpdir/rela%20tive", emptyOptions, false,
+			"http://localhost/x/https%3A%2F%2Fimg.example.com%2Fpic.jpg",
+			"http://example.com/hello/https%3A%2F%2Fimg.example.com%2Fpic.jpg", emptyOptions, false,
 		},
 	}
 

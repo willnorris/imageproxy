@@ -331,7 +331,7 @@ func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 		return nil, URLError{"too few path segments", r.URL}
 	}
 
-	req.URL, err = parseURL(parts[1])
+	req.URL, err = parseURL(parts[1], (baseURL == nil))
 	if err != nil {
 		return nil, URLError{fmt.Sprintf("unable to parse remote URL: %v", err), r.URL}
 	}
@@ -343,7 +343,7 @@ func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 	}
 
 	if !req.URL.IsAbs() {
-		return nil, URLError{"must provide absolute remote URL", r.URL}
+		return nil, URLError{"must provide absolute remote URL", req.URL}
 	}
 
 	if req.URL.Scheme != "http" && req.URL.Scheme != "https" {
@@ -367,15 +367,18 @@ var reCleanedURL = regexp.MustCompile(`^(https?):/+([^/])`)
 
 // parseURL parses s as a URL, handling URLs that have been munged by
 // path.Clean or a webserver that collapses multiple slashes.
-func parseURL(s string) (*url.URL, error) {
+func parseURL(s string, urlDecode bool) (*url.URL, error) {
 	var err error
 
 	// convert http:/example.com to http://example.com
 	s = reCleanedURL.ReplaceAllString(s, "$1://$2")
 
-	s, err = decodeURL(s)
-	if err != nil {
-		return nil, err
+	// only decode remote url param if baseURL is not set
+	if urlDecode {
+		s, err = decodeURL(s)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return url.Parse(s)
