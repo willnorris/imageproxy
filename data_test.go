@@ -116,6 +116,9 @@ func TestNewRequest(t *testing.T) {
 		// invalid URL because options now required
 		{"http://localhost/http://example.com/foo", "", emptyOptions, true},
 
+		// invalid URL because remote url has invalid url encoding (the %u)
+		{"http://localhost/x/https%253A%252F%252Fexample.com%252F%253FbadParam%253D%25u0414", "", emptyOptions, true},
+
 		// invalid options.  These won't return errors, but will not fully parse the options
 		{
 			"http://localhost/s/http://example.com/",
@@ -126,7 +129,9 @@ func TestNewRequest(t *testing.T) {
 			"http://example.com/", Options{Width: 1}, false,
 		},
 
+
 		// valid URLs
+
 		{
 			"http://localhost//http://example.com/foo",
 			"http://example.com/foo", emptyOptions, false,
@@ -172,6 +177,16 @@ func TestNewRequest(t *testing.T) {
 		{
 			"http://localhost/x/http%3A%2F%2Fexample.com%2Ffoo%2Fbar%3Fhello%3Dworld",
 			"http://example.com/foo/bar?hello=world", emptyOptions, false,
+		},
+		// escaped remote including encoded querystring and unencoded querystring (not retained)
+		{
+			"http://localhost/x/http%3A%2F%2Fexample.com%2Ffoo%2Fbar%3Fhello%3Dworld?a=b",
+			"http://example.com/foo/bar?hello=world", emptyOptions, false,
+		},
+		// escaped remote WITHOUT encoded querystring and unencoded querystring (should be retained)
+		{
+			"http://localhost/x/http%3A%2F%2Fexample.com%2Ffoo%2Fbar?a=b",
+			"http://example.com/foo/bar?a=b", emptyOptions, false,
 		},
 		{
 			"http://localhost/x/https%3A%2F%2Fexample.com%2Ffoo%2Fbar%3Fhello%3Dworld",
@@ -284,6 +299,58 @@ func TestNewRequest_BaseURL(t *testing.T) {
 		}
 		if got, want := r.Options, tt.Options; got != want {
 			t.Errorf("NewRequest(%q, %q) request options = %v, want %v", tt.URL, tt.BaseURL, got, want)
+		}
+	}
+}
+
+
+
+func TestParseURL(t *testing.T) {
+	tests := []struct {
+		URL         string  // input URL to parse as an imageproxy request
+		URLDecode   bool    // expected options parsed from input
+		URLExpected string  // expected URL of remote image parsed from input
+		ExpectError bool    // whether an error is expected from NewRequest
+	}{
+		// should fix missing slashes
+		{"http:/example.com/", true,
+		 "http://example.com/", false},
+		{"https:/example.com/", true,
+		 "https://example.com/", false},
+
+		// should decode when told
+		{"https%253A%252F%252Fexample.com%252Fimg.jpg%253Ffoo%253Dbar%2526bar%253Ddo%25252Fnot%25252Fdecode%25252Fme", true,
+		 "https://example.com/img.jpg?foo=bar&bar=do%2Fnot%2Fdecode%2Fme", false},
+
+		// should NOT decode unless told (e.g. baseURL set)
+		{"https%3A%2F%2Fexample.com%2Fimg.jpg%3Ffoo%3Dbar%26bar%3Ddo%252Fnot%252Fdecode%252Fme", false,
+		 "https%3A%2F%2Fexample.com%2Fimg.jpg%3Ffoo%3Dbar%26bar%3Ddo%252Fnot%252Fdecode%252Fme", false},
+
+		// should return original url if asked to decode but can't find anything that 
+		// looks like absolute url (starts with https?://) before giving up
+		{"https%3Aexample.com%2Fimg.jpg", true,
+		 "https%3Aexample.com%2Fimg.jpg", false},
+
+		// should error when asked to decode a url with invalid encoding
+		{"https%253A%252F%252Fexample.com%252F%253FbadParam%253D%25u0414", true,
+		 "", true},
+	}
+
+	for _, tt := range tests {
+
+		URLOut, err := ParseURL(tt.URL, tt.URLDecode)
+		if tt.ExpectError {
+			if err == nil {
+				t.Errorf("ParseURL(%q, decode=%v) did not return expected error", tt.URL, tt.URLDecode)
+			}
+			continue
+		} else if err != nil {
+			t.Errorf("ParseURL(%v, decode=%v) return unexpected error: %v", tt.URL, tt.URLDecode, err)
+			continue
+		}
+
+		if got, want := URLOut.String(), tt.URLExpected; got != want {
+			t.Errorf("ParseURL(%q, decode=%v) returned = %v, wanted %v", tt.URL, tt.URLDecode, got, want)
 		}
 	}
 }

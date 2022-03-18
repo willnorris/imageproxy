@@ -323,7 +323,6 @@ func (r Request) String() string {
 func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 	var err error
 	req := &Request{Original: r}
-
 	path := r.URL.EscapedPath()[1:] // strip leading slash
 	// first segment should be options
 	parts := strings.SplitN(path, "/", 2)
@@ -331,12 +330,14 @@ func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 		return nil, URLError{"too few path segments", r.URL}
 	}
 
-	req.URL, err = parseURL(parts[1], (baseURL == nil))
+	req.URL, err = ParseURL(parts[1], (baseURL == nil)) // don't url decode if baseURL is set
 	if err != nil {
 		return nil, URLError{fmt.Sprintf("unable to parse remote URL: %v", err), r.URL}
 	}
 
 	req.Options = ParseOptions(parts[0])
+
+
 
 	if baseURL != nil {
 		req.URL = baseURL.ResolveReference(req.URL)
@@ -365,9 +366,9 @@ func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 
 var reCleanedURL = regexp.MustCompile(`^(https?):/+([^/])`)
 
-// parseURL parses s as a URL, handling URLs that have been munged by
+// ParseURL parses s as a URL, handling URLs that have been munged by
 // path.Clean or a webserver that collapses multiple slashes.
-func parseURL(s string, urlDecode bool) (*url.URL, error) {
+func ParseURL(s string, urlDecode bool) (*url.URL, error) {
 	var err error
 
 	// convert http:/example.com to http://example.com
@@ -400,7 +401,7 @@ func decodeURL(s string) (string, error) {
 	for i := 0; !reDecodedURL.MatchString(decodedURL) && i < maxDecodeAttempts; i++ {
 		decodedURL, err = url.QueryUnescape(decodedURL)
 		if err != nil {
-			return "", URLError{"remote URL could not be decoded", nil}
+			return "", URLError{fmt.Sprintf("remote URL could not be decoded: %v", err), nil}
 		}
 	}
 	if reDecodedURL.MatchString(decodedURL) {
