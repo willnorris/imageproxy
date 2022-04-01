@@ -8,12 +8,11 @@ require (
 	github.com/Azure/go-autorest/autorest v0.11.24 // indirect
 	github.com/Azure/go-autorest/autorest/to v0.4.0 // indirect
 	github.com/PaulARoy/azurestoragecache v0.0.0-20170906084534-3c249a3ba788
-	github.com/aws/aws-sdk-go v1.42.53
+	github.com/aws/aws-sdk-go v1.43.30
 	github.com/die-net/lrucache v0.0.0-20210908122246-903d43d14082
 	github.com/disintegration/imaging v1.6.2
 	github.com/dnaeon/go-vcr v1.2.0 // indirect
 	github.com/fcjr/aia-transport-go v1.2.2
-	github.com/form3tech-oss/jwt-go v3.2.5+incompatible // indirect
 	github.com/gofrs/uuid v4.2.0+incompatible // indirect
 	github.com/golang-jwt/jwt/v4 v4.3.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
