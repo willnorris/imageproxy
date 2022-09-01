@@ -13,7 +13,6 @@ require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/dnaeon/go-vcr v1.2.0 // indirect
 	github.com/fcjr/aia-transport-go v1.2.2
-	github.com/form3tech-oss/jwt-go v3.2.5+incompatible // indirect
 	github.com/gofrs/uuid v4.2.0+incompatible // indirect
 	github.com/golang-jwt/jwt/v4 v4.3.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
@@ -24,7 +23,7 @@ require (
 	github.com/muesli/smartcrop v0.3.0
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
 	github.com/peterbourgon/diskv v0.0.0-20171120014656-2973218375c3
-	github.com/prometheus/client_golang v1.12.1
+	github.com/prometheus/client_golang v1.13.0
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292 // indirect
 	golang.org/x/image v0.0.0-20211028202545-6944b10bf410
