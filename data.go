@@ -139,14 +139,14 @@ func (o Options) transform() bool {
 // The options can be specified in in order, with duplicate options overwriting
 // previous values.
 //
-// Rectangle Crop
+// # Rectangle Crop
 //
 // There are four options controlling rectangle crop:
 //
-// 	cx{x}      - X coordinate of top left rectangle corner (default: 0)
-// 	cy{y}      - Y coordinate of top left rectangle corner (default: 0)
-// 	cw{width}  - rectangle width (default: image width)
-// 	ch{height} - rectangle height (default: image height)
+//	cx{x}      - X coordinate of top left rectangle corner (default: 0)
+//	cy{y}      - Y coordinate of top left rectangle corner (default: 0)
+//	cw{width}  - rectangle width (default: image width)
+//	ch{height} - rectangle height (default: image height)
 //
 // For all options, integer values are interpreted as exact pixel values and
 // floats between 0 and 1 are interpreted as percentages of the original image
@@ -157,13 +157,13 @@ func (o Options) transform() bool {
 // crop width or height will be adjusted, preserving the specified cx and cy
 // values.  Rectangular crop is applied before any other transformations.
 //
-// Smart Crop
+// # Smart Crop
 //
 // The "sc" option will perform a content-aware smart crop to fit the
 // requested image width and height dimensions (see Size and Cropping below).
 // The smart crop option will override any requested rectangular crop.
 //
-// Size and Cropping
+// # Size and Cropping
 //
 // The size option takes the general form "{width}x{height}", where width and
 // height are numbers. Integer values greater than 1 are interpreted as exact
@@ -192,7 +192,7 @@ func (o Options) transform() bool {
 // option with only one of either width or height does the same thing as if
 // "fit" had not been specified.
 //
-// Rotation and Flips
+// # Rotation and Flips
 //
 // The "r{degrees}" option will rotate the image the specified number of
 // degrees, counter-clockwise. Valid degrees values are 90, 180, and 270.
@@ -200,17 +200,17 @@ func (o Options) transform() bool {
 // The "fv" option will flip the image vertically. The "fh" option will flip
 // the image horizontally. Images are flipped after being rotated.
 //
-// Quality
+// # Quality
 //
 // The "q{qualityPercentage}" option can be used to specify the quality of the
 // output file (JPEG only). If not specified, the default value of "95" is used.
 //
-// Format
+// # Format
 //
 // The "jpeg", "png", and "tiff"  options can be used to specify the desired
 // image format of the proxied image.
 //
-// Signature
+// # Signature
 //
 // The "s{signature}" option specifies an optional base64 encoded HMAC used to
 // sign the remote URL in the request.  The HMAC key used to verify signatures is
@@ -221,18 +221,18 @@ func (o Options) transform() bool {
 //
 // Examples
 //
-// 	0x0         - no resizing
-// 	200x        - 200 pixels wide, proportional height
-// 	x0.15       - 15% original height, proportional width
-// 	100x150     - 100 by 150 pixels, cropping as needed
-// 	100         - 100 pixels square, cropping as needed
-// 	150,fit     - scale to fit 150 pixels square, no cropping
-// 	100,r90     - 100 pixels square, rotated 90 degrees
-// 	100,fv,fh   - 100 pixels square, flipped horizontal and vertical
-// 	200x,q60    - 200 pixels wide, proportional height, 60% quality
-// 	200x,png    - 200 pixels wide, converted to PNG format
-// 	cw100,ch100 - crop image to 100px square, starting at (0,0)
-// 	cx10,cy20,cw100,ch200 - crop image starting at (10,20) is 100px wide and 200px tall
+//	0x0         - no resizing
+//	200x        - 200 pixels wide, proportional height
+//	x0.15       - 15% original height, proportional width
+//	100x150     - 100 by 150 pixels, cropping as needed
+//	100         - 100 pixels square, cropping as needed
+//	150,fit     - scale to fit 150 pixels square, no cropping
+//	100,r90     - 100 pixels square, rotated 90 degrees
+//	100,fv,fh   - 100 pixels square, flipped horizontal and vertical
+//	200x,q60    - 200 pixels wide, proportional height, 60% quality
+//	200x,png    - 200 pixels wide, converted to PNG format
+//	cw100,ch100 - crop image to 100px square, starting at (0,0)
+//	cx10,cy20,cw100,ch200 - crop image starting at (10,20) is 100px wide and 200px tall
 func ParseOptions(str string) Options {
 	var options Options
 
@@ -315,10 +315,10 @@ func (r Request) String() string {
 // Assuming an imageproxy server running on localhost, the following are all
 // valid imageproxy requests:
 //
-// 	http://localhost/100x200/http://example.com/image.jpg
-// 	http://localhost/100x200,r90/http://example.com/image.jpg?foo=bar
-// 	http://localhost//http://example.com/image.jpg
-// 	http://localhost/http://example.com/image.jpg
+//	http://localhost/100x200/http://example.com/image.jpg
+//	http://localhost/100x200,r90/http://example.com/image.jpg?foo=bar
+//	http://localhost//http://example.com/image.jpg
+//	http://localhost/http://example.com/image.jpg
 func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 	var err error
 	req := &Request{Original: r}
