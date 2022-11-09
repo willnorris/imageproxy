@@ -16,7 +16,7 @@ jobs:
         go-version:
           # support the two most recent major go versions
           - 1.x
-          - 1.16.x
+          - 1.18.x
         platform: [ubuntu-latest]
         include:
           # minimum go version that works. This is not necessarily supported in
@@ -37,23 +37,16 @@ jobs:
     runs-on: ${{ matrix.platform }}
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
-
-      - name: Cache go modules
-        uses: actions/cache@v2
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: ${{ runner.os }}-go-
+          cache: true
 
       - name: Run go test
         run: go test -v -race -coverprofile coverage.txt -covermode atomic ./...
 
       - name: Upload coverage to Codecov
         if: ${{ matrix.update-coverage }}
-        uses: codecov/codecov-action@v1
-        timeout-minutes: 2
+        uses: codecov/codecov-action@v3
