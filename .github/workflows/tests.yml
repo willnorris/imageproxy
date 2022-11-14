@@ -22,7 +22,7 @@ jobs:
           # minimum go version that works. This is not necessarily supported in
           # any way, and will be bumped up without notice as needed.  But it at
           # least lets us know what go version should work.
-          - go-version: 1.15
+          - go-version: 1.16
             platform: ubuntu-latest
 
           # include windows, but only with the latest Go version, since there
