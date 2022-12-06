@@ -46,7 +46,7 @@ jobs:
       uses: docker/build-push-action@c56af957549030174b10d6867f20e78cfd7debc5 # v3.2.0
       with:
         context: .
-        push: ${{ github.event_name != 'pull_request' }}
+        push: ${{ github.event_name == 'push' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         platforms: linux/amd64,linux/arm64,linux/arm/v7
@@ -58,5 +58,6 @@ jobs:
     - name: Sign the published Docker image
       if: github.event_name == 'push'
       env:
+        TAGS: ${{ steps.meta.outputs.tags }}
         COSIGN_EXPERIMENTAL: "true"
-      run: cosign sign ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build-and-push.outputs.digest }}
+      run: cosign sign ${TAGS}
