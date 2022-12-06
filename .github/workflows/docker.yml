@@ -58,6 +58,5 @@ jobs:
     - name: Sign the published Docker image
       if: github.event_name == 'push'
       env:
-        TAGS: ${{ steps.meta.outputs.tags }}
         COSIGN_EXPERIMENTAL: "true"
-      run: cosign sign ${TAGS}
+      run: cosign sign ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build-and-push.outputs.digest }}
