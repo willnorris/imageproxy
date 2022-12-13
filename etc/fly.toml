@@ -1,0 +1,33 @@
+# This is the Fly config for my personal imageproxy instance.
+# It's probably not of much use for anyone else.
+
+app = "willnorris-imageproxy"
+
+[build]
+image = "ghcr.io/willnorris/imageproxy:main"
+
+[env]
+IMAGEPROXY_BASEURL = "https://willnorris.com/"
+IMAGEPROXY_ALLOWHOSTS = "*.willnorris.com,notsoserendipitous.com,gabenorris.com,judahnorris.com"
+IMAGEPROXY_CACHE = "/cache/"
+IMAGEPROXY_VERBOSE = true
+
+[mounts]
+source="willnorris_imageproxy_cache"
+destination="/cache"
+
+[deploy]
+strategy = "immediate"
+
+[[services]]
+  internal_port = 8080
+  protocol = "tcp"
+
+  [[services.ports]]
+    handlers = ["http"]
+    port = "80"
+    force_https = true
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = "443"
