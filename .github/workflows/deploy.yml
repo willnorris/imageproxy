@@ -1,8 +1,9 @@
 name: deploy
 on:
-  push:
-    branches:
-      - "main"
+  workflow_run:
+    workflows: [Docker]
+    types: [completed]
+    branches: [main]
 
 concurrency:
   group: production
@@ -11,6 +12,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     environment: production
     steps:
     - uses: actions/checkout@v3
