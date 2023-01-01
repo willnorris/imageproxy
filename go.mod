@@ -27,7 +27,7 @@ require (
 	github.com/prometheus/client_golang v1.14.0
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
 	golang.org/x/crypto v0.2.0 // indirect
-	golang.org/x/image v0.1.0
+	golang.org/x/image v0.2.0
 	golang.org/x/oauth2 v0.2.0 // indirect
 	google.golang.org/api v0.103.0 // indirect
 	google.golang.org/genproto v0.0.0-20221111202108-142d8a6fa32e // indirect
