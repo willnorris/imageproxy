@@ -59,20 +59,20 @@ strings.
 The following live examples demonstrate setting different options on [this
 source image][small-things], which measures 1024 by 678 pixels.
 
-[small-things]: https://willnorris.com/2013/12/small-things.jpg
+[small-things]: https://willnorris.com/images/imageproxy/small-things.jpg
 
 Options | Meaning                                  | Image
 --------|------------------------------------------|------
-200x    | 200px wide, proportional height          | <a href="https://imageproxy.willnorris.com/200x/https://willnorris.com/2013/12/small-things.jpg"><img src="https://imageproxy.willnorris.com/200x/https://willnorris.com/2013/12/small-things.jpg" alt="200x"></a>
-x0.15   | 15% original height, proportional width  | <a href="https://imageproxy.willnorris.com/x0.15/https://willnorris.com/2013/12/small-things.jpg"><img src="https://imageproxy.willnorris.com/x0.15/https://willnorris.com/2013/12/small-things.jpg" alt="x0.15"></a>
-100x150 | 100 by 150 pixels, cropping as needed    | <a href="https://imageproxy.willnorris.com/100x150/https://willnorris.com/2013/12/small-things.jpg"><img src="https://imageproxy.willnorris.com/100x150/https://willnorris.com/2013/12/small-things.jpg" alt="100x150"></a>
-100     | 100px square, cropping as needed         | <a href="https://imageproxy.willnorris.com/100/https://willnorris.com/2013/12/small-things.jpg"><img src="https://imageproxy.willnorris.com/100/https://willnorris.com/2013/12/small-things.jpg" alt="100"></a>
-150,fit | scale to fit 150px square, no cropping   | <a href="https://imageproxy.willnorris.com/150,fit/https://willnorris.com/2013/12/small-things.jpg"><img src="https://imageproxy.willnorris.com/150,fit/https://willnorris.com/2013/12/small-things.jpg" alt="150,fit"></a>
-100,r90 | 100px square, rotated 90 degrees         | <a href="https://imageproxy.willnorris.com/100,r90/https://willnorris.com/2013/12/small-things.jpg"><img src="https://imageproxy.willnorris.com/100,r90/https://willnorris.com/2013/12/small-things.jpg" alt="100,r90"></a>
-100,fv,fh | 100px square, flipped horizontal and vertical | <a href="https://imageproxy.willnorris.com/100,fv,fh/https://willnorris.com/2013/12/small-things.jpg"><img src="https://imageproxy.willnorris.com/100,fv,fh/https://willnorris.com/2013/12/small-things.jpg" alt="100,fv,fh"></a>
-200x,q60 | 200px wide, proportional height, 60% quality | <a href="https://imageproxy.willnorris.com/200x,q60/https://willnorris.com/2013/12/small-things.jpg"><img src="https://imageproxy.willnorris.com/200x,q60/https://willnorris.com/2013/12/small-things.jpg" alt="200x,q60"></a>
-200x,png | 200px wide, converted to PNG format | <a href="https://imageproxy.willnorris.com/200x,png/https://willnorris.com/2013/12/small-things.jpg"><img src="https://imageproxy.willnorris.com/200x,png/https://willnorris.com/2013/12/small-things.jpg" alt="200x,png"></a>
-cx175,cw400,ch300,100x | crop to 400x300px starting at (175,0), scale to 100px wide | <a href="https://imageproxy.willnorris.com/cx175,cw400,ch300,100x/https://willnorris.com/2013/12/small-things.jpg"><img src="https://imageproxy.willnorris.com/cx175,cw400,ch300,100x/https://willnorris.com/2013/12/small-things.jpg" alt="cx175,cw400,ch300,100x"></a>
+200x    | 200px wide, proportional height          | <a href="https://imageproxy.willnorris.com/200x/https://willnorris.com/images/imageproxy/small-things.jpg"><img src="https://imageproxy.willnorris.com/200x/https://willnorris.com/images/imageproxy/small-things.jpg" alt="200x"></a>
+x0.15   | 15% original height, proportional width  | <a href="https://imageproxy.willnorris.com/x0.15/https://willnorris.com/images/imageproxy/small-things.jpg"><img src="https://imageproxy.willnorris.com/x0.15/https://willnorris.com/images/imageproxy/small-things.jpg" alt="x0.15"></a>
+100x150 | 100 by 150 pixels, cropping as needed    | <a href="https://imageproxy.willnorris.com/100x150/https://willnorris.com/images/imageproxy/small-things.jpg"><img src="https://imageproxy.willnorris.com/100x150/https://willnorris.com/images/imageproxy/small-things.jpg" alt="100x150"></a>
+100     | 100px square, cropping as needed         | <a href="https://imageproxy.willnorris.com/100/https://willnorris.com/images/imageproxy/small-things.jpg"><img src="https://imageproxy.willnorris.com/100/https://willnorris.com/images/imageproxy/small-things.jpg" alt="100"></a>
+150,fit | scale to fit 150px square, no cropping   | <a href="https://imageproxy.willnorris.com/150,fit/https://willnorris.com/images/imageproxy/small-things.jpg"><img src="https://imageproxy.willnorris.com/150,fit/https://willnorris.com/images/imageproxy/small-things.jpg" alt="150,fit"></a>
+100,r90 | 100px square, rotated 90 degrees         | <a href="https://imageproxy.willnorris.com/100,r90/https://willnorris.com/images/imageproxy/small-things.jpg"><img src="https://imageproxy.willnorris.com/100,r90/https://willnorris.com/images/imageproxy/small-things.jpg" alt="100,r90"></a>
+100,fv,fh | 100px square, flipped horizontal and vertical | <a href="https://imageproxy.willnorris.com/100,fv,fh/https://willnorris.com/images/imageproxy/small-things.jpg"><img src="https://imageproxy.willnorris.com/100,fv,fh/https://willnorris.com/images/imageproxy/small-things.jpg" alt="100,fv,fh"></a>
+200x,q60 | 200px wide, proportional height, 60% quality | <a href="https://imageproxy.willnorris.com/200x,q60/https://willnorris.com/images/imageproxy/small-things.jpg"><img src="https://imageproxy.willnorris.com/200x,q60/https://willnorris.com/images/imageproxy/small-things.jpg" alt="200x,q60"></a>
+200x,png | 200px wide, converted to PNG format | <a href="https://imageproxy.willnorris.com/200x,png/https://willnorris.com/images/imageproxy/small-things.jpg"><img src="https://imageproxy.willnorris.com/200x,png/https://willnorris.com/images/imageproxy/small-things.jpg" alt="200x,png"></a>
+cx175,cw400,ch300,100x | crop to 400x300px starting at (175,0), scale to 100px wide | <a href="https://imageproxy.willnorris.com/cx175,cw400,ch300,100x/https://willnorris.com/images/imageproxy/small-things.jpg"><img src="https://imageproxy.willnorris.com/cx175,cw400,ch300,100x/https://willnorris.com/images/imageproxy/small-things.jpg" alt="cx175,cw400,ch300,100x"></a>
 
 The [smart crop feature](https://godoc.org/willnorris.com/go/imageproxy#hdr-Smart_Crop)
 can best be seen by comparing crops of [this source image][judah-sheets], with
@@ -88,9 +88,9 @@ Options | Meaning                                  | Image
 Transformation also works on animated gifs.  Here is [this source
 image][material-animation] resized to 200px square and rotated 270 degrees:
 
-[material-animation]: https://willnorris.com/2015/05/material-animations.gif
+[material-animation]: https://willnorris.com/images/imageproxy/material-animations.gif
 
-<a href="https://imageproxy.willnorris.com/200,r270/https://willnorris.com/2015/05/material-animations.gif"><img src="https://imageproxy.willnorris.com/200,r270/https://willnorris.com/2015/05/material-animations.gif" alt="200,r270"></a>
+<a href="https://imageproxy.willnorris.com/200,r270/https://willnorris.com/images/imageproxy/material-animations.gif"><img src="https://imageproxy.willnorris.com/200,r270/https://willnorris.com/images/imageproxy/material-animations.gif" alt="200,r270"></a>
 
 ## Getting Started ##
 
