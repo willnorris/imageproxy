@@ -11,7 +11,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"io"
-	"io/ioutil"
 	"log"
 	"path"
 
@@ -35,7 +34,7 @@ func (c *cache) Get(key string) ([]byte, bool) {
 	}
 	defer r.Close()
 
-	value, err := ioutil.ReadAll(r)
+	value, err := io.ReadAll(r)
 	if err != nil {
 		log.Printf("error reading from gcs: %v", err)
 		return nil, false

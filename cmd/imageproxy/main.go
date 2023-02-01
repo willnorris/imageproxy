@@ -7,7 +7,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -118,7 +117,7 @@ func (skl *signatureKeyList) Set(value string) error {
 		if strings.HasPrefix(v, "@") {
 			file := strings.TrimPrefix(v, "@")
 			var err error
-			key, err = ioutil.ReadFile(file)
+			key, err = os.ReadFile(file)
 			if err != nil {
 				log.Fatalf("error reading signature file: %v", err)
 			}

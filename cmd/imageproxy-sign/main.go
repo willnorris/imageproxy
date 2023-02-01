@@ -12,7 +12,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -65,7 +64,7 @@ func sign(key string, s string, urlOnly bool) ([]byte, error) {
 
 func parseKey(s string) ([]byte, error) {
 	if strings.HasPrefix(s, "@") {
-		return ioutil.ReadFile(s[1:])
+		return os.ReadFile(s[1:])
 	}
 	return []byte(s), nil
 }

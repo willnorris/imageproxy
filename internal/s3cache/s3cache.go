@@ -11,7 +11,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/url"
 	"path"
@@ -44,7 +43,7 @@ func (c *cache) Get(key string) ([]byte, bool) {
 		return nil, false
 	}
 
-	value, err := ioutil.ReadAll(resp.Body)
+	value, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Printf("error reading s3 response body: %v", err)
 		return nil, false

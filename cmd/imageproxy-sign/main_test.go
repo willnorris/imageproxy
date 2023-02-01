@@ -4,7 +4,7 @@
 package main
 
 import (
-	"io/ioutil"
+	"io"
 	"net/url"
 	"os"
 	"reflect"
@@ -25,7 +25,7 @@ func TestMainFunc(t *testing.T) {
 	main()
 	w.Close()
 
-	output, err := ioutil.ReadAll(r)
+	output, err := io.ReadAll(r)
 	got := string(output)
 	if err != nil {
 		t.Errorf("error reading from pipe: %v", err)
@@ -94,7 +94,7 @@ func TestParseKey(t *testing.T) {
 }
 
 func TestParseKey_FilePath(t *testing.T) {
-	f, err := ioutil.TempFile("", "key")
+	f, err := os.CreateTemp("", "key")
 	if err != nil {
 		t.Errorf("error creating temp file: %v", err)
 	}
