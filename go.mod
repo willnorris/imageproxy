@@ -1,8 +1,7 @@
 module willnorris.com/go/imageproxy
 
 require (
-	cloud.google.com/go v0.106.0 // indirect
-	cloud.google.com/go/storage v1.28.0
+	cloud.google.com/go/storage v1.29.0
 	github.com/Azure/azure-sdk-for-go v67.0.0+incompatible // indirect
 	github.com/Azure/go-autorest/autorest v0.11.28 // indirect
 	github.com/Azure/go-autorest/autorest/adal v0.9.21 // indirect
@@ -29,8 +28,6 @@ require (
 	golang.org/x/crypto v0.2.0 // indirect
 	golang.org/x/image v0.1.0
 	golang.org/x/oauth2 v0.2.0 // indirect
-	google.golang.org/api v0.103.0 // indirect
-	google.golang.org/genproto v0.0.0-20221111202108-142d8a6fa32e // indirect
 	willnorris.com/go/gifresize v1.0.0
 )
 
