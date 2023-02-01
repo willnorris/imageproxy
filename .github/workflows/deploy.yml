@@ -4,7 +4,7 @@ on:
     workflows: [Docker]
     types: [completed]
     branches: [main]
-
+  workflow_dispatch:
 
 concurrency:
   group: production
@@ -18,6 +18,6 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - uses: superfly/flyctl-actions/setup-flyctl@master
-    - run: flyctl -c etc/fly.toml deploy --local-only
+    - run: flyctl -c etc/fly.toml deploy --remote-only
       env:
         FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
