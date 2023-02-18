@@ -380,6 +380,9 @@ to alter the precedence order by setting:
   }
 ```
 
+## Clients ##
+- [Ruby](https://github.com/azolf/imageproxy_ruby)
+
 ## License ##
 
 imageproxy is copyright its respective authors. All of my personal work on
