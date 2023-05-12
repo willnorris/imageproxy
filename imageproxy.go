@@ -197,7 +197,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 				}
 				return errTooManyRedirects
 			}
-			if hostMatches(p.DenyHosts, newreq.URL) || (len(p.AllowHosts) > 0 && !hostMatches(p.AllowHosts, newreq.URL)) {
+			if hostMatches(p.DenyHosts, newreq.URL) {
 				http.Error(w, msgNotAllowedInRedirect, http.StatusForbidden)
 				return errNotAllowed
 			}
