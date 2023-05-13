@@ -847,5 +847,3 @@ sigs.k8s.io/yaml v1.1.0/go.mod h1:UJmg0vDUVViEyp3mgSv9WPwZCDxu4rQW1olrI1uml+o=
 sourcegraph.com/sourcegraph/appdash v0.0.0-20190731080439-ebfcffb1b5c0/go.mod h1:hI742Nqp5OhwiqlzhgfbWU4mW4yO10fP+LoT9WOswdU=
 willnorris.com/go/gifresize v1.0.0 h1:GKS68zjNhHMqkgNTv4iFAO/j/sNcVSOHQ7SqmDAIAmM=
 willnorris.com/go/gifresize v1.0.0/go.mod h1:eBM8gogBGCcaH603vxSpnfjwXIpq6nmnj/jauBDKtAk=
-willnorris.com/go/imageproxy v0.11.3-0.20230509044219-7295bec9951b h1:qcb/XUcPCDotQbXNLnnJsOia/1UTNB641wleCLx+gtw=
-willnorris.com/go/imageproxy v0.11.3-0.20230509044219-7295bec9951b/go.mod h1:bvXHWeOWbe/IIHRayDtl/T2W2Ol1sAU1RhMMHOXeIsY=

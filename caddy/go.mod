@@ -7,8 +7,10 @@ require (
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 	github.com/peterbourgon/diskv v2.0.1+incompatible
 	go.uber.org/zap v1.24.0
-	willnorris.com/go/imageproxy v0.11.3-0.20230509044219-7295bec9951b
+	willnorris.com/go/imageproxy v0.11.3-0.20230512192740-2008a17f5e6c
 )
+
+replace willnorris.com/go/imageproxy => ../
 
 require (
 	filippo.io/edwards25519 v1.0.0 // indirect
