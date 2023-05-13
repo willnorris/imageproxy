@@ -221,6 +221,12 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	// close the original resp.Body, even if we wrap it in a NopCloser below
 	defer resp.Body.Close()
 
+	// return early on 404s.  Perhaps handle additional status codes here?
+	if resp.StatusCode == http.StatusNotFound {
+		http.Error(w, "not found", http.StatusNotFound)
+		return
+	}
+
 	cached := resp.Header.Get(httpcache.XFromCache) == "1"
 	if p.Verbose {
 		p.logf("request: %+v (served from cache: %t)", *actualReq, cached)
