@@ -69,6 +69,7 @@ func (p *ImageProxy) Provision(ctx caddy.Context) error {
 	}
 	p.proxy.Logger = zap.NewStdLog(p.logger)
 	p.proxy.Verbose = p.Verbose
+	p.proxy.FollowRedirects = true
 	return nil
 }
 
