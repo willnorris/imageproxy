@@ -21,7 +21,7 @@ use it as an SSL proxy for remote images, similar to [atmos/camo][] but with
 additional image adjustment options.
 
 I aim to keep imageproxy compatible with the two [most recent major go releases][].
-I also keep track of the minimum go version that still works (currently go1.17), but that might change at any time.
+I also keep track of the minimum go version that still works (currently go1.18), but that might change at any time.
 You can see the go versions that are tested against in [.github/workflows/tests.yml][].
 
 [this post]: https://willnorris.com/2014/01/a-self-hosted-alternative-to-jetpacks-photon-service
