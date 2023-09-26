@@ -1,4 +1,4 @@
-// Copyright 2013 Google Inc. All rights reserved.
+// Copyright 2013 Google LLC. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import (
 	"testing"
 
 	"github.com/disintegration/imaging"
+	"golang.org/x/image/bmp"
 )
 
 var (
@@ -90,6 +91,7 @@ func TestCropParams(t *testing.T) {
 		{Options{CropX: 50, CropY: 100, CropWidth: 100, CropHeight: 150}, 50, 100, 64, 128},
 		{Options{CropX: -50, CropY: -50}, 14, 78, 64, 128},
 		{Options{CropY: 0.5, CropWidth: 0.5}, 0, 64, 32, 128},
+		{Options{Width: 10, Height: 10, SmartCrop: true}, 0, 0, 64, 64},
 	}
 	for _, tt := range tests {
 		want := image.Rect(tt.x0, tt.y0, tt.x1, tt.y1)
@@ -111,6 +113,7 @@ func TestTransform(t *testing.T) {
 		encode      func(io.Writer, image.Image)
 		exactOutput bool // whether input and output should match exactly
 	}{
+		{"bmp", func(w io.Writer, m image.Image) { bmp.Encode(w, m) }, true},
 		{"gif", func(w io.Writer, m image.Image) { gif.Encode(w, m, nil) }, true},
 		{"jpeg", func(w io.Writer, m image.Image) { jpeg.Encode(w, m, nil) }, false},
 		{"png", func(w io.Writer, m image.Image) { png.Encode(w, m) }, true},
@@ -143,6 +146,17 @@ func TestTransform(t *testing.T) {
 
 	if _, err := Transform([]byte{}, Options{Width: 1}); err == nil {
 		t.Errorf("Transform with invalid image input did not return expected err")
+	}
+}
+
+func TestTransform_InvalidFormat(t *testing.T) {
+	src := newImage(2, 2, red, green, blue, yellow)
+	buf := new(bytes.Buffer)
+	png.Encode(buf, src)
+
+	_, err := Transform(buf.Bytes(), Options{Format: "invalid"})
+	if err == nil {
+		t.Errorf("Transform with invalid format did not return expected error")
 	}
 }
 

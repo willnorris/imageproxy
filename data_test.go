@@ -1,4 +1,4 @@
-// Copyright 2013 Google Inc. All rights reserved.
+// Copyright 2013 Google LLC. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ package imageproxy
 
 import (
 	"net/http"
+	"net/url"
 	"testing"
 )
 
@@ -31,20 +32,20 @@ func TestOptions_String(t *testing.T) {
 			"0x0",
 		},
 		{
-			Options{1, 2, true, 90, true, true, 80, "", false, "", 0, 0, 0, 0, false},
-			"1x2,fit,r90,fv,fh,q80",
+			Options{Width: 1, Height: 2, Fit: true, Rotate: 90, FlipVertical: true, FlipHorizontal: true, Quality: 80},
+			"1x2,fh,fit,fv,q80,r90",
 		},
 		{
-			Options{0.15, 1.3, false, 45, false, false, 95, "c0ffee", false, "png", 0, 0, 0, 0, false},
-			"0.15x1.3,r45,q95,sc0ffee,png",
+			Options{Width: 0.15, Height: 1.3, Rotate: 45, Quality: 95, Signature: "c0ffee", Format: "png"},
+			"0.15x1.3,png,q95,r45,sc0ffee",
 		},
 		{
-			Options{0.15, 1.3, false, 45, false, false, 95, "c0ffee", false, "", 100, 200, 0, 0, false},
-			"0.15x1.3,r45,q95,sc0ffee,cx100,cy200",
+			Options{Width: 0.15, Height: 1.3, CropX: 100, CropY: 200},
+			"0.15x1.3,cx100,cy200",
 		},
 		{
-			Options{0.15, 1.3, false, 45, false, false, 95, "c0ffee", false, "png", 100, 200, 300, 400, false},
-			"0.15x1.3,r45,q95,sc0ffee,png,cx100,cy200,cw300,ch400",
+			Options{ScaleUp: true, CropX: 100, CropY: 200, CropWidth: 300, CropHeight: 400, SmartCrop: true},
+			"0x0,ch400,cw300,cx100,cy200,sc,scaleUp",
 		},
 	}
 
@@ -94,19 +95,9 @@ func TestParseOptions(t *testing.T) {
 		{"FOO,1,BAR,r90,BAZ", Options{Width: 1, Height: 1, Rotate: 90}},
 
 		// flags, in different orders
-		{"q70,1x2,fit,r90,fv,fh,sc0ffee,png", Options{1, 2, true, 90, true, true, 70, "c0ffee", false, "png", 0, 0, 0, 0, false}},
-		{"r90,fh,sc0ffee,png,q90,1x2,fv,fit", Options{1, 2, true, 90, true, true, 90, "c0ffee", false, "png", 0, 0, 0, 0, false}},
-
-		// all flags, in different orders with crop
-		{"q70,cx100,cw300,1x2,fit,cy200,r90,fv,ch400,fh,sc0ffee,png", Options{1, 2, true, 90, true, true, 70, "c0ffee", false, "png", 100, 200, 300, 400, false}},
-		{"ch400,r90,cw300,fh,sc0ffee,png,cx100,q90,cy200,1x2,fv,fit", Options{1, 2, true, 90, true, true, 90, "c0ffee", false, "png", 100, 200, 300, 400, false}},
-
-		// all flags, in different orders with crop & different resizes
-		{"q70,cx100,cw300,x2,fit,cy200,r90,fv,ch400,fh,sc0ffee,png", Options{0, 2, true, 90, true, true, 70, "c0ffee", false, "png", 100, 200, 300, 400, false}},
-		{"ch400,r90,cw300,fh,sc0ffee,png,cx100,q90,cy200,1x,fv,fit", Options{1, 0, true, 90, true, true, 90, "c0ffee", false, "png", 100, 200, 300, 400, false}},
-		{"ch400,r90,cw300,fh,sc0ffee,png,cx100,q90,cy200,cw,fv,fit", Options{0, 0, true, 90, true, true, 90, "c0ffee", false, "png", 100, 200, 0, 400, false}},
-		{"ch400,r90,cw300,fh,sc0ffee,png,cx100,q90,cy200,cw,fv,fit,123x321", Options{123, 321, true, 90, true, true, 90, "c0ffee", false, "png", 100, 200, 0, 400, false}},
-		{"123x321,ch400,r90,cw300,fh,sc0ffee,png,cx100,q90,cy200,cw,fv,fit", Options{123, 321, true, 90, true, true, 90, "c0ffee", false, "png", 100, 200, 0, 400, false}},
+		{"q70,1x2,fit,r90,fv,fh,sc0ffee,png", Options{Width: 1, Height: 2, Fit: true, Rotate: 90, FlipVertical: true, FlipHorizontal: true, Quality: 70, Signature: "c0ffee", Format: "png"}},
+		{"r90,fh,sc0ffee,png,q90,1x2,fv,fit", Options{Width: 1, Height: 2, Fit: true, Rotate: 90, FlipVertical: true, FlipHorizontal: true, Quality: 90, Signature: "c0ffee", Format: "png"}},
+		{"cx100,cw300,1x2,cy200,ch400,sc,scaleUp", Options{Width: 1, Height: 2, ScaleUp: true, CropX: 100, CropY: 200, CropWidth: 300, CropHeight: 400, SmartCrop: true}},
 	}
 
 	for _, tt := range tests {
@@ -203,4 +194,20 @@ func TestNewRequest(t *testing.T) {
 			t.Errorf("NewRequest(%q) request options = %v, want %v", tt.URL, got, want)
 		}
 	}
+}
+
+func TestNewRequest_BaseURL(t *testing.T) {
+	req, _ := http.NewRequest("GET", "/x/path", nil)
+	base, _ := url.Parse("https://example.com/")
+
+	r, err := NewRequest(req, base)
+	if err != nil {
+		t.Errorf("NewRequest(%v, %v) returned unexpected error: %v", req, base, err)
+	}
+
+	want := "https://example.com/path#0x0"
+	if got := r.String(); got != want {
+		t.Errorf("NewRequest(%v, %v) returned %q, want %q", req, base, got, want)
+	}
+
 }

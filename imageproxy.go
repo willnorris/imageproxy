@@ -1,4 +1,4 @@
-// Copyright 2013 Google Inc. All rights reserved.
+// Copyright 2013 Google LLC. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,18 +22,21 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"mime"
+	"net"
 	"net/http"
 	"net/url"
-	"path/filepath"
+	"path"
 	"strings"
 	"time"
 
 	"github.com/gregjones/httpcache"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	tphttp "github.com/totalwinelabs/imageproxy/third_party/http"
 )
@@ -43,25 +46,34 @@ type Proxy struct {
 	Client *http.Client // client used to fetch remote URLs
 	Cache  Cache        // cache used to cache responses
 
-	// RemoteHosts specifies a list of remote hosts that images can be
+	// AllowHosts specifies a list of remote hosts that images can be
 	// proxied from.  An empty list means all hosts are allowed.
-	RemoteHosts []string
+	AllowHosts []string
 
-	// Whitelist should no longer be used. Use "RemoteHosts" instead.
-	Whitelist []string
+	// DenyHosts specifies a list of remote hosts that images cannot be
+	// proxied from.
+	DenyHosts []string
 
 	// Referrers, when given, requires that requests to the image
 	// proxy come from a referring host. An empty list means all
 	// hosts are allowed.
 	Referrers []string
 
+	// IncludeReferer controls whether the original Referer request header
+	// is included in remote requests.
+	IncludeReferer bool
+
 	// DefaultBaseURL is the URL that relative remote URLs are resolved in
 	// reference to.  If nil, all remote URLs specified in requests must be
 	// absolute.
 	DefaultBaseURL *url.URL
 
-	// SignatureKey is the HMAC key used to verify signed requests.
-	SignatureKey []byte
+	// The Logger used by the image proxy
+	Logger *log.Logger
+
+	// SignatureKeys is a list of HMAC keys used to verify signed requests.
+	// Any of them can be used to verify signed requests.
+	SignatureKeys [][]byte
 
 	// Allow images to scale beyond their original dimensions.
 	ScaleUp bool
@@ -77,6 +89,9 @@ type Proxy struct {
 	// ContentTypes specifies a list of content types to allow. An empty
 	// list means all content types are allowed.
 	ContentTypes []string
+
+	// The User-Agent used by imageproxy when requesting origin image
+	UserAgent string
 }
 
 // NewProxy constructs a new proxy.  The provided http RoundTripper will be
@@ -101,7 +116,7 @@ func NewProxy(transport http.RoundTripper, cache Cache) *Proxy {
 			CachingClient: client,
 			log: func(format string, v ...interface{}) {
 				if proxy.Verbose {
-					log.Printf(format, v...)
+					proxy.logf(format, v...)
 				}
 			},
 		},
@@ -135,8 +150,13 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if p.Timeout > 0 {
 		h = tphttp.TimeoutHandler(h, p.Timeout, "Gateway timeout waiting for remote resource.")
 	}
+
+	timer := prometheus.NewTimer(metricRequestDuration)
+	defer timer.ObserveDuration()
+
 	start := time.Now()
 	h.ServeHTTP(w, r)
+
 	httpRequestsResponseTime.Observe(float64(time.Since(start).Seconds()))
 }
 
@@ -145,29 +165,43 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	req, err := NewRequest(r, p.DefaultBaseURL)
 	if err != nil {
 		msg := fmt.Sprintf("invalid request URL: %v", err)
-		log.Print(msg)
+		p.log(msg)
 		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
+
+	if err := p.allowed(req); err != nil {
+		p.logf("%s: %v", err, req)
+		http.Error(w, msgNotAllowed, http.StatusForbidden)
+		return
+	}
+
 	// assign static settings from proxy to req.Options
 	req.Options.ScaleUp = p.ScaleUp
 
-	if err := p.allowed(req); err != nil {
-		log.Print(err)
-		http.Error(w, err.Error(), http.StatusForbidden)
-		return
+	actualReq, _ := http.NewRequest("GET", req.String(), nil)
+	actualReq.Header = req.Original.Header
+	if p.UserAgent != "" {
+		actualReq.Header.Set("User-Agent", p.UserAgent)
+	}
+	if len(p.ContentTypes) != 0 {
+		actualReq.Header.Set("Accept", strings.Join(p.ContentTypes, ", "))
+	}
+	if p.IncludeReferer {
+		// pass along the referer header from the original request
+		copyHeader(actualReq.Header, r.Header, "referer")
 	}
 
-	imageRequest, _ := http.NewRequest("GET", req.String(), nil)
-	imageRequest.Header = req.Original.Header
-	resp, err :=p.Client.Do(imageRequest)
+	resp, err := p.Client.Do(actualReq)
 	if err != nil {
 		msg := fmt.Sprintf("error fetching remote image: %v", err)
-		log.Print(msg)
+		p.log(msg)
 		http.Error(w, msg, http.StatusInternalServerError)
+		metricRemoteErrors.Inc()
 		remoteImageFetchErrors.Inc()
 		return
 	}
+	// close the original resp.Body, even if we wrap it in a NopCloser below
 	defer resp.Body.Close()
 
 	if resp.StatusCode == 404 {
@@ -178,12 +212,14 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cached := resp.Header.Get(httpcache.XFromCache)
+	cached := resp.Header.Get(httpcache.XFromCache) == "1"
+
 	if p.Verbose {
-		log.Printf("request: %v (served from cache: %v)", *req, cached == "1")
+		p.logf("request: %+v (served from cache: %t)", *actualReq, cached)
 	}
 
-	if cached == "1" {
+	if cached {
+		metricServedFromCache.Inc()
 		requestServedFromCacheCount.Inc()
 	}
 
@@ -246,7 +282,7 @@ func peekContentType(p *bufio.Reader) string {
 // keys will be copied.
 func copyHeader(dst, src http.Header, keys ...string) {
 	if len(keys) == 0 {
-		for k, _ := range src {
+		for k := range src {
 			keys = append(keys, k)
 		}
 	}
@@ -258,41 +294,51 @@ func copyHeader(dst, src http.Header, keys ...string) {
 	}
 }
 
+var (
+	errReferrer   = errors.New("request does not contain an allowed referrer")
+	errDeniedHost = errors.New("request contains a denied host")
+	errNotAllowed = errors.New("request does not contain an allowed host or valid signature")
+
+	msgNotAllowed = "requested URL is not allowed"
+)
+
 // allowed determines whether the specified request contains an allowed
 // referrer, host, and signature.  It returns an error if the request is not
 // allowed.
 func (p *Proxy) allowed(r *Request) error {
-	if p.RemoteHosts == nil {
-		// backwards compatible with old naming of the field
-		p.RemoteHosts = p.Whitelist
-	}
-	if len(p.Referrers) > 0 && !validReferrer(p.Referrers, r.Original) {
-		return fmt.Errorf("request does not contain an allowed referrer: %v", r)
+	if len(p.Referrers) > 0 && !referrerMatches(p.Referrers, r.Original) {
+		return errReferrer
 	}
 
-	if len(p.RemoteHosts) == 0 && len(p.SignatureKey) == 0 {
+	if hostMatches(p.DenyHosts, r.URL) {
+		return errDeniedHost
+	}
+
+	if len(p.AllowHosts) == 0 && len(p.SignatureKeys) == 0 {
 		return nil // no allowed hosts or signature key, all requests accepted
 	}
 
-	if len(p.RemoteHosts) > 0 && validHost(p.RemoteHosts, r.URL) {
+	if len(p.AllowHosts) > 0 && hostMatches(p.AllowHosts, r.URL) {
 		return nil
 	}
 
-	if len(p.SignatureKey) > 0 && validSignature(p.SignatureKey, r) {
-		return nil
+	for _, signatureKey := range p.SignatureKeys {
+		if len(signatureKey) > 0 && validSignature(signatureKey, r) {
+			return nil
+		}
 	}
 
-	return fmt.Errorf("request does not contain an allowed host or valid signature: %v", r)
+	return errNotAllowed
 }
 
-// validContentType returns whether contentType matches one of the allowed patterns.
-func validContentType(patterns []string, contentType string) bool {
+// contentTypeMatches returns whether contentType matches one of the allowed patterns.
+func contentTypeMatches(patterns []string, contentType string) bool {
 	if len(patterns) == 0 {
 		return true
 	}
 
 	for _, pattern := range patterns {
-		if ok, err := filepath.Match(pattern, contentType); ok && err == nil {
+		if ok, err := path.Match(pattern, contentType); ok && err == nil {
 			return true
 		}
 	}
@@ -300,14 +346,24 @@ func validContentType(patterns []string, contentType string) bool {
 	return false
 }
 
-// validHost returns whether the host in u matches one of hosts.
-func validHost(hosts []string, u *url.URL) bool {
+// hostMatches returns whether the host in u matches one of hosts.
+func hostMatches(hosts []string, u *url.URL) bool {
 	for _, host := range hosts {
-		if u.Host == host {
+		if u.Hostname() == host {
 			return true
 		}
-		if strings.HasPrefix(host, "*.") && strings.HasSuffix(u.Host, host[2:]) {
+		if strings.HasPrefix(host, "*.") && strings.HasSuffix(u.Hostname(), host[2:]) {
 			return true
+		}
+		// Checks whether the host in u is an IP
+		if ip := net.ParseIP(u.Hostname()); ip != nil {
+			// Checks whether our current host is a CIDR
+			if _, ipnet, err := net.ParseCIDR(host); err == nil {
+				// Checks if our host contains the IP in u
+				if ipnet.Contains(ip) {
+					return true
+				}
+			}
 		}
 	}
 
@@ -315,13 +371,13 @@ func validHost(hosts []string, u *url.URL) bool {
 }
 
 // returns whether the referrer from the request is in the host list.
-func validReferrer(hosts []string, r *http.Request) bool {
+func referrerMatches(hosts []string, r *http.Request) bool {
 	u, err := url.Parse(r.Header.Get("Referer"))
 	if err != nil { // malformed or blank header, just deny
 		return false
 	}
 
-	return validHost(hosts, u)
+	return hostMatches(hosts, u)
 }
 
 // validSignature returns whether the request signature is valid.
@@ -337,10 +393,22 @@ func validSignature(key []byte, r *Request) bool {
 		return false
 	}
 
+	// check signature with URL only
 	mac := hmac.New(sha256.New, key)
 	mac.Write([]byte(r.URL.String()))
 	want := mac.Sum(nil)
+	if hmac.Equal(got, want) {
+		return true
+	}
 
+	// check signature with URL and options
+	u, opt := *r.URL, r.Options // make copies
+	opt.Signature = ""
+	u.Fragment = opt.String()
+
+	mac = hmac.New(sha256.New, key)
+	mac.Write([]byte(u.String()))
+	want = mac.Sum(nil)
 	return hmac.Equal(got, want)
 }
 
@@ -371,6 +439,22 @@ func should304(req *http.Request, resp *http.Response) bool {
 	return false
 }
 
+func (p *Proxy) log(v ...interface{}) {
+	if p.Logger != nil {
+		p.Logger.Print(v...)
+	} else {
+		log.Print(v...)
+	}
+}
+
+func (p *Proxy) logf(format string, v ...interface{}) {
+	if p.Logger != nil {
+		p.Logger.Printf(format, v...)
+	} else {
+		log.Printf(format, v...)
+	}
+}
+
 // TransformingTransport is an implementation of http.RoundTripper that
 // optionally transforms images using the options specified in the request URL
 // fragment.
@@ -398,11 +482,12 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 		return t.Transport.RoundTrip(req)
 	}
 
-	u := *req.URL
-	u.Fragment = ""
-	imageRequest, _ := http.NewRequest("GET", u.String(), nil)
+	f := req.URL.Fragment
+	req.URL.Fragment = ""
+	imageRequest, _ := http.NewRequest("GET", req.URL.String(), nil)
 	imageRequest.Header = req.Header
 	resp, err := t.CachingClient.Do(imageRequest)
+	req.URL.Fragment = f
 	if err != nil {
 		return nil, err
 	}
@@ -423,7 +508,7 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 
 	img, err := Transform(b, opt)
 	if err != nil {
-		log.Printf("error transforming image %s: %v", u.String(), err)
+		log.Printf("error transforming image %s: %v", req.URL.String(), err)
 		img = b
 	}
 
