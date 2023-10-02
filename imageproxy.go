@@ -160,7 +160,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 
 	imageRequest, _ := http.NewRequest("GET", req.String(), nil)
 	imageRequest.Header = req.Original.Header
-	resp, err :=p.Client.Do(imageRequest)
+	resp, err := p.Client.Do(imageRequest)
 	if err != nil {
 		msg := fmt.Sprintf("error fetching remote image: %v", err)
 		log.Print(msg)
@@ -403,7 +403,7 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 	imageRequest, _ := http.NewRequest("GET", u.String(), nil)
 	imageRequest.Header = req.Header
 	resp, err := t.CachingClient.Do(imageRequest)
-	if err != nil {
+	if err != nil || resp.StatusCode >= 400 {
 		return nil, err
 	}
 
