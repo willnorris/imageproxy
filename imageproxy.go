@@ -35,6 +35,7 @@ import (
 
 	"github.com/gregjones/httpcache"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/totalwinelabs/go-common/src/errors"
 	tphttp "github.com/totalwinelabs/imageproxy/third_party/http"
 )
 
@@ -403,11 +404,19 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 	imageRequest, _ := http.NewRequest("GET", u.String(), nil)
 	imageRequest.Header = req.Header
 	resp, err := t.CachingClient.Do(imageRequest)
-	if err != nil || resp.StatusCode >= 400 {
+	if err != nil {
 		return nil, err
 	}
 
 	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		if resp.StatusCode == 400 {
+			return nil, errors.ErrCustom.New("Bad Request (400) received when retrieving image.")
+		}
+		return nil,
+			errors.ErrCustom.New(fmt.Sprintf("Error received when retrieving image. Status: %d", resp.StatusCode))
+	}
 
 	if should304(req, resp) {
 		// bare 304 response, full response will be used from cache
