@@ -412,10 +412,11 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 
 	if resp.StatusCode >= 400 {
 		if resp.StatusCode == 400 {
-			return nil, errors.ErrCustom.New("Bad Request (400) received when retrieving image.")
+			return nil, errors.ErrBadRequestReason.New(u.String())
 		}
-		return nil,
-			errors.ErrCustom.New(fmt.Sprintf("Error received when retrieving image. Status: %d", resp.StatusCode))
+		imageError := errors.ErrCustom.New(fmt.Sprintf("Error received when retrieving image: %s", u.String()))
+		imageError.SetCode(resp.StatusCode)
+		return nil, imageError
 	}
 
 	if should304(req, resp) {
