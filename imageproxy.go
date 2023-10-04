@@ -35,7 +35,6 @@ import (
 
 	"github.com/gregjones/httpcache"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/totalwinelabs/go-common/src/errors"
 	tphttp "github.com/totalwinelabs/imageproxy/third_party/http"
 )
 
@@ -171,8 +170,8 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == 404 {
-		msg := fmt.Sprintf("remote image not found: %v", req.String())
+	if resp.StatusCode >= 404 {
+		msg := fmt.Sprintf("Error Code %d received. Remote image not found: %v", resp.StatusCode, req.String())
 		log.Print(msg)
 		http.Error(w, msg, http.StatusNotFound)
 		remoteImageFetchErrors.Inc()
@@ -409,15 +408,6 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 	}
 
 	defer resp.Body.Close()
-
-	if resp.StatusCode >= 400 {
-		if resp.StatusCode == 400 {
-			return nil, errors.ErrBadRequestReason.New(u.String())
-		}
-		imageError := errors.ErrCustom.New(fmt.Sprintf("Error received when retrieving image: %s", u.String()))
-		imageError.SetCode(resp.StatusCode)
-		return nil, imageError
-	}
 
 	if should304(req, resp) {
 		// bare 304 response, full response will be used from cache
