@@ -170,7 +170,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode >= 404 {
+	if resp.StatusCode >= 400 {
 		msg := fmt.Sprintf("Error Code %d received. Remote image not found: %v", resp.StatusCode, req.String())
 		log.Print(msg)
 		http.Error(w, msg, http.StatusNotFound)
