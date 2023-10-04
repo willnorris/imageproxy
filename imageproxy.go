@@ -160,7 +160,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 
 	imageRequest, _ := http.NewRequest("GET", req.String(), nil)
 	imageRequest.Header = req.Original.Header
-	resp, err :=p.Client.Do(imageRequest)
+	resp, err := p.Client.Do(imageRequest)
 	if err != nil {
 		msg := fmt.Sprintf("error fetching remote image: %v", err)
 		log.Print(msg)
@@ -170,8 +170,8 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == 404 {
-		msg := fmt.Sprintf("remote image not found: %v", req.String())
+	if resp.StatusCode >= 400 {
+		msg := fmt.Sprintf("Error Code %d received. Remote image not found: %v", resp.StatusCode, req.String())
 		log.Print(msg)
 		http.Error(w, msg, http.StatusNotFound)
 		remoteImageFetchErrors.Inc()
