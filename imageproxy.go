@@ -200,8 +200,8 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	// close the original resp.Body, even if we wrap it in a NopCloser below
 	defer resp.Body.Close()
 
-	if resp.StatusCode == 404 {
-		msg := fmt.Sprintf("remote image not found: %v", req.String())
+	if resp.StatusCode >= 400 {
+		msg := fmt.Sprintf("Error Code %d received. Remote image not found: %v", resp.StatusCode, req.String())
 		log.Print(msg)
 		http.Error(w, msg, http.StatusNotFound)
 		metricRemoteErrors.Inc()
