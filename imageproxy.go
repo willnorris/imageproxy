@@ -154,10 +154,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	timer := prometheus.NewTimer(metricRequestDuration)
 	defer timer.ObserveDuration()
 
-	start := time.Now()
 	h.ServeHTTP(w, r)
-
-	httpRequestsResponseTime.Observe(float64(time.Since(start).Seconds()))
 }
 
 // serveImage handles incoming requests for proxied images.
@@ -198,7 +195,6 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 		p.log(msg)
 		http.Error(w, msg, http.StatusInternalServerError)
 		metricRemoteErrors.Inc()
-		remoteImageFetchErrors.Inc()
 		return
 	}
 	// close the original resp.Body, even if we wrap it in a NopCloser below
@@ -208,7 +204,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 		msg := fmt.Sprintf("remote image not found: %v", req.String())
 		log.Print(msg)
 		http.Error(w, msg, http.StatusNotFound)
-		remoteImageFetchErrors.Inc()
+		metricRemoteErrors.Inc()
 		return
 	}
 
@@ -220,10 +216,9 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 
 	if cached {
 		metricServedFromCache.Inc()
-		requestServedFromCacheCount.Inc()
 	}
 
-	copyHeader(w.Header(), resp.Header, "Cache-Control", "Last-Modified", "Expires", "Etag", "Link")
+	copyHeader(w.Header(), resp.Header, "Cache-Control", "Expires", "Etag", "Link")
 
 	if should304(r, resp) {
 		w.WriteHeader(http.StatusNotModified)
@@ -233,6 +228,8 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	contentType, _, _ := mime.ParseMediaType(resp.Header.Get("Content-Type"))
 
 	if contentType == "" || contentType == "application/octet-stream" || contentType == "binary/octet-stream" {
+		fmt.Println(fmt.Sprintf("requested image content type (%s) isn't valid, need to peek: %s", contentType, req.String()))
+
 		// try to detect content type
 		b := bufio.NewReader(resp.Body)
 		resp.Body = ioutil.NopCloser(b)
@@ -245,7 +242,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if resp.ContentLength != 0 && !validContentType(p.ContentTypes, contentType) {
+	if resp.ContentLength != 0 && !contentTypeMatches(p.ContentTypes, contentType) {
 		msg := fmt.Sprintf("forbidden content-type: %q", contentType)
 		log.Print(msg)
 		http.Error(w, msg, http.StatusForbidden)
@@ -270,6 +267,12 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 // peekContentType peeks at the first 512 bytes of p, and attempts to detect
 // the content type.  Returns empty string if error occurs.
 func peekContentType(p *bufio.Reader) string {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("recovered in peekContentType", r)
+		}
+	}()
+
 	byt, err := p.Peek(512)
 	if err != nil && err != bufio.ErrBufferFull && err != io.EOF {
 		return ""
@@ -419,6 +422,7 @@ func should304(req *http.Request, resp *http.Response) bool {
 	// TODO(willnorris): if-none-match header can be a comma separated list
 	// of multiple tags to be matched, or the special value "*" which
 	// matches all etags
+
 	etag := resp.Header.Get("Etag")
 	if etag != "" && etag == req.Header.Get("If-None-Match") {
 		return true

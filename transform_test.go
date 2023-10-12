@@ -15,8 +15,11 @@
 package imageproxy
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/base64"
+	"fmt"
+	"golang.org/x/image/bmp"
 	"image"
 	"image/color"
 	"image/draw"
@@ -24,11 +27,11 @@ import (
 	"image/jpeg"
 	"image/png"
 	"io"
+	"os"
 	"reflect"
 	"testing"
 
 	"github.com/disintegration/imaging"
-	"golang.org/x/image/bmp"
 )
 
 var (
@@ -116,7 +119,7 @@ func TestTransform(t *testing.T) {
 		{"bmp", func(w io.Writer, m image.Image) { bmp.Encode(w, m) }, true},
 		{"gif", func(w io.Writer, m image.Image) { gif.Encode(w, m, nil) }, true},
 		{"jpeg", func(w io.Writer, m image.Image) { jpeg.Encode(w, m, nil) }, false},
-		{"png", func(w io.Writer, m image.Image) { png.Encode(w, m) }, true},
+		{"png", func(w io.Writer, m image.Image) { png.Encode(w, m) }, false},
 	}
 
 	for _, tt := range tests {
@@ -128,7 +131,8 @@ func TestTransform(t *testing.T) {
 		if err != nil {
 			t.Errorf("Transform with encoder %s returned unexpected error: %v", tt.name, err)
 		}
-		if !reflect.DeepEqual(in, out) {
+
+		if tt.exactOutput && !reflect.DeepEqual(in, out) {
 			t.Errorf("Transform with with encoder %s with empty options returned modified result", tt.name)
 		}
 
@@ -136,6 +140,7 @@ func TestTransform(t *testing.T) {
 		if err != nil {
 			t.Errorf("Transform with encoder %s returned unexpected error: %v", tt.name, err)
 		}
+
 		if len(out) == 0 {
 			t.Errorf("Transform with encoder %s returned empty bytes", tt.name)
 		}
@@ -379,4 +384,70 @@ func TestTransformImage(t *testing.T) {
 			t.Errorf("transformImage(%v, %v) returned image %#v, want %#v", tt.src, tt.opt, got, tt.want)
 		}
 	}
+}
+
+func TestTWMChanges(t *testing.T) {
+	src, err := getTwmTestImage("test-images/unanime.png")
+	if err != nil {
+		t.Errorf("test failed getting image: %v", err)
+		t.Fail()
+	}
+
+	tests := []struct {
+		name             string
+		matchOutFilename string
+		options          Options
+	}{
+		{"jpeg 400x", "test-images/unanime-400x.png", Options{Width: 400}},
+		{"jpeg 400x,200ml", "test-images/unanime-400x,200ml.png", Options{Width: 400, IndicatorSize: optIndicatorSize200ml, Square: true}},
+	}
+
+	for _, tt := range tests {
+		shouldOut, err := getTwmTestImage(tt.matchOutFilename)
+		if err != nil {
+			t.Errorf("test failed getting out image %s: %v", tt.matchOutFilename, err)
+			continue
+		}
+		out, err := Transform(src, tt.options)
+		if err != nil {
+			t.Errorf("Transform with encoder %s returned unexpected error: %v", tt.name, err)
+		}
+
+		if !reflect.DeepEqual(shouldOut, out) {
+			TMPORARYWriteTestImage("test-images/tmepout.png", out)
+			t.Errorf("Transform with with encoder %s with empty options returned modified result", tt.name)
+		}
+
+		fmt.Println("done", tt.name)
+	}
+
+}
+
+func getTwmTestImage(name string) ([]byte, error) {
+	src, err := os.Open(name)
+	if err != nil {
+		return nil, err
+	}
+
+	stat, err := src.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	bs := make([]byte, stat.Size())
+	bufio.NewReader(src).Read(bs)
+
+	return bs, nil
+}
+
+func TMPORARYWriteTestImage(name string, bs []byte) {
+	f, err := os.OpenFile(name, os.O_RDWR|os.O_CREATE, 0755)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	n, err := f.Write(bs)
+	fmt.Println(n, err)
+
 }

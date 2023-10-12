@@ -91,6 +91,7 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
+		outputBytes = buf.Bytes()
 	case "gif":
 		fn := func(img image.Image) image.Image {
 			return transformImage(img, opt)
@@ -107,6 +108,7 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 		}
 
 		m = transformImage(m, opt)
+
 		err = jpeg.Encode(buf, m, &jpeg.Options{Quality: quality})
 		if err != nil {
 			return nil, err
@@ -304,7 +306,7 @@ func cropParams(m image.Image, opt Options) image.Rectangle {
 	return image.Rect(x0, y0, x1, y1)
 }
 
-//make image square by adding transparency to max side
+// make image square by adding transparency to max side
 func makeSquare(m image.Image, sidePadding int) image.Image {
 	x := m.Bounds().Dx()
 	x = x + sidePadding
@@ -376,6 +378,9 @@ func exifOrientation(r io.Reader) (opt Options) {
 
 func addSizeIndicator(m image.Image, size string) image.Image {
 	relativePath := "../.."
+	if os.Getenv("GOTESTS") == "true" {
+		relativePath = "./"
+	}
 	if os.Getenv("DOCKER") == "true" {
 		relativePath = ""
 	}
@@ -431,7 +436,6 @@ func transformImage(m image.Image, opt Options) image.Image {
 	// Parse crop and resize parameters before applying any transforms.
 	// This is to ensure that any percentage-based values are based off the
 	// size of the original image.
-	start := time.Now()
 	rect := cropParams(m, opt)
 	w, h, resize := resizeParams(m, opt)
 
@@ -477,8 +481,6 @@ func transformImage(m image.Image, opt Options) image.Image {
 	if opt.IndicatorSize != "" {
 		m = addSizeIndicator(m, opt.IndicatorSize)
 	}
-
-	imageTransformationSummary.Observe(float64(time.Since(start).Seconds()))
 
 	return m
 }
