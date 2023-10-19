@@ -1,38 +1,51 @@
 module github.com/totalwinelabs/imageproxy
 
 require (
-	cloud.google.com/go v0.0.0-20180131234750-2de512d2700d
-	github.com/Azure/azure-sdk-for-go v12.3.0-beta+incompatible // indirect
-	github.com/Azure/go-autorest v9.9.0+incompatible // indirect
+	cloud.google.com/go v0.37.1
+	contrib.go.opencensus.io/exporter/ocagent v0.4.9 // indirect
+	github.com/Azure/azure-sdk-for-go v26.5.0+incompatible // indirect
+	github.com/Azure/go-autorest v11.5.2+incompatible // indirect
 	github.com/PaulARoy/azurestoragecache v0.0.0-20170906084534-3c249a3ba788
-	github.com/aws/aws-sdk-go v1.15.35
-	github.com/dgrijalva/jwt-go v3.1.0+incompatible // indirect
-	github.com/die-net/lrucache v0.0.0-20171111232917-04b9315ab7a6
-	github.com/disintegration/imaging v1.3.0
-	github.com/dnaeon/go-vcr v0.0.0-20180814043457-aafff18a5cc2 // indirect
-	github.com/garyburd/redigo v1.5.0
-	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b // indirect
-	github.com/google/btree v0.0.0-20180124185431-e89373fe6b4a // indirect
-	github.com/googleapis/gax-go v2.0.0+incompatible // indirect
-	github.com/gopherjs/gopherjs v0.0.0-20180825215210-0210a2f0f73c // indirect
-	github.com/gregjones/httpcache v0.0.0-20171119193500-2bcd89a1743f
-	github.com/jtolds/gls v4.2.1+incompatible // indirect
+	github.com/aws/aws-sdk-go v1.19.0
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
+	github.com/die-net/lrucache v0.0.0-20181227122439-19a39ef22a11
+	github.com/disintegration/imaging v1.6.0
+	github.com/dnaeon/go-vcr v1.0.1 // indirect
+	github.com/garyburd/redigo v1.6.0
+	github.com/gomodule/redigo v2.0.0+incompatible // indirect
+	github.com/google/btree v1.0.0 // indirect
+	github.com/gorilla/mux v1.6.2
+	github.com/gregjones/httpcache v0.0.0-20190212212710-3befbb6ad0cc
+	github.com/grpc-ecosystem/grpc-gateway v1.8.5 // indirect
+	github.com/hashicorp/golang-lru v0.5.1 // indirect
+	github.com/jamiealquiza/envy v1.1.0
 	github.com/marstr/guid v0.0.0-20170427235115-8bdf7d1a087c // indirect
-	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
-	github.com/modern-go/reflect2 v1.0.1 // indirect
-	github.com/muesli/smartcrop v0.0.0-20171215203440-9032446b30f6
-	github.com/nfnt/resize v0.0.0-20160724205520-891127d8d1b5 // indirect
+	github.com/muesli/smartcrop v0.2.1-0.20181030220600-548bbf0c0965
+	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
 	github.com/peterbourgon/diskv v0.0.0-20171120014656-2973218375c3
-	github.com/prometheus/client_golang v1.5.0 // indirect
-	github.com/rwcarlsen/goexif v0.0.0-20141222211634-41dad3aa0833
+	github.com/prometheus/client_golang v1.4.1
+	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
 	github.com/satori/go.uuid v0.0.0-20180103174451-36e9d2ebbde5 // indirect
-	github.com/smartystreets/assertions v0.0.0-20180820201707-7c9eb446e3cf // indirect
-	github.com/smartystreets/goconvey v0.0.0-20180222194500-ef6db91d284a // indirect
-	golang.org/x/image v0.0.0-20171214225156-12117c17ca67
-	golang.org/x/oauth2 v0.0.0-20180126164932-a032972e2806 // indirect
-	google.golang.org/api v0.0.0-20180202000329-f7618f4b41ca // indirect
-	google.golang.org/appengine v0.0.0-20171212223047-5bee14b453b4 // indirect
-	google.golang.org/genproto v0.0.0-20180125080656-4eb30f4778ee // indirect
-	google.golang.org/grpc v0.0.0-20180201193814-f9628db66d14 // indirect
+	go.opencensus.io v0.19.2 // indirect
+	golang.org/x/image v0.0.0-20190321063152-3fc05d484e9f
+	golang.org/x/oauth2 v0.0.0-20190319182350-c85d3e98c914 // indirect
+	google.golang.org/appengine v1.5.0 // indirect
+	google.golang.org/genproto v0.0.0-20190321212433-e79c0c59cdb5 // indirect
 	willnorris.com/go/gifresize v1.0.0
 )
+
+replace (
+	// replace git.apache.org with github.com/apache (which is the upstream master
+	// anyway), since git.apache.org is offline. v0.12.0 is the latest release, but
+	// go complains about "github.com/apache/thrift@v0.12.0 used for two different
+	// module paths".  Instead we move one commit ahead.
+	git.apache.org/thrift.git => github.com/apache/thrift v0.12.1-0.20190107215100-e824efcb7935
+
+	// temporary fix to https://github.com/golang/lint/issues/436 which still seems to be a problem
+	github.com/golang/lint => github.com/golang/lint v0.0.0-20181217174547-8f45f776aaf1
+
+	// local copy of envy package without cobra support
+	github.com/jamiealquiza/envy => ./third_party/envy
+)
+
+go 1.13
