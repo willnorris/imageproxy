@@ -6,28 +6,23 @@ require (
 	github.com/Azure/azure-sdk-for-go v26.5.0+incompatible // indirect
 	github.com/Azure/go-autorest v11.5.2+incompatible // indirect
 	github.com/PaulARoy/azurestoragecache v0.0.0-20170906084534-3c249a3ba788
-	github.com/aws/aws-sdk-go v1.19.0
+	github.com/aws/aws-sdk-go v1.44.314
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
-	github.com/die-net/lrucache v0.0.0-20181227122439-19a39ef22a11
-	github.com/disintegration/imaging v1.6.0
-	github.com/dnaeon/go-vcr v1.0.1 // indirect
-	github.com/garyburd/redigo v1.6.0
-	github.com/gomodule/redigo v2.0.0+incompatible // indirect
-	github.com/google/btree v1.0.0 // indirect
-	github.com/gorilla/mux v1.6.2
-	github.com/gregjones/httpcache v0.0.0-20190212212710-3befbb6ad0cc
-	github.com/grpc-ecosystem/grpc-gateway v1.8.5 // indirect
-	github.com/hashicorp/golang-lru v0.5.1 // indirect
+	github.com/die-net/lrucache v0.0.0-20220628165024-20a71bc65bf1
+	github.com/disintegration/imaging v1.6.2
+	github.com/dnaeon/go-vcr v1.2.0 // indirect
+	github.com/gomodule/redigo v1.8.9
+	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 	github.com/jamiealquiza/envy v1.1.0
-	github.com/marstr/guid v0.0.0-20170427235115-8bdf7d1a087c // indirect
-	github.com/muesli/smartcrop v0.2.1-0.20181030220600-548bbf0c0965
+	github.com/marstr/guid v1.1.0 // indirect
+	github.com/muesli/smartcrop v0.3.0
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
 	github.com/peterbourgon/diskv v0.0.0-20171120014656-2973218375c3
 	github.com/prometheus/client_golang v1.4.1
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
 	github.com/satori/go.uuid v0.0.0-20180103174451-36e9d2ebbde5 // indirect
 	go.opencensus.io v0.19.2 // indirect
-	golang.org/x/image v0.0.0-20190321063152-3fc05d484e9f
+	golang.org/x/image v0.0.0-20191009234506-e7c1f5e7dbb8
 	golang.org/x/oauth2 v0.0.0-20190319182350-c85d3e98c914 // indirect
 	google.golang.org/appengine v1.5.0 // indirect
 	google.golang.org/genproto v0.0.0-20190321212433-e79c0c59cdb5 // indirect
