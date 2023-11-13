@@ -10,7 +10,6 @@ require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/fcjr/aia-transport-go v1.2.2
 	github.com/gomodule/redigo v1.8.9
-	github.com/gorilla/mux v1.8.0
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 	github.com/muesli/smartcrop v0.3.0
 	github.com/peterbourgon/diskv v0.0.0-20171120014656-2973218375c3

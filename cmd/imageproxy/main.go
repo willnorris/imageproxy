@@ -19,7 +19,6 @@ import (
 	"github.com/die-net/lrucache"
 	"github.com/die-net/lrucache/twotier"
 	"github.com/gomodule/redigo/redis"
-	"github.com/gorilla/mux"
 	"github.com/gregjones/httpcache/diskcache"
 	rediscache "github.com/gregjones/httpcache/redis"
 	"github.com/peterbourgon/diskv"
@@ -89,12 +88,9 @@ func main() {
 	p.Verbose = *verbose
 	p.UserAgent = *userAgent
 
-	r := mux.NewRouter().SkipClean(true).UseEncodedPath()
-	r.PathPrefix("/").Handler(p)
-
 	server := &http.Server{
 		Addr:    *addr,
-		Handler: r,
+		Handler: p,
 
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,
