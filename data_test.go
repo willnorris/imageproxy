@@ -71,6 +71,7 @@ func TestParseOptions(t *testing.T) {
 		{"fv", Options{FlipVertical: true}},
 		{"fh", Options{FlipHorizontal: true}},
 		{"jpeg", Options{Format: "jpeg"}},
+		{"webp", Options{Format: "webp"}},
 
 		// duplicate flags (last one wins)
 		{"1x2,3x4", Options{Width: 3, Height: 4}},
@@ -120,7 +121,9 @@ func TestNewRequest(t *testing.T) {
 		},
 		{
 			"http://localhost/1xs/http://example.com/",
-			"http://example.com/", Options{Width: 1}, false,
+			"http://example.com/",
+			Options{Width: 1},
+			false,
 		},
 
 		// valid URLs
@@ -138,7 +141,9 @@ func TestNewRequest(t *testing.T) {
 		},
 		{
 			"http://localhost/1x2/http://example.com/foo",
-			"http://example.com/foo", Options{Width: 1, Height: 2}, false,
+			"http://example.com/foo",
+			Options{Width: 1, Height: 2},
+			false,
 		},
 		{
 			"http://localhost//http://example.com/foo?bar",
