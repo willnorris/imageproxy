@@ -30,8 +30,7 @@ import (
 	"github.com/PaulARoy/azurestoragecache"
 	"github.com/die-net/lrucache"
 	"github.com/die-net/lrucache/twotier"
-	"github.com/garyburd/redigo/redis"
-	"github.com/gorilla/mux"
+	"github.com/gomodule/redigo/redis"
 	"github.com/gregjones/httpcache/diskcache"
 	rediscache "github.com/gregjones/httpcache/redis"
 	"github.com/jamiealquiza/envy"
@@ -96,14 +95,15 @@ func main() {
 	p.UserAgent = *userAgent
 
 	server := &http.Server{
-		Addr:    *addr,
-		Handler: p,
+		Addr:         *addr,
+		Handler:      p,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		IdleTimeout:  120 * time.Second,
 	}
 
-	r := mux.NewRouter().SkipClean(true).UseEncodedPath()
-	r.PathPrefix("/").Handler(p)
 	fmt.Printf("imageproxy listening on %s\n", server.Addr)
-	log.Fatal(http.ListenAndServe(*addr, r))
+	log.Fatal(server.ListenAndServe())
 }
 
 type signatureKeyList [][]byte
