@@ -37,8 +37,8 @@ jobs:
           push_image: false
       - docker-scout/command-scan-image:
           image_tag: ${DEPLOYMENT_AWS_ECR_REGISTRY_ID}.dkr.ecr.eu-central-1.amazonaws.com/imageproxy:latest
-      # - aws-cli/setup:
-      #     role-arn: "arn:aws:iam::676012288735:role/inventory-back-office_oidc_ecr_deployment_role"
+      - aws-cli/setup:
+          role-arn: "arn:aws:iam::676012288735:role/imageproxy-oidc-deployment-role"
       - aws-ecr/ecr_login:
           account_id: $DEPLOYMENT_AWS_ECR_REGISTRY_ID
           region: $AWS_DEFAULT_REGION
