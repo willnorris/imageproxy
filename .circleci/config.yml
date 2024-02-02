@@ -57,4 +57,4 @@ workflows:
             - aws-oidc
             - docker-hub-creds-heyjobsci
           filters:
-            <<: *filter_docker_scout
+            <<: *filter_main
