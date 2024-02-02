@@ -7,7 +7,6 @@ orbs:
   aws-ecr: circleci/aws-ecr@9.0.2
 
 default_env: &default_env
-  working_directory: ~/
   docker:
     - image: cimg/go:1.20.13-node
 
