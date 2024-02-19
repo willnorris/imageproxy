@@ -1,0 +1,60 @@
+version: 2.1
+
+# Declare Orbs here:
+orbs:
+  aws-cli: circleci/aws-cli@3.1.5
+  docker-scout: heyjobs_orbs/docker-scout@1.1.6
+  aws-ecr: circleci/aws-ecr@9.0.2
+
+default_env: &default_env
+  docker:
+    - image: cimg/go:1.20.13-node
+
+# Declare filters here:
+filter_main: &filter_main
+  branches:
+    only:
+      - main
+
+filter_docker_scout: &filter_docker_scout
+  branches:
+    only:
+      - INF-4058/docker-scout-integration
+
+# Declare Jobs here:
+jobs:
+  job_publish:
+    <<: *default_env
+    steps:
+      - setup_remote_docker: { docker_layer_caching: true }
+      - checkout
+      - aws-ecr/build_image:
+          region: $AWS_DEFAULT_REGION
+          account_id: $DEPLOYMENT_AWS_ECR_REGISTRY_ID
+          repo: imageproxy
+          tag: latest
+          dockerfile: "Dockerfile"
+          push_image: false
+      - docker-scout/command-scan-image:
+          image_tag: ${DEPLOYMENT_AWS_ECR_REGISTRY_ID}.dkr.ecr.eu-central-1.amazonaws.com/imageproxy:latest
+      - aws-cli/setup:
+          role-arn: "arn:aws:iam::676012288735:role/imageproxy-oidc-deployment-role"
+      - aws-ecr/ecr_login:
+          account_id: $DEPLOYMENT_AWS_ECR_REGISTRY_ID
+          region: $AWS_DEFAULT_REGION
+      - aws-ecr/push_image:
+          region: $AWS_DEFAULT_REGION
+          repo: imageproxy
+          tag: latest
+          account_id: $DEPLOYMENT_AWS_ECR_REGISTRY_ID
+
+# Declare workflows here:
+workflows:
+  workflow_publish:
+    jobs:
+      - job_publish:
+          context:
+            - aws-oidc
+            - docker-hub-creds-heyjobsci
+          filters:
+            <<: *filter_main
