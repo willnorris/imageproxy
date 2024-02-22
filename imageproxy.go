@@ -200,6 +200,10 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	// close the original resp.Body, even if we wrap it in a NopCloser below
 	defer resp.Body.Close()
 
+	fmt.Println("actualReq", actualReq)
+	fmt.Println(resp.Header)
+	fmt.Println(resp.StatusCode)
+
 	if resp.StatusCode >= 400 {
 		msg := fmt.Sprintf("Error Code %d received. Remote image not found: %v", resp.StatusCode, req.String())
 		log.Print(msg)
@@ -422,6 +426,10 @@ func should304(req *http.Request, resp *http.Response) bool {
 	// TODO(willnorris): if-none-match header can be a comma separated list
 	// of multiple tags to be matched, or the special value "*" which
 	// matches all etags
+
+	if resp.StatusCode == http.StatusNotModified {
+		return true
+	}
 
 	etag := resp.Header.Get("Etag")
 	if etag != "" && etag == req.Header.Get("If-None-Match") {
