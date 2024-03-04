@@ -3,7 +3,7 @@ version: 2.1
 # Declare Orbs here:
 orbs:
   aws-cli: circleci/aws-cli@3.1.5
-  docker-scout: heyjobs_orbs/docker-scout@1.1.6
+  docker-scout: heyjobs_orbs/docker-scout@1.1.8
   aws-ecr: circleci/aws-ecr@9.0.2
 
 default_env: &default_env
