@@ -8,7 +8,7 @@ export const options = {
         'imageproxy_images': {
             executor: 'ramping-vus',
             startVUs: 0,
-            stages: [{duration: '10s', target: 50}, {duration: '60s', target: 100}, {duration: '10s', target: 50},],
+            stages: [{duration: '10s', target: 200}, {duration: '60s', target: 600}, {duration: '10s', target: 300},],
             gracefulRampDown: '5s',
         }
     }, thresholds: {
