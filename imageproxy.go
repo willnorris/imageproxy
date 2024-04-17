@@ -25,7 +25,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"mime"
 	"net"
@@ -159,7 +158,17 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // serveImage handles incoming requests for proxied images.
 func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
-	req, err := NewRequest(r, p.DefaultBaseURL)
+	var req *Request
+	var err error
+	var resp *http.Response
+
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("recovered in serveImage for url: ", req.String(), resp.Status, resp.ContentLength, r)
+		}
+	}()
+
+	req, err = NewRequest(r, p.DefaultBaseURL)
 	if err != nil {
 		msg := fmt.Sprintf("invalid request URL: %v", err)
 		p.log(msg)
@@ -189,7 +198,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 		copyHeader(actualReq.Header, r.Header, "referer")
 	}
 
-	resp, err := p.Client.Do(actualReq)
+	resp, err = p.Client.Do(actualReq)
 	if err != nil {
 		msg := fmt.Sprintf("error fetching remote image: %v", err)
 		p.log(msg)
@@ -230,7 +239,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	if contentType == "" || contentType == "application/octet-stream" || contentType == "binary/octet-stream" {
 		// try to detect content type
 		b := bufio.NewReader(resp.Body)
-		resp.Body = ioutil.NopCloser(b)
+		resp.Body = io.NopCloser(b)
 		contentType = peekContentType(b)
 	}
 
@@ -501,7 +510,7 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 		return &http.Response{StatusCode: http.StatusNotModified}, nil
 	}
 
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}

@@ -1,0 +1,21 @@
+{
+  "name": "imageproxy-perf",
+  "version": "1.0.0",
+  "main": "testFlow.js",
+  "scripts": {
+    "perf-images": "k6 run dist/images.bundle.js",
+    "perf-randomized": "k6 run dist/randomized.bundle.js",
+    "bundle": "webpack"
+  },
+  "dependencies": {
+    "@babel/core": "^7.17.8",
+    "@babel/preset-env": "^7.16.11",
+    "@types/k6": "^0.36.0",
+    "babel-loader": "^8.2.4",
+    "core-js": "^3.21.1",
+    "date-fns": "^2.28.0",
+    "k6": "^0.0.0",
+    "webpack": "^5.70.0",
+    "webpack-cli": "^4.9.2"
+  }
+}
