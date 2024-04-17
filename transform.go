@@ -403,9 +403,6 @@ func addSizeIndicator(m image.Image, size string) image.Image {
 	draw.Draw(output, b, m, image.ZP, draw.Src)
 	draw.Draw(output, sizeImage.Bounds().Add(offset), sizeImage, image.ZP, draw.Over)
 
-	if err != nil {
-		log.Fatalf("failed to decode: %s", err)
-	}
 	return output
 }
 
