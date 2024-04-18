@@ -31,6 +31,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -164,7 +165,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("recovered in serveImage for url: ", req.String(), resp.Status, resp.ContentLength, r)
+			fmt.Println("recovered in serveImage for url: ", req.String(), resp.Status, resp.ContentLength, r, string(debug.Stack()))
 		}
 	}()
 
@@ -227,7 +228,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 		metricServedFromCache.Inc()
 	}
 
-	copyHeader(w.Header(), resp.Header, "Cache-Control", "Expires", "Etag", "Link")
+	copyHeader(w.Header(), resp.Header, "Cache-Control", "Last-Modified", "Expires", "Etag", "Link")
 
 	if should304(r, resp) {
 		w.WriteHeader(http.StatusNotModified)
@@ -276,7 +277,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 func peekContentType(p *bufio.Reader) string {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("recovered in peekContentType", r)
+			fmt.Println("recovered in peekContentType", r, string(debug.Stack()))
 		}
 	}()
 
@@ -506,8 +507,11 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 	defer resp.Body.Close()
 
 	if should304(req, resp) {
-		// bare 304 response, full response will be used from cache
-		return &http.Response{StatusCode: http.StatusNotModified}, nil
+		return resp, nil
+	}
+
+	if resp.StatusCode >= 400 {
+		return resp, nil
 	}
 
 	b, err := io.ReadAll(resp.Body)
