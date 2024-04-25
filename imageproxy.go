@@ -163,9 +163,16 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	var err error
 	var resp *http.Response
 
+	var respWas304 bool
+
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println("recovered in serveImage for url: ", req.String(), resp.Status, resp.ContentLength, r, string(debug.Stack()))
+			// We only want to intentionally print out non-304 panics.
+			// This is required because of how we changed our fetching of images (passing headers) to GCP and getting nil body back
+			// This causes the parent transport in httpcache to panic
+			if !respWas304 {
+				fmt.Println("recovered in serveImage for url: ", req.String(), resp.Status, resp.ContentLength, r, string(debug.Stack()))
+			}
 		}
 	}()
 
@@ -232,6 +239,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 
 	if should304(r, resp) {
 		w.WriteHeader(http.StatusNotModified)
+		respWas304 = true
 		return
 	}
 
@@ -431,6 +439,11 @@ func should304(req *http.Request, resp *http.Response) bool {
 	// of multiple tags to be matched, or the special value "*" which
 	// matches all etags
 
+	// Check if returned status from gcp bucket is 304 and empty response body, return true
+	if resp.StatusCode == http.StatusNotModified && resp.Header.Get("content-length") == "0" || resp.Header.Get("content-length") == "" {
+		return true
+	}
+
 	etag := resp.Header.Get("Etag")
 	if etag != "" && etag == req.Header.Get("If-None-Match") {
 		return true
@@ -498,6 +511,7 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 	req.URL.Fragment = ""
 	imageRequest, _ := http.NewRequest("GET", req.URL.String(), nil)
 	imageRequest.Header = req.Header
+
 	resp, err := t.CachingClient.Do(imageRequest)
 	req.URL.Fragment = f
 	if err != nil {
@@ -507,7 +521,8 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 	defer resp.Body.Close()
 
 	if should304(req, resp) {
-		return resp, nil
+		// bare 304 response, full response will be used from cache
+		return &http.Response{StatusCode: http.StatusNotModified}, nil
 	}
 
 	if resp.StatusCode >= 400 {
