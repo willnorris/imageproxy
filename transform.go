@@ -108,8 +108,12 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 			return nil, err
 		}
 	case "webp":
+		quality := opt.Quality
+		if quality == 0 {
+			quality = defaultQuality
+		}
 		m = transformImage(m, opt)
-		err = webp.Encode(buf, m)
+		err = webp.Encode(buf, m, webp.Quality(float32(quality)/100))
 		if err != nil {
 			return nil, err
 		}
