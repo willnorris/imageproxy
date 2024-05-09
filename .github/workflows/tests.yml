@@ -4,7 +4,7 @@ on:
       - main
   pull_request:
     branches:
-      - '**'
+      - "**"
 name: tests
 env:
   GO111MODULE: on
