@@ -14,14 +14,14 @@ import (
 	"log"
 	"math"
 
+	"git.sr.ht/~jackmordaunt/go-libwebp/webp"
 	"github.com/disintegration/imaging"
 	"github.com/muesli/smartcrop"
 	"github.com/muesli/smartcrop/nfnt"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rwcarlsen/goexif/exif"
-	"golang.org/x/image/bmp"    // register bmp format
-	"golang.org/x/image/tiff"   // register tiff format
-	_ "golang.org/x/image/webp" // register webp format
+	"golang.org/x/image/bmp"  // register bmp format
+	"golang.org/x/image/tiff" // register tiff format
 	"willnorris.com/go/gifresize"
 )
 
@@ -58,8 +58,8 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 		}
 	}
 
-	// encode webp and tiff as jpeg by default
-	if format == "tiff" || format == "webp" {
+	// encode tiff as jpeg by default
+	if format == "tiff" {
 		format = "jpeg"
 	}
 
@@ -104,6 +104,16 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 	case "tiff":
 		m = transformImage(m, opt)
 		err = tiff.Encode(buf, m, &tiff.Options{Compression: tiff.Deflate, Predictor: true})
+		if err != nil {
+			return nil, err
+		}
+	case "webp":
+		quality := opt.Quality
+		if quality == 0 {
+			quality = defaultQuality
+		}
+		m = transformImage(m, opt)
+		err = webp.Encode(buf, m, webp.Quality(float32(quality)/100))
 		if err != nil {
 			return nil, err
 		}
