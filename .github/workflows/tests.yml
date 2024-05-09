@@ -37,9 +37,9 @@ jobs:
     runs-on: ${{ matrix.platform }}
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - uses: actions/setup-go@v4
+      - uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go-version }}
 
@@ -48,4 +48,4 @@ jobs:
 
       - name: Upload coverage to Codecov
         if: ${{ matrix.update-coverage }}
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@5ecb98a3c6b747ed38dc09f787459979aebb39be # v4.3.1

@@ -5,5 +5,15 @@ updates:
     schedule:
       interval: monthly
     open-pull-requests-limit: 10
+    commit-message:
+      prefix: "go.mod:"
+    assignees:
+      - willnorris
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: ".github:"
     assignees:
       - willnorris
