@@ -20,6 +20,7 @@ import (
 func init() {
 	caddy.RegisterModule(ImageProxy{})
 	httpcaddyfile.RegisterHandlerDirective("imageproxy", parseCaddyfile)
+	httpcaddyfile.RegisterDirectiveOrder("imageproxy", "after", "reverse_proxy")
 }
 
 type ImageProxy struct {
