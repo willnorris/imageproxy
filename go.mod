@@ -3,7 +3,7 @@ module willnorris.com/go/imageproxy
 go 1.21
 
 require (
-	cloud.google.com/go/storage v1.40.0
+	cloud.google.com/go/storage v1.41.0
 	github.com/PaulARoy/azurestoragecache v0.0.0-20170906084534-3c249a3ba788
 	github.com/aws/aws-sdk-go v1.52.5
 	github.com/die-net/lrucache v0.0.0-20220628165024-20a71bc65bf1
