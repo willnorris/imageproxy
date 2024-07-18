@@ -13,7 +13,7 @@ require (
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 	github.com/muesli/smartcrop v0.3.0
 	github.com/peterbourgon/diskv v0.0.0-20171120014656-2973218375c3
-	github.com/prometheus/client_golang v1.19.0
+	github.com/prometheus/client_golang v1.19.1
 	github.com/rwcarlsen/goexif v0.0.0-20190401172101-9e8deecbddbd
 	golang.org/x/image v0.16.0
 	willnorris.com/go/gifresize v1.0.0
