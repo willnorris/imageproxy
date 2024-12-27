@@ -25,6 +25,7 @@ import (
 	"willnorris.com/go/imageproxy"
 	"willnorris.com/go/imageproxy/internal/gcscache"
 	"willnorris.com/go/imageproxy/internal/s3cache"
+	"willnorris.com/go/imageproxy/internal/ttldiskcache"
 	"willnorris.com/go/imageproxy/third_party/envy"
 )
 
@@ -46,6 +47,7 @@ var verbose = flag.Bool("verbose", false, "print verbose logging messages")
 var _ = flag.Bool("version", false, "Deprecated: this flag does nothing")
 var contentTypes = flag.String("contentTypes", "image/*", "comma separated list of allowed content types")
 var userAgent = flag.String("userAgent", "willnorris/imageproxy", "specify the user-agent used by imageproxy when fetching images from origin website")
+var cacheMaxAge = flag.Duration("cache-max-age", 0, "override remote server's cache headers with this max age (0 to use remote headers, negative to disable caching)")
 
 func init() {
 	flag.Var(&cache, "cache", "location to cache images (see https://github.com/willnorris/imageproxy#cache)")
@@ -87,6 +89,7 @@ func main() {
 	p.ScaleUp = *scaleUp
 	p.Verbose = *verbose
 	p.UserAgent = *userAgent
+	p.CacheMaxAge = *cacheMaxAge
 
 	server := &http.Server{
 		Addr:    *addr,
@@ -178,10 +181,19 @@ func parseCache(c string) (imageproxy.Cache, error) {
 		}
 		return rediscache.NewWithClient(conn), nil
 	case "s3":
+		if *cacheMaxAge > 0 {
+			return s3cache.NewWithTTL(u.String(), *cacheMaxAge)
+		}
 		return s3cache.New(u.String())
 	case "file":
-		return diskCache(u.Path), nil
+		if *cacheMaxAge > 0 {
+			return ttldiskcache.New(u.Path, *cacheMaxAge), nil
+		}
+		return diskCache(c), nil
 	default:
+		if *cacheMaxAge > 0 {
+			return ttldiskcache.New(c, *cacheMaxAge), nil
+		}
 		return diskCache(c), nil
 	}
 }
