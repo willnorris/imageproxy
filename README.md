@@ -390,3 +390,56 @@ imageproxy is copyright its respective authors. All of my personal work on
 imageproxy through 2020 (which accounts for the majority of the code) is
 copyright Google, my employer at the time. It is available under the [Apache
 2.0 License](./LICENSE).
+
+### Cache Control
+
+By default, imageproxy respects the cache headers from the remote server. However, you can override these headers using the `-cache-max-age` flag:
+
+```
+# Cache all images for 24 hours, regardless of remote headers
+imageproxy -cache memory:100:24h -cache-max-age 24h
+
+# Disable caching completely
+imageproxy -cache memory -cache-max-age -1
+
+# Use remote server's cache headers (default)
+imageproxy -cache memory -cache-max-age 0
+```
+
+The `-cache-max-age` flag accepts a duration string (e.g., "24h", "30m", "1h30m"). When set:
+- A positive value overrides the remote server's cache headers with the specified duration
+- Zero (default) uses the remote server's cache headers
+- A negative value disables caching completely
+
+### Building and Running
+
+A Makefile is provided for common operations. The binary will be built in the `bin` directory:
+
+```bash
+# Build the binary (outputs to bin/imageproxy)
+make build
+
+# Run tests
+make test
+
+# Build and run with default settings
+make run
+
+# Run with memory cache and 24h cache duration
+make run-with-cache
+
+# Run with disk cache and 24h cache duration
+make run-with-disk-cache
+
+# Run with disk cache and 5-year cache duration
+make run-with-5year-cache
+
+# Build Docker image
+make docker-build
+```
+
+You can also build and install directly using Go:
+
+```bash
+go install willnorris.com/go/imageproxy/cmd/imageproxy@latest
+```

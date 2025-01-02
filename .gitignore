@@ -1,0 +1,30 @@
+# Go build artifacts
+
+# Binaries
+*.exe
+*.dll
+*.so
+*.dylib
+imageproxy
+
+# Test binaries
+*.test
+
+# Build directories
+/bin/
+/pkg/
+
+# Output files
+*.out
+
+# Cache directory
+/cache/
+
+# Dependency directories (uncomment if dependencies are vendored)
+/vendor/
+
+# Editor and IDE files
+*.swp
+*.swo
+*.idea/
+.vscode/

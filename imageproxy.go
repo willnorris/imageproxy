@@ -91,6 +91,11 @@ type Proxy struct {
 	// PassRequestHeaders identifies HTTP headers to pass from inbound
 	// requests to the proxied server.
 	PassRequestHeaders []string
+
+	// CacheMaxAge specifies the maximum age for cached images, overriding the remote server's cache headers.
+	// If zero, the remote server's cache headers are used.
+	// If negative, caching is disabled.
+	CacheMaxAge time.Duration
 }
 
 // NewProxy constructs a new proxy.  The provided http RoundTripper will be
@@ -236,7 +241,24 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 		metricServedFromCache.Inc()
 	}
 
-	copyHeader(w.Header(), resp.Header, "Cache-Control", "Last-Modified", "Expires", "Etag", "Link")
+	// Copy original cache headers first
+	copyHeader(w.Header(), resp.Header, "Last-Modified", "Etag", "Link")
+
+	// Handle cache control headers
+	if p.CacheMaxAge > 0 {
+		// Override cache headers with our specified max age
+		w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%d", int(p.CacheMaxAge.Seconds())))
+		// Set Expires based on CacheMaxAge
+		expires := time.Now().Add(p.CacheMaxAge)
+		w.Header().Set("Expires", expires.Format(time.RFC1123))
+	} else if p.CacheMaxAge == 0 {
+		// Use original cache headers
+		copyHeader(w.Header(), resp.Header, "Cache-Control", "Expires")
+	} else {
+		// CacheMaxAge < 0, disable caching
+		w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate")
+		w.Header().Set("Expires", "0")
+	}
 
 	if should304(r, resp) {
 		w.WriteHeader(http.StatusNotModified)
