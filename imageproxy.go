@@ -232,6 +232,10 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Override response cache for future requests
+	resp.Header.Set("Cache-Control", "public")
+	resp.Header.Set("Expires", "Sat, 28 Dec 2199 00:00:00 GMT")
+
 	cached := resp.Header.Get(httpcache.XFromCache) == "1"
 	if p.Verbose {
 		p.logf("request: %+v (served from cache: %t)", *actualReq, cached)
