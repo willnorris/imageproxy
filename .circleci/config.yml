@@ -3,7 +3,6 @@ version: 2.1
 # Declare Orbs here:
 orbs:
   aws-cli: circleci/aws-cli@3.1.5
-  docker-scout: heyjobs_orbs/docker-scout@1.1.8
   aws-ecr: circleci/aws-ecr@9.0.2
 
 default_env: &default_env
@@ -15,11 +14,6 @@ filter_main: &filter_main
   branches:
     only:
       - main
-
-filter_docker_scout: &filter_docker_scout
-  branches:
-    only:
-      - INF-4058/docker-scout-integration
 
 # Declare Jobs here:
 jobs:
@@ -35,8 +29,6 @@ jobs:
           tag: latest
           dockerfile: "Dockerfile"
           push_image: false
-      - docker-scout/command-scan-image:
-          image_tag: ${DEPLOYMENT_AWS_ECR_REGISTRY_ID}.dkr.ecr.eu-central-1.amazonaws.com/imageproxy:latest
       - aws-cli/setup:
           role-arn: "arn:aws:iam::676012288735:role/imageproxy-oidc-deployment-role"
       - aws-ecr/ecr_login:
