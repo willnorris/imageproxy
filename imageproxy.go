@@ -573,7 +573,14 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 
 	if should304(req, resp) {
 		// bare 304 response, full response will be used from cache
-		return &http.Response{StatusCode: http.StatusNotModified}, nil
+		return &http.Response{
+			Proto:      "HTTP/1.1",
+			ProtoMajor: 1,
+			ProtoMinor: 1,
+			Status:     fmt.Sprintf("%d %s", http.StatusNotModified, http.StatusText(http.StatusNotModified)),
+			StatusCode: http.StatusNotModified,
+			Body:       http.NoBody,
+		}, nil
 	}
 
 	b, err := io.ReadAll(resp.Body)
