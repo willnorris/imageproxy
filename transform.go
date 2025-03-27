@@ -58,9 +58,9 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 		}
 	}
 
-	// encode webp and tiff as jpeg by default
+	// encode webp and tiff as png by default to preserve transparency
 	if format == "tiff" || format == "webp" {
-		format = "jpeg"
+		format = "png"
 	}
 
 	if opt.Format != "" {
