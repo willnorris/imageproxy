@@ -226,6 +226,13 @@ func (o Options) transform() bool {
 // See https://github.com/willnorris/imageproxy/blob/master/docs/url-signing.md
 // for examples of generating signatures.
 //
+// # Trim
+//
+// The "trim" option will automatically trim pixels of the same color around
+// the edges of the image.  This is useful for removing borders from images
+// that have been resized or cropped.  The trim option is applied after any
+// cropping or resizing has been performed.
+//
 // Examples
 //
 //	0x0         - no resizing
