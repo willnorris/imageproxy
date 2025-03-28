@@ -375,3 +375,22 @@ func TestTransformImage(t *testing.T) {
 		}
 	}
 }
+
+func TestTrimBordersOfSameColor(t *testing.T) {
+	src := newImage(4, 4,
+		color.NRGBA{255, 255, 255, 255}, color.NRGBA{255, 255, 255, 255}, color.NRGBA{255, 255, 255, 255}, color.NRGBA{255, 255, 255, 255},
+		color.NRGBA{255, 255, 255, 255}, color.NRGBA{255, 0, 0, 255}, color.NRGBA{255, 0, 0, 255}, color.NRGBA{255, 255, 255, 255},
+		color.NRGBA{255, 255, 255, 255}, color.NRGBA{255, 0, 0, 255}, color.NRGBA{255, 0, 0, 255}, color.NRGBA{255, 255, 255, 255},
+		color.NRGBA{255, 255, 255, 255}, color.NRGBA{255, 255, 255, 255}, color.NRGBA{255, 255, 255, 255}, color.NRGBA{255, 255, 255, 255},
+	)
+
+	want := newImage(2, 2,
+		color.NRGBA{255, 0, 0, 255}, color.NRGBA{255, 0, 0, 255},
+		color.NRGBA{255, 0, 0, 255}, color.NRGBA{255, 0, 0, 255},
+	)
+
+	got := trimEdges(src)
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("trimEdges() = %v, want %v", got, want)
+	}
+}

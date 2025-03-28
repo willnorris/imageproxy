@@ -309,5 +309,47 @@ func transformImage(m image.Image, opt Options) image.Image {
 		m = imaging.FlipH(m)
 	}
 
+	// trim
+	if opt.Trim {
+		m = trimEdges(m)
+	}
+
 	return m
+}
+
+func trimEdges(img image.Image) image.Image {
+	bounds := img.Bounds()
+	minX, minY, maxX, maxY := bounds.Max.X, bounds.Max.Y, bounds.Min.X, bounds.Min.Y
+
+	// Get the color of the first pixel (top-left corner)
+	baseColor := img.At(bounds.Min.X, bounds.Min.Y)
+
+	// Check each pixel and find the bounding box of non-matching pixels
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			if img.At(x, y) != baseColor { // Non-matching pixel
+				if x < minX {
+					minX = x
+				}
+				if y < minY {
+					minY = y
+				}
+				if x > maxX {
+					maxX = x
+				}
+				if y > maxY {
+					maxY = y
+				}
+			}
+		}
+	}
+
+	// If no non-matching pixels are found, return the original image
+	if minX > maxX || minY > maxY {
+		return img
+	}
+
+	// Crop the image to the bounding box of non-matching pixels
+	croppedImg := imaging.Crop(img, image.Rect(minX, minY, maxX+1, maxY+1))
+	return croppedImg
 }
