@@ -267,6 +267,11 @@ func transformImage(m image.Image, opt Options) image.Image {
 	timer := prometheus.NewTimer(metricTransformationDuration)
 	defer timer.ObserveDuration()
 
+	// trim
+	if opt.Trim {
+		m = trimEdges(m)
+	}
+
 	// Parse crop and resize parameters before applying any transforms.
 	// This is to ensure that any percentage-based values are based off the
 	// size of the original image.
@@ -310,4 +315,42 @@ func transformImage(m image.Image, opt Options) image.Image {
 	}
 
 	return m
+}
+
+// trimEdges returns a new image with solid color borders of the image removed.
+// The pixel at the top left corner is used to match the border color.
+func trimEdges(img image.Image) image.Image {
+	bounds := img.Bounds()
+	minX, minY, maxX, maxY := bounds.Max.X, bounds.Max.Y, bounds.Min.X, bounds.Min.Y
+
+	// Get the color of the first pixel (top-left corner)
+	baseColor := img.At(bounds.Min.X, bounds.Min.Y)
+
+	// Check each pixel and find the bounding box of non-matching pixels
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			if img.At(x, y) != baseColor { // Non-matching pixel
+				if x < minX {
+					minX = x
+				}
+				if y < minY {
+					minY = y
+				}
+				if x > maxX {
+					maxX = x
+				}
+				if y > maxY {
+					maxY = y
+				}
+			}
+		}
+	}
+
+	// If no non-matching pixels are found, return the original image
+	if minX >= maxX || minY >= maxY {
+		return img
+	}
+
+	// Crop the image to the bounding box of non-matching pixels
+	return imaging.Crop(img, image.Rect(minX, minY, maxX+1, maxY+1))
 }

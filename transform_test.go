@@ -375,3 +375,77 @@ func TestTransformImage(t *testing.T) {
 		}
 	}
 }
+
+func TestTrimEdges(t *testing.T) {
+	x := color.NRGBA{255, 255, 255, 255}
+	o := color.NRGBA{0, 0, 0, 255}
+
+	tests := []struct {
+		name string
+		src  image.Image // source image to transform
+		want image.Image // expected transformed image
+	}{
+		{
+			name: "empty",
+			src:  newImage(0, 0),
+			want: newImage(0, 0), // same as src
+		},
+		{
+			name: "solid",
+			src:  newImage(8, 8, x),
+			want: newImage(8, 8, x), // same as src
+		},
+		{
+			name: "square",
+			src: newImage(4, 4,
+				x, x, x, x,
+				x, o, o, x,
+				x, o, o, x,
+				x, x, x, x,
+			),
+			want: newImage(2, 2,
+				o, o,
+				o, o,
+			),
+		},
+		{
+			name: "diamond",
+			src: newImage(5, 5,
+				x, x, x, x, x,
+				x, x, o, x, x,
+				x, o, o, o, x,
+				x, x, o, x, x,
+				x, x, x, x, x,
+			),
+			want: newImage(3, 3,
+				x, o, x,
+				o, o, o,
+				x, o, x,
+			),
+		},
+		{
+			name: "irregular",
+			src: newImage(5, 5,
+				x, o, x, x, x,
+				x, o, o, x, x,
+				x, o, o, x, x,
+				x, x, x, x, x,
+				x, x, x, x, x,
+			),
+			want: newImage(2, 3,
+				o, x,
+				o, o,
+				o, o,
+			),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := trimEdges(tt.src)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("trimEdges() returned image %#v, want %#v", got, tt.want)
+			}
+		})
+	}
+}

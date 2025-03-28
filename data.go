@@ -30,6 +30,7 @@ const (
 	optCropWidth       = "cw"
 	optCropHeight      = "ch"
 	optSmartCrop       = "sc"
+	optTrim            = "trim"
 )
 
 // URLError reports a malformed URL error.
@@ -80,6 +81,9 @@ type Options struct {
 
 	// Automatically find good crop points based on image content.
 	SmartCrop bool
+
+	// If true, automatically trim pixels of the same color around the edges
+	Trim bool
 }
 
 func (o Options) String() string {
@@ -123,6 +127,9 @@ func (o Options) String() string {
 	if o.SmartCrop {
 		opts = append(opts, optSmartCrop)
 	}
+	if o.Trim {
+		opts = append(opts, optTrim)
+	}
 	sort.Strings(opts)
 	return strings.Join(opts, ",")
 }
@@ -132,7 +139,7 @@ func (o Options) String() string {
 // the presence of other fields (like Fit).  A non-empty Format value is
 // assumed to involve a transformation.
 func (o Options) transform() bool {
-	return o.Width != 0 || o.Height != 0 || o.Rotate != 0 || o.FlipHorizontal || o.FlipVertical || o.Quality != 0 || o.Format != "" || o.CropX != 0 || o.CropY != 0 || o.CropWidth != 0 || o.CropHeight != 0
+	return o.Width != 0 || o.Height != 0 || o.Rotate != 0 || o.FlipHorizontal || o.FlipVertical || o.Quality != 0 || o.Format != "" || o.CropX != 0 || o.CropY != 0 || o.CropWidth != 0 || o.CropHeight != 0 || o.Trim
 }
 
 // ParseOptions parses str as a list of comma separated transformation options.
@@ -207,7 +214,7 @@ func (o Options) transform() bool {
 //
 // # Format
 //
-// The "jpeg", "png", and "tiff"  options can be used to specify the desired
+// The "jpeg", "png", and "tiff" options can be used to specify the desired
 // image format of the proxied image.
 //
 // # Signature
@@ -218,6 +225,13 @@ func (o Options) transform() bool {
 //
 // See https://github.com/willnorris/imageproxy/blob/master/docs/url-signing.md
 // for examples of generating signatures.
+//
+// # Trim
+//
+// The "trim" option will automatically trim pixels of the same color around
+// the edges of the image.  This is useful for removing borders from images
+// that have been resized or cropped.  The trim option is applied before other
+// options such as cropping or resizing.
 //
 // Examples
 //
@@ -251,6 +265,8 @@ func ParseOptions(str string) Options {
 			options.Format = opt
 		case opt == optSmartCrop:
 			options.SmartCrop = true
+		case opt == optTrim:
+			options.Trim = true
 		case strings.HasPrefix(opt, optRotatePrefix):
 			value := strings.TrimPrefix(opt, optRotatePrefix)
 			options.Rotate, _ = strconv.Atoi(value)
