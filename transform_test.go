@@ -410,3 +410,60 @@ func TestTrimEdgesSingleColorImage(t *testing.T) {
 		t.Errorf("trimEdges() = %v, want %v", got.Bounds(), want.Bounds())
 	}
 }
+
+func TestTrimEdgesCircle(t *testing.T) {
+	// Define colors for better readability
+	white := color.NRGBA{255, 255, 255, 255}
+	red := color.NRGBA{255, 0, 0, 255}
+
+	// Create a 9x9 image with a white background and a larger red circle in the center
+	src := newImage(9, 9,
+		white, white, white, white, white, white, white, white, white,
+		white, white, white, red, red, red, white, white, white,
+		white, white, red, red, red, red, red, white, white,
+		white, red, red, red, red, red, red, red, white,
+		white, red, red, red, red, red, red, red, white,
+		white, red, red, red, red, red, red, red, white,
+		white, white, red, red, red, red, red, white, white,
+		white, white, white, red, red, red, white, white, white,
+		white, white, white, white, white, white, white, white, white,
+	)
+
+	// Expected result: a trimmed 7x7 image containing only the circle
+	want := newImage(7, 7,
+		white, white, red, red, red, white, white,
+		white, red, red, red, red, red, white,
+		red, red, red, red, red, red, red,
+		red, red, red, red, red, red, red,
+		red, red, red, red, red, red, red,
+		white, red, red, red, red, red, white,
+		white, white, red, red, red, white, white,
+	)
+
+	// Apply the trimEdges function
+	got := trimEdges(src)
+
+	// Compare pixel data
+	if !compareImages(got, want) {
+		t.Errorf("trimEdges() pixel data does not match expected result")
+	}
+}
+
+func compareImages(img1, img2 image.Image) bool {
+	bounds1 := img1.Bounds()
+	bounds2 := img2.Bounds()
+	if !bounds1.Eq(bounds2) {
+		return false
+	}
+
+	for y := bounds1.Min.Y; y < bounds1.Max.Y; y++ {
+		for x := bounds1.Min.X; x < bounds1.Max.X; x++ {
+			r1, g1, b1, a1 := img1.At(x, y).RGBA()
+			r2, g2, b2, a2 := img2.At(x, y).RGBA()
+			if r1 != r2 || g1 != g2 || b1 != b2 || a1 != a2 {
+				return false
+			}
+		}
+	}
+	return true
+}
