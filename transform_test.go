@@ -539,3 +539,19 @@ func TestTrimEdgesUneven(t *testing.T) {
 		t.Errorf("trimEdges() pixel data does not match expected result")
 	}
 }
+
+func TestTrimEdgesEmptyImage(t *testing.T) {
+	// Create an empty image (0x0 dimensions)
+	src := newImage(0, 0)
+
+	// The expected result should also be an empty image
+	want := src
+
+	// Apply the trimEdges function
+	got := trimEdges(src)
+
+	// Compare pixel data
+	if !compareImages(got, want) {
+		t.Errorf("trimEdges() for empty image returned %v, want %v", got.Bounds(), want.Bounds())
+	}
+}
