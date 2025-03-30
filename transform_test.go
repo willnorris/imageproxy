@@ -377,21 +377,24 @@ func TestTransformImage(t *testing.T) {
 }
 
 func TestTrimBordersOfSameColor(t *testing.T) {
+	w := color.NRGBA{255, 255, 255, 255}
+	r := color.NRGBA{255, 0, 0, 255}
 	src := newImage(4, 4,
-		color.NRGBA{255, 255, 255, 255}, color.NRGBA{255, 255, 255, 255}, color.NRGBA{255, 255, 255, 255}, color.NRGBA{255, 255, 255, 255},
-		color.NRGBA{255, 255, 255, 255}, color.NRGBA{255, 0, 0, 255}, color.NRGBA{255, 0, 0, 255}, color.NRGBA{255, 255, 255, 255},
-		color.NRGBA{255, 255, 255, 255}, color.NRGBA{255, 0, 0, 255}, color.NRGBA{255, 0, 0, 255}, color.NRGBA{255, 255, 255, 255},
-		color.NRGBA{255, 255, 255, 255}, color.NRGBA{255, 255, 255, 255}, color.NRGBA{255, 255, 255, 255}, color.NRGBA{255, 255, 255, 255},
+		w, w, w, w,
+		w, r, r, w,
+		w, r, r, w,
+		w, w, w, w,
 	)
 
 	want := newImage(2, 2,
-		color.NRGBA{255, 0, 0, 255}, color.NRGBA{255, 0, 0, 255},
-		color.NRGBA{255, 0, 0, 255}, color.NRGBA{255, 0, 0, 255},
+		r, r,
+		r, r,
 	)
 
 	got := trimEdges(src)
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("trimEdges() = %v, want %v", got, want)
+	// Compare pixel data
+	if !compareImages(got, want) {
+		t.Errorf("trimEdges() pixel data does not match expected result")
 	}
 }
 
@@ -405,39 +408,39 @@ func TestTrimEdgesSingleColorImage(t *testing.T) {
 	// Apply the trimEdges function
 	got := trimEdges(src)
 
-	// Check if the result matches the expected image
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("trimEdges() = %v, want %v", got.Bounds(), want.Bounds())
+	// Compare pixel data
+	if !compareImages(got, want) {
+		t.Errorf("trimEdges() pixel data does not match expected result")
 	}
 }
 
 func TestTrimEdgesCircle(t *testing.T) {
 	// Define colors for better readability
-	white := color.NRGBA{255, 255, 255, 255}
-	red := color.NRGBA{255, 0, 0, 255}
+	w := color.NRGBA{255, 255, 255, 255}
+	r := color.NRGBA{255, 0, 0, 255}
 
 	// Create a 9x9 image with a white background and a larger red circle in the center
 	src := newImage(9, 9,
-		white, white, white, white, white, white, white, white, white,
-		white, white, white, red, red, red, white, white, white,
-		white, white, red, red, red, red, red, white, white,
-		white, red, red, red, red, red, red, red, white,
-		white, red, red, red, red, red, red, red, white,
-		white, red, red, red, red, red, red, red, white,
-		white, white, red, red, red, red, red, white, white,
-		white, white, white, red, red, red, white, white, white,
-		white, white, white, white, white, white, white, white, white,
+		w, w, w, w, w, w, w, w, w,
+		w, w, w, r, r, r, w, w, w,
+		w, w, r, r, r, r, r, w, w,
+		w, r, r, r, r, r, r, r, w,
+		w, r, r, r, r, r, r, r, w,
+		w, r, r, r, r, r, r, r, w,
+		w, w, r, r, r, r, r, w, w,
+		w, w, w, r, r, r, w, w, w,
+		w, w, w, w, w, w, w, w, w,
 	)
 
 	// Expected result: a trimmed 7x7 image containing only the circle
 	want := newImage(7, 7,
-		white, white, red, red, red, white, white,
-		white, red, red, red, red, red, white,
-		red, red, red, red, red, red, red,
-		red, red, red, red, red, red, red,
-		red, red, red, red, red, red, red,
-		white, red, red, red, red, red, white,
-		white, white, red, red, red, white, white,
+		w, w, r, r, r, w, w,
+		w, r, r, r, r, r, w,
+		r, r, r, r, r, r, r,
+		r, r, r, r, r, r, r,
+		r, r, r, r, r, r, r,
+		w, r, r, r, r, r, w,
+		w, w, r, r, r, w, w,
 	)
 
 	// Apply the trimEdges function
@@ -451,31 +454,31 @@ func TestTrimEdgesCircle(t *testing.T) {
 
 func TestTrimEdgesUnevenVerticalRectangle(t *testing.T) {
 	// Define colors for better readability
-	white := color.NRGBA{255, 255, 255, 255}
-	red := color.NRGBA{255, 0, 0, 255}
+	w := color.NRGBA{255, 255, 255, 255}
+	r := color.NRGBA{255, 0, 0, 255}
 
 	// Create a 9x5 image with a white background and a red diagonal shape
 	src := newImage(5, 9,
-		white, white, white, white, white,
-		white, white, white, red, white,
-		white, white, red, white, white,
-		white, red, white, white, white,
-		white, red, white, white, white,
-		white, red, white, white, white,
-		white, white, red, white, white,
-		white, white, white, red, white,
-		white, white, white, white, white,
+		w, w, w, w, w,
+		w, w, w, r, w,
+		w, w, r, w, w,
+		w, r, w, w, w,
+		w, r, w, w, w,
+		w, r, w, w, w,
+		w, w, r, w, w,
+		w, w, w, r, w,
+		w, w, w, w, w,
 	)
 
 	// Expected result: a trimmed 5x5 image containing only the diagonal shape
 	want := newImage(3, 7,
-		white, white, red,
-		white, red, white,
-		red, white, white,
-		red, white, white,
-		red, white, white,
-		white, red, white,
-		white, white, red,
+		w, w, r,
+		w, r, w,
+		r, w, w,
+		r, w, w,
+		r, w, w,
+		w, r, w,
+		w, w, r,
 	)
 
 	// Apply the trimEdges function
