@@ -449,6 +449,44 @@ func TestTrimEdgesCircle(t *testing.T) {
 	}
 }
 
+func TestTrimEdgesUnevenVerticalRectangle(t *testing.T) {
+	// Define colors for better readability
+	white := color.NRGBA{255, 255, 255, 255}
+	red := color.NRGBA{255, 0, 0, 255}
+
+	// Create a 9x5 image with a white background and a red diagonal shape
+	src := newImage(5, 9,
+		white, white, white, white, white,
+		white, white, white, red, white,
+		white, white, red, white, white,
+		white, red, white, white, white,
+		white, red, white, white, white,
+		white, red, white, white, white,
+		white, white, red, white, white,
+		white, white, white, red, white,
+		white, white, white, white, white,
+	)
+
+	// Expected result: a trimmed 5x5 image containing only the diagonal shape
+	want := newImage(3, 7,
+		white, white, red,
+		white, red, white,
+		red, white, white,
+		red, white, white,
+		red, white, white,
+		white, red, white,
+		white, white, red,
+	)
+
+	// Apply the trimEdges function
+	got := trimEdges(src)
+
+	// Compare pixel data
+	if !compareImages(got, want) {
+		t.Errorf("trimEdges() pixel data does not match expected result")
+	}
+}
+
 func compareImages(img1, img2 image.Image) bool {
 	bounds1 := img1.Bounds()
 	bounds2 := img2.Bounds()
