@@ -394,3 +394,19 @@ func TestTrimBordersOfSameColor(t *testing.T) {
 		t.Errorf("trimEdges() = %v, want %v", got, want)
 	}
 }
+
+func TestTrimEdgesSingleColorImage(t *testing.T) {
+	// Create a 4x4 image filled with a single color (white)
+	src := newImage(4, 4, color.NRGBA{255, 255, 255, 255})
+
+	// The expected result should be the same as the source image
+	want := src
+
+	// Apply the trimEdges function
+	got := trimEdges(src)
+
+	// Check if the result matches the expected image
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("trimEdges() = %v, want %v", got.Bounds(), want.Bounds())
+	}
+}
