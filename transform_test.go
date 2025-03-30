@@ -508,3 +508,34 @@ func compareImages(img1, img2 image.Image) bool {
 	}
 	return true
 }
+
+func TestTrimEdgesUneven(t *testing.T) {
+	// Define colors for better readability
+	w := color.NRGBA{255, 255, 255, 255} // white
+	r := color.NRGBA{255, 0, 0, 255}     // red
+
+	// Create a 6x4 image with a white background and a red inner rectangle
+	src := newImage(4, 6,
+		w, w, w, w,
+		w, w, r, w,
+		w, r, r, w,
+		w, r, r, w,
+		w, w, w, w,
+		w, w, w, w,
+	)
+
+	// Expected result: a trimmed 2x3 image containing only the red rectangle
+	want := newImage(2, 3,
+		w, r,
+		r, r,
+		r, r,
+	)
+
+	// Apply the trimEdges function
+	got := trimEdges(src)
+
+	// Compare pixel data
+	if !compareImages(got, want) {
+		t.Errorf("trimEdges() pixel data does not match expected result")
+	}
+}
