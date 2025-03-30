@@ -396,8 +396,8 @@ func TestTrimBordersOfSameColor(t *testing.T) {
 }
 
 func TestTrimEdgesSingleColorImage(t *testing.T) {
-	// Create a 4x4 image filled with a single color (white)
-	src := newImage(4, 4, color.NRGBA{255, 255, 255, 255})
+	// Create an 8x8 image filled with a single color (white)
+	src := newImage(8, 8, color.NRGBA{255, 255, 255, 255})
 
 	// The expected result should be the same as the source image
 	want := src
