@@ -267,6 +267,11 @@ func transformImage(m image.Image, opt Options) image.Image {
 	timer := prometheus.NewTimer(metricTransformationDuration)
 	defer timer.ObserveDuration()
 
+	// trim
+	if opt.Trim {
+		m = trimEdges(m)
+	}
+
 	// Parse crop and resize parameters before applying any transforms.
 	// This is to ensure that any percentage-based values are based off the
 	// size of the original image.
@@ -307,11 +312,6 @@ func transformImage(m image.Image, opt Options) image.Image {
 	}
 	if opt.FlipHorizontal {
 		m = imaging.FlipH(m)
-	}
-
-	// trim
-	if opt.Trim {
-		m = trimEdges(m)
 	}
 
 	return m
