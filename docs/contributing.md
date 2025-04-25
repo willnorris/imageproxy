@@ -27,16 +27,3 @@ Go code should follow general best practices, such as using go fmt, go lint, and
 go vet (this is enforced by our continuous integration setup).  Tests should
 always be included where possible, especially for bug fixes in order to prevent
 regressions.
-
-## Contributor License Agreement
-
-Even though this is effectively a personal project of mine, it is still governed
-by Google's Contributor License Agreement because of my employment there.  You
-(or your employer) retain the copyright to your contribution; the CLA simply
-gives permission to use and redistribute your contributions as part of the
-project.  Head over to <https://cla.developers.google.com/> to see your current
-agreements on file or to sign a new one.
-
-You generally only need to submit a CLA once, so if you've already submitted one
-(even if it was for a different Google project), you probably don't need to do
-it again.

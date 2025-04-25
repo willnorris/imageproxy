@@ -1,16 +1,5 @@
-// Copyright 2013 Google LLC. All rights reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Copyright 2013 The imageproxy authors.
+// SPDX-License-Identifier: Apache-2.0
 
 package imageproxy
 
@@ -28,6 +17,7 @@ import (
 	"github.com/disintegration/imaging"
 	"github.com/muesli/smartcrop"
 	"github.com/muesli/smartcrop/nfnt"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rwcarlsen/goexif/exif"
 	"golang.org/x/image/bmp"    // register bmp format
 	"golang.org/x/image/tiff"   // register tiff format
@@ -274,6 +264,14 @@ func exifOrientation(r io.Reader) (opt Options) {
 // transformImage modifies the image m based on the transformations specified
 // in opt.
 func transformImage(m image.Image, opt Options) image.Image {
+	timer := prometheus.NewTimer(metricTransformationDuration)
+	defer timer.ObserveDuration()
+
+	// trim
+	if opt.Trim {
+		m = trimEdges(m)
+	}
+
 	// Parse crop and resize parameters before applying any transforms.
 	// This is to ensure that any percentage-based values are based off the
 	// size of the original image.
@@ -317,4 +315,42 @@ func transformImage(m image.Image, opt Options) image.Image {
 	}
 
 	return m
+}
+
+// trimEdges returns a new image with solid color borders of the image removed.
+// The pixel at the top left corner is used to match the border color.
+func trimEdges(img image.Image) image.Image {
+	bounds := img.Bounds()
+	minX, minY, maxX, maxY := bounds.Max.X, bounds.Max.Y, bounds.Min.X, bounds.Min.Y
+
+	// Get the color of the first pixel (top-left corner)
+	baseColor := img.At(bounds.Min.X, bounds.Min.Y)
+
+	// Check each pixel and find the bounding box of non-matching pixels
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
+			if img.At(x, y) != baseColor { // Non-matching pixel
+				if x < minX {
+					minX = x
+				}
+				if y < minY {
+					minY = y
+				}
+				if x > maxX {
+					maxX = x
+				}
+				if y > maxY {
+					maxY = y
+				}
+			}
+		}
+	}
+
+	// If no non-matching pixels are found, return the original image
+	if minX >= maxX || minY >= maxY {
+		return img
+	}
+
+	// Crop the image to the bounding box of non-matching pixels
+	return imaging.Crop(img, image.Rect(minX, minY, maxX+1, maxY+1))
 }

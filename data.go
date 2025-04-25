@@ -1,16 +1,5 @@
-// Copyright 2013 Google LLC. All rights reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Copyright 2013 The imageproxy authors.
+// SPDX-License-Identifier: Apache-2.0
 
 package imageproxy
 
@@ -41,6 +30,7 @@ const (
 	optCropWidth       = "cw"
 	optCropHeight      = "ch"
 	optSmartCrop       = "sc"
+	optTrim            = "trim"
 )
 
 // URLError reports a malformed URL error.
@@ -91,6 +81,9 @@ type Options struct {
 
 	// Automatically find good crop points based on image content.
 	SmartCrop bool
+
+	// If true, automatically trim pixels of the same color around the edges
+	Trim bool
 }
 
 func (o Options) String() string {
@@ -134,6 +127,9 @@ func (o Options) String() string {
 	if o.SmartCrop {
 		opts = append(opts, optSmartCrop)
 	}
+	if o.Trim {
+		opts = append(opts, optTrim)
+	}
 	sort.Strings(opts)
 	return strings.Join(opts, ",")
 }
@@ -143,21 +139,21 @@ func (o Options) String() string {
 // the presence of other fields (like Fit).  A non-empty Format value is
 // assumed to involve a transformation.
 func (o Options) transform() bool {
-	return o.Width != 0 || o.Height != 0 || o.Rotate != 0 || o.FlipHorizontal || o.FlipVertical || o.Quality != 0 || o.Format != "" || o.CropX != 0 || o.CropY != 0 || o.CropWidth != 0 || o.CropHeight != 0
+	return o.Width != 0 || o.Height != 0 || o.Rotate != 0 || o.FlipHorizontal || o.FlipVertical || o.Quality != 0 || o.Format != "" || o.CropX != 0 || o.CropY != 0 || o.CropWidth != 0 || o.CropHeight != 0 || o.Trim
 }
 
 // ParseOptions parses str as a list of comma separated transformation options.
 // The options can be specified in in order, with duplicate options overwriting
 // previous values.
 //
-// Rectangle Crop
+// # Rectangle Crop
 //
 // There are four options controlling rectangle crop:
 //
-// 	cx{x}      - X coordinate of top left rectangle corner (default: 0)
-// 	cy{y}      - Y coordinate of top left rectangle corner (default: 0)
-// 	cw{width}  - rectangle width (default: image width)
-// 	ch{height} - rectangle height (default: image height)
+//	cx{x}      - X coordinate of top left rectangle corner (default: 0)
+//	cy{y}      - Y coordinate of top left rectangle corner (default: 0)
+//	cw{width}  - rectangle width (default: image width)
+//	ch{height} - rectangle height (default: image height)
 //
 // For all options, integer values are interpreted as exact pixel values and
 // floats between 0 and 1 are interpreted as percentages of the original image
@@ -168,13 +164,13 @@ func (o Options) transform() bool {
 // crop width or height will be adjusted, preserving the specified cx and cy
 // values.  Rectangular crop is applied before any other transformations.
 //
-// Smart Crop
+// # Smart Crop
 //
 // The "sc" option will perform a content-aware smart crop to fit the
 // requested image width and height dimensions (see Size and Cropping below).
 // The smart crop option will override any requested rectangular crop.
 //
-// Size and Cropping
+// # Size and Cropping
 //
 // The size option takes the general form "{width}x{height}", where width and
 // height are numbers. Integer values greater than 1 are interpreted as exact
@@ -203,7 +199,7 @@ func (o Options) transform() bool {
 // option with only one of either width or height does the same thing as if
 // "fit" had not been specified.
 //
-// Rotation and Flips
+// # Rotation and Flips
 //
 // The "r{degrees}" option will rotate the image the specified number of
 // degrees, counter-clockwise. Valid degrees values are 90, 180, and 270.
@@ -211,17 +207,17 @@ func (o Options) transform() bool {
 // The "fv" option will flip the image vertically. The "fh" option will flip
 // the image horizontally. Images are flipped after being rotated.
 //
-// Quality
+// # Quality
 //
 // The "q{qualityPercentage}" option can be used to specify the quality of the
 // output file (JPEG only). If not specified, the default value of "95" is used.
 //
-// Format
+// # Format
 //
-// The "jpeg", "png", and "tiff"  options can be used to specify the desired
+// The "jpeg", "png", and "tiff" options can be used to specify the desired
 // image format of the proxied image.
 //
-// Signature
+// # Signature
 //
 // The "s{signature}" option specifies an optional base64 encoded HMAC used to
 // sign the remote URL in the request.  The HMAC key used to verify signatures is
@@ -230,27 +226,33 @@ func (o Options) transform() bool {
 // See https://github.com/willnorris/imageproxy/blob/master/docs/url-signing.md
 // for examples of generating signatures.
 //
+// # Trim
+//
+// The "trim" option will automatically trim pixels of the same color around
+// the edges of the image.  This is useful for removing borders from images
+// that have been resized or cropped.  The trim option is applied before other
+// options such as cropping or resizing.
+//
 // Examples
 //
-// 	0x0         - no resizing
-// 	200x        - 200 pixels wide, proportional height
-// 	x0.15       - 15% original height, proportional width
-// 	100x150     - 100 by 150 pixels, cropping as needed
-// 	100         - 100 pixels square, cropping as needed
-// 	150,fit     - scale to fit 150 pixels square, no cropping
-// 	100,r90     - 100 pixels square, rotated 90 degrees
-// 	100,fv,fh   - 100 pixels square, flipped horizontal and vertical
-// 	200x,q60    - 200 pixels wide, proportional height, 60% quality
-// 	200x,png    - 200 pixels wide, converted to PNG format
-// 	cw100,ch100 - crop image to 100px square, starting at (0,0)
-// 	cx10,cy20,cw100,ch200 - crop image starting at (10,20) is 100px wide and 200px tall
+//	0x0         - no resizing
+//	200x        - 200 pixels wide, proportional height
+//	x0.15       - 15% original height, proportional width
+//	100x150     - 100 by 150 pixels, cropping as needed
+//	100         - 100 pixels square, cropping as needed
+//	150,fit     - scale to fit 150 pixels square, no cropping
+//	100,r90     - 100 pixels square, rotated 90 degrees
+//	100,fv,fh   - 100 pixels square, flipped horizontal and vertical
+//	200x,q60    - 200 pixels wide, proportional height, 60% quality
+//	200x,png    - 200 pixels wide, converted to PNG format
+//	cw100,ch100 - crop image to 100px square, starting at (0,0)
+//	cx10,cy20,cw100,ch200 - crop image starting at (10,20) is 100px wide and 200px tall
 func ParseOptions(str string) Options {
 	var options Options
 
 	for _, opt := range strings.Split(str, ",") {
 		switch {
-		case len(opt) == 0:
-			break
+		case len(opt) == 0: // do nothing
 		case opt == optFit:
 			options.Fit = true
 		case opt == optFlipVertical:
@@ -263,6 +265,8 @@ func ParseOptions(str string) Options {
 			options.Format = opt
 		case opt == optSmartCrop:
 			options.SmartCrop = true
+		case opt == optTrim:
+			options.Trim = true
 		case strings.HasPrefix(opt, optRotatePrefix):
 			value := strings.TrimPrefix(opt, optRotatePrefix)
 			options.Rotate, _ = strconv.Atoi(value)
@@ -327,10 +331,10 @@ func (r Request) String() string {
 // Assuming an imageproxy server running on localhost, the following are all
 // valid imageproxy requests:
 //
-// 	http://localhost/100x200/http://example.com/image.jpg
-// 	http://localhost/100x200,r90/http://example.com/image.jpg?foo=bar
-// 	http://localhost//http://example.com/image.jpg
-// 	http://localhost/http://example.com/image.jpg
+//	http://localhost/100x200/http://example.com/image.jpg
+//	http://localhost/100x200,r90/http://example.com/image.jpg?foo=bar
+//	http://localhost//http://example.com/image.jpg
+//	http://localhost/http://example.com/image.jpg
 func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 	var err error
 	req := &Request{Original: r}

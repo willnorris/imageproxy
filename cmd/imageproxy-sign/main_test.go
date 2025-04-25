@@ -1,7 +1,9 @@
+// Copyright 2013 The imageproxy authors.
+// SPDX-License-Identifier: Apache-2.0
+
 package main
 
 import (
-	"io/ioutil"
 	"net/url"
 	"os"
 	"reflect"
@@ -9,30 +11,6 @@ import (
 )
 
 var key = "secret"
-
-func TestMainFunc(t *testing.T) {
-	os.Args = []string{"imageproxy-sign", "-key", key, "http://example.com/#0x0"}
-	r, w, err := os.Pipe()
-	if err != nil {
-		t.Errorf("error creating pipe: %v", err)
-	}
-	defer r.Close()
-	os.Stdout = w
-
-	main()
-	w.Close()
-
-	output, err := ioutil.ReadAll(r)
-	got := string(output)
-	if err != nil {
-		t.Errorf("error reading from pipe: %v", err)
-	}
-
-	want := "url: http://example.com/#0x0\nsignature: pwlnJ3bVazxg2nQxClimqT0VnNxUm5W0cdyg1HpKUPY=\n"
-	if got != want {
-		t.Errorf("main output %q, want %q", got, want)
-	}
-}
 
 func TestSign(t *testing.T) {
 	s := "http://example.com/image.jpg#0x0"
@@ -91,7 +69,7 @@ func TestParseKey(t *testing.T) {
 }
 
 func TestParseKey_FilePath(t *testing.T) {
-	f, err := ioutil.TempFile("", "key")
+	f, err := os.CreateTemp("", "key")
 	if err != nil {
 		t.Errorf("error creating temp file: %v", err)
 	}

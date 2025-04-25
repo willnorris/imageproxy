@@ -1,16 +1,5 @@
-// Copyright 2013 Google LLC. All rights reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Copyright 2013 The imageproxy authors.
+// SPDX-License-Identifier: Apache-2.0
 
 // Package imageproxy provides an image proxy server.  For typical use of
 // creating and using a Proxy, see cmd/imageproxy/main.go.
@@ -25,18 +14,24 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"mime"
+	"net"
 	"net/http"
 	"net/url"
 	"path"
 	"strings"
 	"time"
 
+	"github.com/fcjr/aia-transport-go"
 	"github.com/gregjones/httpcache"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	tphttp "willnorris.com/go/imageproxy/third_party/http"
 )
+
+// Maximum number of redirection-followings allowed.
+const maxRedirects = 10
 
 // Proxy serves image requests.
 type Proxy struct {
@@ -56,6 +51,13 @@ type Proxy struct {
 	// hosts are allowed.
 	Referrers []string
 
+	// IncludeReferer controls whether the original Referer request header
+	// is included in remote requests.
+	IncludeReferer bool
+
+	// FollowRedirects controls whether imageproxy will follow redirects or not.
+	FollowRedirects bool
+
 	// DefaultBaseURL is the URL that relative remote URLs are resolved in
 	// reference to.  If nil, all remote URLs specified in requests must be
 	// absolute.
@@ -64,8 +66,9 @@ type Proxy struct {
 	// The Logger used by the image proxy
 	Logger *log.Logger
 
-	// SignatureKey is the HMAC key used to verify signed requests.
-	SignatureKey []byte
+	// SignatureKeys is a list of HMAC keys used to verify signed requests.
+	// Any of them can be used to verify signed requests.
+	SignatureKeys [][]byte
 
 	// Allow images to scale beyond their original dimensions.
 	ScaleUp bool
@@ -84,6 +87,10 @@ type Proxy struct {
 
 	// The User-Agent used by imageproxy when requesting origin image
 	UserAgent string
+
+	// PassRequestHeaders identifies HTTP headers to pass from inbound
+	// requests to the proxied server.
+	PassRequestHeaders []string
 }
 
 // NewProxy constructs a new proxy.  The provided http RoundTripper will be
@@ -91,7 +98,7 @@ type Proxy struct {
 // be used.
 func NewProxy(transport http.RoundTripper, cache Cache) *Proxy {
 	if transport == nil {
-		transport = http.DefaultTransport
+		transport, _ = aia.NewTransport()
 	}
 	if cache == nil {
 		cache = NopCache
@@ -132,10 +139,19 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if r.URL.Path == "/metrics" {
+		var h = promhttp.Handler()
+		h.ServeHTTP(w, r)
+		return
+	}
+
 	var h http.Handler = http.HandlerFunc(p.serveImage)
 	if p.Timeout > 0 {
 		h = tphttp.TimeoutHandler(h, p.Timeout, "Gateway timeout waiting for remote resource.")
 	}
+
+	timer := prometheus.NewTimer(metricRequestDuration)
+	defer timer.ObserveDuration()
 	h.ServeHTTP(w, r)
 }
 
@@ -165,20 +181,59 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	if len(p.ContentTypes) != 0 {
 		actualReq.Header.Set("Accept", strings.Join(p.ContentTypes, ", "))
 	}
+	if p.IncludeReferer {
+		// pass along the referer header from the original request
+		copyHeader(actualReq.Header, r.Header, "referer")
+	}
+	if len(p.PassRequestHeaders) != 0 {
+		copyHeader(actualReq.Header, r.Header, p.PassRequestHeaders...)
+	}
+	if p.FollowRedirects {
+		// FollowRedirects is true (default), ensure that the redirected host is allowed
+		p.Client.CheckRedirect = func(newreq *http.Request, via []*http.Request) error {
+			if len(via) > maxRedirects {
+				if p.Verbose {
+					p.logf("followed too many redirects (%d).", len(via))
+				}
+				return errTooManyRedirects
+			}
+			if hostMatches(p.DenyHosts, newreq.URL) {
+				http.Error(w, msgNotAllowedInRedirect, http.StatusForbidden)
+				return errNotAllowed
+			}
+			return nil
+		}
+	} else {
+		// FollowRedirects is false, don't follow redirects
+		p.Client.CheckRedirect = func(newreq *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		}
+	}
 	resp, err := p.Client.Do(actualReq)
 
 	if err != nil {
 		msg := fmt.Sprintf("error fetching remote image: %v", err)
 		p.log(msg)
 		http.Error(w, msg, http.StatusInternalServerError)
+		metricRemoteErrors.Inc()
 		return
 	}
 	// close the original resp.Body, even if we wrap it in a NopCloser below
 	defer resp.Body.Close()
 
-	cached := resp.Header.Get(httpcache.XFromCache)
+	// return early on 404s.  Perhaps handle additional status codes here?
+	if resp.StatusCode == http.StatusNotFound {
+		http.Error(w, "not found", http.StatusNotFound)
+		return
+	}
+
+	cached := resp.Header.Get(httpcache.XFromCache) == "1"
 	if p.Verbose {
-		p.logf("request: %+v (served from cache: %t)", *actualReq, cached == "1")
+		p.logf("request: %+v (served from cache: %t)", *actualReq, cached)
+	}
+
+	if cached {
+		metricServedFromCache.Inc()
 	}
 
 	copyHeader(w.Header(), resp.Header, "Cache-Control", "Last-Modified", "Expires", "Etag", "Link")
@@ -192,7 +247,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	if contentType == "" || contentType == "application/octet-stream" || contentType == "binary/octet-stream" {
 		// try to detect content type
 		b := bufio.NewReader(resp.Body)
-		resp.Body = ioutil.NopCloser(b)
+		resp.Body = io.NopCloser(b)
 		contentType = peekContentType(b)
 	}
 	if resp.ContentLength != 0 && !contentTypeMatches(p.ContentTypes, contentType) {
@@ -204,34 +259,39 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 
 	copyHeader(w.Header(), resp.Header, "Content-Length")
 
-	//Enable CORS for 3rd party applications
+	// Enable CORS for 3rd party applications
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
+	// Add a Content-Security-Policy to prevent stored-XSS attacks via SVG files
+	w.Header().Set("Content-Security-Policy", "script-src 'none'")
+
+	// Disable Content-Type sniffing
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+
+	// Block potential XSS attacks especially in legacy browsers which do not support CSP
+	w.Header().Set("X-XSS-Protection", "1; mode=block")
+
 	w.WriteHeader(resp.StatusCode)
-	io.Copy(w, resp.Body)
+	if _, err := io.Copy(w, resp.Body); err != nil {
+		p.logf("error copying response: %v", err)
+	}
 }
 
 // peekContentType peeks at the first 512 bytes of p, and attempts to detect
 // the content type.  Returns empty string if error occurs.
 func peekContentType(p *bufio.Reader) string {
 	byt, err := p.Peek(512)
-	if err != nil && err != bufio.ErrBufferFull && err != io.EOF {
+	if err != nil && !errors.Is(err, bufio.ErrBufferFull) && !errors.Is(err, io.EOF) {
 		return ""
 	}
 	return http.DetectContentType(byt)
 }
 
-// copyHeader copies header values from src to dst, adding to any existing
-// values with the same header name.  If keys is not empty, only those header
-// keys will be copied.
-func copyHeader(dst, src http.Header, keys ...string) {
-	if len(keys) == 0 {
-		for k := range src {
-			keys = append(keys, k)
-		}
-	}
-	for _, key := range keys {
-		k := http.CanonicalHeaderKey(key)
+// copyHeader copies values for specified headers from src to dst, adding to
+// any existing values with the same header name.
+func copyHeader(dst, src http.Header, headerNames ...string) {
+	for _, name := range headerNames {
+		k := http.CanonicalHeaderKey(name)
 		for _, v := range src[k] {
 			dst.Add(k, v)
 		}
@@ -239,11 +299,13 @@ func copyHeader(dst, src http.Header, keys ...string) {
 }
 
 var (
-	errReferrer   = errors.New("request does not contain an allowed referrer")
-	errDeniedHost = errors.New("request contains a denied host")
-	errNotAllowed = errors.New("request does not contain an allowed host or valid signature")
+	errReferrer         = errors.New("request does not contain an allowed referrer")
+	errDeniedHost       = errors.New("request contains a denied host")
+	errNotAllowed       = errors.New("request does not contain an allowed host or valid signature")
+	errTooManyRedirects = errors.New("too many redirects")
 
-	msgNotAllowed = "requested URL is not allowed"
+	msgNotAllowed           = "requested URL is not allowed"
+	msgNotAllowedInRedirect = "requested URL in redirect is not allowed"
 )
 
 // allowed determines whether the specified request contains an allowed
@@ -258,7 +320,7 @@ func (p *Proxy) allowed(r *Request) error {
 		return errDeniedHost
 	}
 
-	if len(p.AllowHosts) == 0 && len(p.SignatureKey) == 0 {
+	if len(p.AllowHosts) == 0 && len(p.SignatureKeys) == 0 {
 		return nil // no allowed hosts or signature key, all requests accepted
 	}
 
@@ -266,8 +328,10 @@ func (p *Proxy) allowed(r *Request) error {
 		return nil
 	}
 
-	if len(p.SignatureKey) > 0 && validSignature(p.SignatureKey, r) {
-		return nil
+	for _, signatureKey := range p.SignatureKeys {
+		if len(signatureKey) > 0 && validSignature(signatureKey, r) {
+			return nil
+		}
 	}
 
 	return errNotAllowed
@@ -291,11 +355,21 @@ func contentTypeMatches(patterns []string, contentType string) bool {
 // hostMatches returns whether the host in u matches one of hosts.
 func hostMatches(hosts []string, u *url.URL) bool {
 	for _, host := range hosts {
-		if u.Host == host {
+		if u.Hostname() == host {
 			return true
 		}
-		if strings.HasPrefix(host, "*.") && strings.HasSuffix(u.Host, host[2:]) {
+		if strings.HasPrefix(host, "*.") && strings.HasSuffix(u.Hostname(), host[2:]) {
 			return true
+		}
+		// Checks whether the host in u is an IP
+		if ip := net.ParseIP(u.Hostname()); ip != nil {
+			// Checks whether our current host is a CIDR
+			if _, ipnet, err := net.ParseCIDR(host); err == nil {
+				// Checks if our host contains the IP in u
+				if ipnet.Contains(ip) {
+					return true
+				}
+			}
 		}
 	}
 
@@ -327,7 +401,7 @@ func validSignature(key []byte, r *Request) bool {
 
 	// check signature with URL only
 	mac := hmac.New(sha256.New, key)
-	mac.Write([]byte(r.URL.String()))
+	_, _ = mac.Write([]byte(r.URL.String()))
 	want := mac.Sum(nil)
 	if hmac.Equal(got, want) {
 		return true
@@ -339,7 +413,7 @@ func validSignature(key []byte, r *Request) bool {
 	u.Fragment = opt.String()
 
 	mac = hmac.New(sha256.New, key)
-	mac.Write([]byte(u.String()))
+	_, _ = mac.Write([]byte(u.String()))
 	want = mac.Sum(nil)
 	return hmac.Equal(got, want)
 }
@@ -428,7 +502,7 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 		return &http.Response{StatusCode: http.StatusNotModified}, nil
 	}
 
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -444,11 +518,13 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 	// replay response with transformed image and updated content length
 	buf := new(bytes.Buffer)
 	fmt.Fprintf(buf, "%s %s\n", resp.Proto, resp.Status)
-	resp.Header.WriteSubset(buf, map[string]bool{
+	if err := resp.Header.WriteSubset(buf, map[string]bool{
 		"Content-Length": true,
 		// exclude Content-Type header if the format may have changed during transformation
 		"Content-Type": opt.Format != "" || resp.Header.Get("Content-Type") == "image/webp" || resp.Header.Get("Content-Type") == "image/tiff",
-	})
+	}); err != nil {
+		t.log("error copying headers: %v", err)
+	}
 	fmt.Fprintf(buf, "Content-Length: %d\n\n", len(img))
 	buf.Write(img)
 

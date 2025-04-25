@@ -5,10 +5,7 @@ Description=Image Proxy
 User=www-data
 ExecStart=/usr/local/bin/imageproxy \
     -addr localhost:4593 \
-    -cache /var/cache/imageproxy \
-    -signatureKey @/etc/imageproxy.key \
-    -baseURL https://willnorris.com/ \
-    -allowHosts willnorris.com,notsoserendipitous.com,gabenorris.com
+    -cache memory -cache /var/cache/imageproxy 
 Restart=on-abort
 
 [Install]

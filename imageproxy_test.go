@@ -1,16 +1,5 @@
-// Copyright 2013 Google LLC. All rights reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Copyright 2013 The imageproxy authors.
+// SPDX-License-Identifier: Apache-2.0
 
 package imageproxy
 
@@ -28,6 +17,8 @@ import (
 	"net/url"
 	"os"
 	"reflect"
+	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -74,28 +65,10 @@ func TestCopyHeader(t *testing.T) {
 
 		// copy headers
 		{
-			dst:  http.Header{},
-			src:  http.Header{"A": []string{"a"}},
-			keys: nil,
-			want: http.Header{"A": []string{"a"}},
-		},
-		{
-			dst:  http.Header{"A": []string{"a"}},
-			src:  http.Header{"B": []string{"b"}},
-			keys: nil,
-			want: http.Header{"A": []string{"a"}, "B": []string{"b"}},
-		},
-		{
 			dst:  http.Header{"A": []string{"a"}},
 			src:  http.Header{"B": []string{"b"}, "C": []string{"c"}},
 			keys: []string{"B"},
 			want: http.Header{"A": []string{"a"}, "B": []string{"b"}},
-		},
-		{
-			dst:  http.Header{"A": []string{"a1"}},
-			src:  http.Header{"A": []string{"a2"}},
-			keys: nil,
-			want: http.Header{"A": []string{"a1", "a2"}},
 		},
 	}
 
@@ -110,13 +83,18 @@ func TestCopyHeader(t *testing.T) {
 		if !reflect.DeepEqual(got, tt.want) {
 			t.Errorf("copyHeader(%v, %v, %v) returned %v, want %v", tt.dst, tt.src, tt.keys, got, tt.want)
 		}
-
 	}
 }
 
 func TestAllowed(t *testing.T) {
 	allowHosts := []string{"good"}
-	key := []byte("c0ffee")
+	key := [][]byte{
+		[]byte("c0ffee"),
+	}
+	multipleKey := [][]byte{
+		[]byte("c0ffee"),
+		[]byte("beer"),
+	}
 
 	genRequest := func(headers map[string]string) *http.Request {
 		req := &http.Request{Header: make(http.Header)}
@@ -132,7 +110,7 @@ func TestAllowed(t *testing.T) {
 		allowHosts []string
 		denyHosts  []string
 		referrers  []string
-		key        []byte
+		keys       [][]byte
 		request    *http.Request
 		allowed    bool
 	}{
@@ -151,7 +129,10 @@ func TestAllowed(t *testing.T) {
 
 		// signature key
 		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ="}, nil, nil, nil, key, nil, true},
+		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ="}, nil, nil, nil, multipleKey, nil, true}, // signed with key "c0ffee"
+		{"http://test/image", Options{Signature: "FWIawYV4SEyI4zKJMeGugM-eJM1eI_jXPEQ20ZgRe4A="}, nil, nil, nil, multipleKey, nil, true}, // signed with key "beer"
 		{"http://test/image", Options{Signature: "deadbeef"}, nil, nil, nil, key, nil, false},
+		{"http://test/image", Options{Signature: "deadbeef"}, nil, nil, nil, multipleKey, nil, false},
 		{"http://test/image", emptyOptions, nil, nil, nil, key, nil, false},
 
 		// allowHosts and signature
@@ -161,15 +142,18 @@ func TestAllowed(t *testing.T) {
 
 		// deny requests that match denyHosts, even if signature is valid or also matches allowHosts
 		{"http://test/image", emptyOptions, nil, []string{"test"}, nil, nil, nil, false},
+		{"http://test:3000/image", emptyOptions, nil, []string{"test"}, nil, nil, nil, false},
 		{"http://test/image", emptyOptions, []string{"test"}, []string{"test"}, nil, nil, nil, false},
 		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ="}, nil, []string{"test"}, nil, key, nil, false},
+		{"http://127.0.0.1/image", emptyOptions, nil, []string{"127.0.0.0/8"}, nil, nil, nil, false},
+		{"http://127.0.0.1:3000/image", emptyOptions, nil, []string{"127.0.0.0/8"}, nil, nil, nil, false},
 	}
 
 	for _, tt := range tests {
 		p := NewProxy(nil, nil)
 		p.AllowHosts = tt.allowHosts
 		p.DenyHosts = tt.denyHosts
-		p.SignatureKey = tt.key
+		p.SignatureKeys = tt.keys
 		p.Referrers = tt.referrers
 
 		u, err := url.Parse(tt.url)
@@ -363,11 +347,21 @@ func (t testTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	case "/png":
 		m := image.NewNRGBA(image.Rect(0, 0, 1, 1))
 		img := new(bytes.Buffer)
-		png.Encode(img, m)
+		_ = png.Encode(img, m)
 
 		raw = fmt.Sprintf("HTTP/1.1 200 OK\nContent-Length: %d\nContent-Type: image/png\n\n%s", len(img.Bytes()), img.Bytes())
 	default:
-		raw = "HTTP/1.1 404 Not Found\n\n"
+		redirectRegexp := regexp.MustCompile(`/redirects-(\d+)`)
+		if redirectRegexp.MatchString(req.URL.Path) {
+			redirectsLeft, _ := strconv.ParseUint(redirectRegexp.FindStringSubmatch(req.URL.Path)[1], 10, 8)
+			if redirectsLeft == 0 {
+				raw = "HTTP/1.1 200 OK\n\n"
+			} else {
+				raw = fmt.Sprintf("HTTP/1.1 302\nLocation: /http://redirect.test/redirects-%d\n\n", redirectsLeft-1)
+			}
+		} else {
+			raw = "HTTP/1.1 404 Not Found\n\n"
+		}
 	}
 
 	buf := bufio.NewReader(bytes.NewBufferString(raw))
@@ -429,6 +423,34 @@ func TestProxy_ServeHTTP_is304(t *testing.T) {
 	}
 	if got, want := resp.Header().Get("Etag"), `"tag"`; got != want {
 		t.Errorf("ServeHTTP(%v) returned etag header %v, want %v", req, got, want)
+	}
+}
+
+func TestProxy_ServeHTTP_maxRedirects(t *testing.T) {
+	p := &Proxy{
+		Client: &http.Client{
+			Transport: testTransport{},
+		},
+		FollowRedirects: true,
+	}
+
+	tests := []struct {
+		url  string
+		code int
+	}{
+		{"/http://redirect.test/redirects-0", http.StatusOK},
+		{"/http://redirect.test/redirects-2", http.StatusOK},
+		{"/http://redirect.test/redirects-11", http.StatusInternalServerError}, // too many redirects
+	}
+
+	for _, tt := range tests {
+		req, _ := http.NewRequest("GET", "http://localhost"+tt.url, nil)
+		resp := httptest.NewRecorder()
+		p.ServeHTTP(resp, req)
+
+		if got, want := resp.Code, tt.code; got != want {
+			t.Errorf("ServeHTTP(%v) returned status %d, want %d", req, got, want)
+		}
 	}
 }
 

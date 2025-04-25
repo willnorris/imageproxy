@@ -1,3 +1,6 @@
+// Copyright 2013 The imageproxy authors.
+// SPDX-License-Identifier: Apache-2.0
+
 // The imageproxy-sign tool creates signature values for a provided URL and
 // signing key.
 package main
@@ -9,7 +12,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -50,17 +52,19 @@ func sign(key string, s string, urlOnly bool) ([]byte, error) {
 
 	k, err := parseKey(key)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing key: %v", err)
+		return nil, fmt.Errorf("error parsing key: %w", err)
 	}
 
-	mac := hmac.New(sha256.New, []byte(k))
-	mac.Write([]byte(u.String()))
+	mac := hmac.New(sha256.New, k)
+	if _, err := mac.Write([]byte(u.String())); err != nil {
+		return nil, err
+	}
 	return mac.Sum(nil), nil
 }
 
 func parseKey(s string) ([]byte, error) {
 	if strings.HasPrefix(s, "@") {
-		return ioutil.ReadFile(s[1:])
+		return os.ReadFile(s[1:])
 	}
 	return []byte(s), nil
 }

@@ -1,16 +1,5 @@
-// Copyright 2013 Google LLC. All rights reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Copyright 2013 The imageproxy authors.
+// SPDX-License-Identifier: Apache-2.0
 
 package imageproxy
 
@@ -44,7 +33,7 @@ var (
 func newImage(w, h int, pixels ...color.Color) image.Image {
 	m := image.NewNRGBA(image.Rect(0, 0, w, h))
 	if len(pixels) == 1 {
-		draw.Draw(m, m.Bounds(), &image.Uniform{pixels[0]}, image.ZP, draw.Src)
+		draw.Draw(m, m.Bounds(), &image.Uniform{pixels[0]}, image.Point{}, draw.Src)
 	} else {
 		for i, p := range pixels {
 			m.Set(i%w, i/w, p)
@@ -106,22 +95,26 @@ func TestTransform(t *testing.T) {
 	src := newImage(2, 2, red, green, blue, yellow)
 
 	buf := new(bytes.Buffer)
-	png.Encode(buf, src)
+	if err := png.Encode(buf, src); err != nil {
+		t.Errorf("error encoding reference image: %v", err)
+	}
 
 	tests := []struct {
 		name        string
-		encode      func(io.Writer, image.Image)
+		encode      func(io.Writer, image.Image) error
 		exactOutput bool // whether input and output should match exactly
 	}{
-		{"bmp", func(w io.Writer, m image.Image) { bmp.Encode(w, m) }, true},
-		{"gif", func(w io.Writer, m image.Image) { gif.Encode(w, m, nil) }, true},
-		{"jpeg", func(w io.Writer, m image.Image) { jpeg.Encode(w, m, nil) }, false},
-		{"png", func(w io.Writer, m image.Image) { png.Encode(w, m) }, true},
+		{"bmp", func(w io.Writer, m image.Image) error { return bmp.Encode(w, m) }, true},
+		{"gif", func(w io.Writer, m image.Image) error { return gif.Encode(w, m, nil) }, true},
+		{"jpeg", func(w io.Writer, m image.Image) error { return jpeg.Encode(w, m, nil) }, false},
+		{"png", func(w io.Writer, m image.Image) error { return png.Encode(w, m) }, true},
 	}
 
 	for _, tt := range tests {
 		buf := new(bytes.Buffer)
-		tt.encode(buf, src)
+		if err := tt.encode(buf, src); err != nil {
+			t.Errorf("error encoding image: %v", err)
+		}
 		in := buf.Bytes()
 
 		out, err := Transform(in, emptyOptions)
@@ -152,7 +145,9 @@ func TestTransform(t *testing.T) {
 func TestTransform_InvalidFormat(t *testing.T) {
 	src := newImage(2, 2, red, green, blue, yellow)
 	buf := new(bytes.Buffer)
-	png.Encode(buf, src)
+	if err := png.Encode(buf, src); err != nil {
+		t.Errorf("error encoding reference image: %v", err)
+	}
 
 	_, err := Transform(buf.Bytes(), Options{Format: "invalid"})
 	if err == nil {
@@ -378,5 +373,79 @@ func TestTransformImage(t *testing.T) {
 		if got := transformImage(tt.src, tt.opt); !reflect.DeepEqual(got, tt.want) {
 			t.Errorf("transformImage(%v, %v) returned image %#v, want %#v", tt.src, tt.opt, got, tt.want)
 		}
+	}
+}
+
+func TestTrimEdges(t *testing.T) {
+	x := color.NRGBA{255, 255, 255, 255}
+	o := color.NRGBA{0, 0, 0, 255}
+
+	tests := []struct {
+		name string
+		src  image.Image // source image to transform
+		want image.Image // expected transformed image
+	}{
+		{
+			name: "empty",
+			src:  newImage(0, 0),
+			want: newImage(0, 0), // same as src
+		},
+		{
+			name: "solid",
+			src:  newImage(8, 8, x),
+			want: newImage(8, 8, x), // same as src
+		},
+		{
+			name: "square",
+			src: newImage(4, 4,
+				x, x, x, x,
+				x, o, o, x,
+				x, o, o, x,
+				x, x, x, x,
+			),
+			want: newImage(2, 2,
+				o, o,
+				o, o,
+			),
+		},
+		{
+			name: "diamond",
+			src: newImage(5, 5,
+				x, x, x, x, x,
+				x, x, o, x, x,
+				x, o, o, o, x,
+				x, x, o, x, x,
+				x, x, x, x, x,
+			),
+			want: newImage(3, 3,
+				x, o, x,
+				o, o, o,
+				x, o, x,
+			),
+		},
+		{
+			name: "irregular",
+			src: newImage(5, 5,
+				x, o, x, x, x,
+				x, o, o, x, x,
+				x, o, o, x, x,
+				x, x, x, x, x,
+				x, x, x, x, x,
+			),
+			want: newImage(2, 3,
+				o, x,
+				o, o,
+				o, o,
+			),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := trimEdges(tt.src)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("trimEdges() returned image %#v, want %#v", got, tt.want)
+			}
+		})
 	}
 }
