@@ -340,8 +340,13 @@ func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 	var additionalQuery string
 	req := &Request{Original: r}
 
-	path := r.URL.EscapedPath()[1:]              // the image url is stored in the path, so get image url from path but strip leading slash so it's not like /https://example.com
-	path, err, additionalQuery = decodeURL(path) // Conditionally decode url path param if it is url encoded this enables us to process image urls with query params built in
+	path := r.URL.EscapedPath()[1:] // the image url is stored in the path, so get image url from path but strip leading slash so it's not like /https://example.com
+
+	decodedPath, err, additionalQuery := decodeURL(path) // Conditionally decode url path param if it is url encoded this enables us to process image urls with query params built in
+	if err == nil {
+		path = decodedPath
+	}
+
 	req.URL, err = parseURL(path)
 
 	if err != nil || !req.URL.IsAbs() {
