@@ -4,6 +4,7 @@
 package imageproxy
 
 import (
+	"encoding/base64"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -11,6 +12,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
 const (
@@ -325,8 +327,10 @@ func (r Request) String() string {
 // NewRequest parses an http.Request into an imageproxy Request.  Options and
 // the remote image URL are specified in the request path, formatted as:
 // /{options}/{remote_url}.  Options may be omitted, so a request path may
-// simply contain /{remote_url}.  The remote URL must be an absolute "http" or
-// "https" URL, should not be URL encoded, and may contain a query string.
+// simply contain /{remote_url}.  The remote URL must either be:
+//
+//   - an absolute "http" or "https" URL, not be URL encoded, with optional query string, or
+//   - base64 encoded (URL safe, no padding).
 //
 // Assuming an imageproxy server running on localhost, the following are all
 // valid imageproxy requests:
@@ -335,12 +339,14 @@ func (r Request) String() string {
 //	http://localhost/100x200,r90/http://example.com/image.jpg?foo=bar
 //	http://localhost//http://example.com/image.jpg
 //	http://localhost/http://example.com/image.jpg
+//	http://localhost/100x200/aHR0cDovL2V4YW1wbGUuY29tL2ltYWdlLmpwZw
 func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 	var err error
 	req := &Request{Original: r}
+	var enc bool // whether the remote URL was base64 encoded
 
 	path := r.URL.EscapedPath()[1:] // strip leading slash
-	req.URL, err = parseURL(path)
+	req.URL, enc, err = parseURL(path, baseURL)
 	if err != nil || !req.URL.IsAbs() {
 		// first segment should be options
 		parts := strings.SplitN(path, "/", 2)
@@ -349,7 +355,7 @@ func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 		}
 
 		var err error
-		req.URL, err = parseURL(parts[1])
+		req.URL, enc, err = parseURL(parts[1], baseURL)
 		if err != nil {
 			return nil, URLError{fmt.Sprintf("unable to parse remote URL: %v", err), r.URL}
 		}
@@ -369,8 +375,11 @@ func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 		return nil, URLError{"remote URL must have http or https scheme", r.URL}
 	}
 
-	// query string is always part of the remote URL
-	req.URL.RawQuery = r.URL.RawQuery
+	if !enc {
+		// if the remote URL was not base64-encoded,
+		// then the query string is part of the remote URL
+		req.URL.RawQuery = r.URL.RawQuery
+	}
 	return req, nil
 }
 
@@ -378,7 +387,26 @@ var reCleanedURL = regexp.MustCompile(`^(https?):/+([^/])`)
 
 // parseURL parses s as a URL, handling URLs that have been munged by
 // path.Clean or a webserver that collapses multiple slashes.
-func parseURL(s string) (*url.URL, error) {
+// The returned enc bool indicates whether the remote URL was encoded.
+func parseURL(s string, baseURL *url.URL) (_ *url.URL, enc bool, _ error) {
+	// Try to base64 decode the string. If it is not base64 encoded,
+	// this will fail quickly on the first invalid character like ":", ".", or "/".
+	// Accept the decoded string if it looks like an absolute HTTP URL,
+	// or if we have a baseURL and the decoded string did not contain invalid code points.
+	// This allows for values like "/path", which do successfully base64 decode,
+	// but not to valid code points, to be treated as an unencoded string.
+	if b, err := base64.RawURLEncoding.DecodeString(s); err == nil {
+		d := string(b)
+		if strings.HasPrefix(d, "http://") || strings.HasPrefix(d, "https://") {
+			enc = true
+			s = d
+		} else if baseURL != nil && !strings.ContainsRune(d, unicode.ReplacementChar) {
+			enc = true
+			s = d
+		}
+	}
+
 	s = reCleanedURL.ReplaceAllString(s, "$1://$2")
-	return url.Parse(s)
+	u, err := url.Parse(s)
+	return u, enc, err
 }

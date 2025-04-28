@@ -152,6 +152,27 @@ func TestNewRequest(t *testing.T) {
 			"http://localhost/http:///example.com/foo",
 			"http://example.com/foo", emptyOptions, false,
 		},
+		// base64 encoded paths
+		{
+			"http://localhost/aHR0cDovL2V4YW1wbGUuY29tL2Zvbw",
+			"http://example.com/foo", emptyOptions, false,
+		},
+		{
+			"http://localhost//aHR0cDovL2V4YW1wbGUuY29tL2Zvbw",
+			"http://example.com/foo", emptyOptions, false,
+		},
+		{
+			"http://localhost/x/aHR0cDovL2V4YW1wbGUuY29tL2Zvbw",
+			"http://example.com/foo", emptyOptions, false,
+		},
+		{
+			"http://localhost/x/aHR0cHM6Ly9leGFtcGxlLmNvbS9mb28_YmFy",
+			"https://example.com/foo?bar", emptyOptions, false,
+		},
+		{
+			"http://localhost/x/aHR0cHM6Ly9leGFtcGxlLmNvbS9mb28_YmFy?baz",
+			"https://example.com/foo?bar", emptyOptions, false,
+		},
 		{ // escaped path
 			"http://localhost/http://example.com/%2C",
 			"http://example.com/%2C", emptyOptions, false,
@@ -186,16 +207,31 @@ func TestNewRequest(t *testing.T) {
 }
 
 func TestNewRequest_BaseURL(t *testing.T) {
-	req, _ := http.NewRequest("GET", "/x/path", nil)
 	base, _ := url.Parse("https://example.com/")
 
-	r, err := NewRequest(req, base)
-	if err != nil {
-		t.Errorf("NewRequest(%v, %v) returned unexpected error: %v", req, base, err)
+	tests := []struct {
+		path string
+		want string
+	}{
+		{
+			path: "/x/path",
+			want: "https://example.com/path#0x0",
+		},
+		{ // Chinese characters 已然
+			path: "/x/5bey54S2",
+			want: "https://example.com/%E5%B7%B2%E7%84%B6#0x0",
+		},
 	}
 
-	want := "https://example.com/path#0x0"
-	if got := r.String(); got != want {
-		t.Errorf("NewRequest(%v, %v) returned %q, want %q", req, base, got, want)
+	for _, tt := range tests {
+		req, _ := http.NewRequest("GET", tt.path, nil)
+		r, err := NewRequest(req, base)
+		if err != nil {
+			t.Errorf("NewRequest(%v, %v) returned unexpected error: %v", req, base, err)
+		}
+
+		if got := r.String(); got != tt.want {
+			t.Errorf("NewRequest(%v, %v) returned %q, want %q", req, base, got, tt.want)
+		}
 	}
 }
