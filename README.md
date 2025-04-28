@@ -49,10 +49,12 @@ The URL of the original image to load is specified as the remainder of the
 path, without any encoding. For example,
 `http://localhost/200/https://willnorris.com/logo.jpg`.
 
-In order to [optimize caching][], it is recommended that URLs not contain query
-strings.
+If the URL contains a query string, it is treated as part of the remote URL.
 
-[optimize caching]: http://www.stevesouders.com/blog/2008/08/23/revving-filenames-dont-use-querystring/
+Alternatively, the remote URL may be base64 encoded (URL safe, no padding).
+This can be helpful if the URL contains characters or encoding that imageproxy
+is not handling properly. For example,
+`http://localhost/200/aHR0cHM6Ly93aWxsbm9ycmlzLmNvbS9sb2dvLmpwZw`.
 
 ### Examples
 
