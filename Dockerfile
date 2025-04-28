@@ -2,7 +2,7 @@
 FROM --platform=$BUILDPLATFORM cgr.dev/chainguard/wolfi-base as build
 LABEL maintainer="Will Norris <will@willnorris.com>"
 
-RUN apk update && apk add build-base git openssh go-1.21
+RUN apk update && apk add build-base git openssh go-1.24
 
 WORKDIR /app
 COPY go.mod go.sum ./
