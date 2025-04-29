@@ -113,7 +113,7 @@ func NewProxy(transport http.RoundTripper, cache Cache) *Proxy {
 		Transport: &TransformingTransport{
 			Transport:     transport,
 			CachingClient: client,
-			log: func(format string, v ...interface{}) {
+			log: func(format string, v ...any) {
 				if proxy.Verbose {
 					proxy.logf(format, v...)
 				}
@@ -445,7 +445,7 @@ func should304(req *http.Request, resp *http.Response) bool {
 	return false
 }
 
-func (p *Proxy) log(v ...interface{}) {
+func (p *Proxy) log(v ...any) {
 	if p.Logger != nil {
 		p.Logger.Print(v...)
 	} else {
@@ -453,7 +453,7 @@ func (p *Proxy) log(v ...interface{}) {
 	}
 }
 
-func (p *Proxy) logf(format string, v ...interface{}) {
+func (p *Proxy) logf(format string, v ...any) {
 	if p.Logger != nil {
 		p.Logger.Printf(format, v...)
 	} else {
@@ -474,7 +474,7 @@ type TransformingTransport struct {
 	// responses are properly cached.
 	CachingClient *http.Client
 
-	log func(format string, v ...interface{})
+	log func(format string, v ...any)
 }
 
 // RoundTrip implements the http.RoundTripper interface.

@@ -212,14 +212,8 @@ func cropParams(m image.Image, opt Options) image.Rectangle {
 	}
 
 	// bottom right coordinate of crop
-	x1 := x0 + w
-	if x1 > imgW {
-		x1 = imgW
-	}
-	y1 := y0 + h
-	if y1 > imgH {
-		y1 = imgH
-	}
+	x1 := min(x0+w, imgW)
+	y1 := min(y0+h, imgH)
 
 	return image.Rect(x0, y0, x1, y1)
 }
