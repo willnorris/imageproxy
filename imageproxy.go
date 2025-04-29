@@ -28,6 +28,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	tphttp "willnorris.com/go/imageproxy/third_party/http"
+	tphc "willnorris.com/go/imageproxy/third_party/httpcache"
 )
 
 // Maximum number of redirection-followings allowed.
@@ -91,6 +92,10 @@ type Proxy struct {
 	// PassRequestHeaders identifies HTTP headers to pass from inbound
 	// requests to the proxied server.
 	PassRequestHeaders []string
+
+	// MinimumCacheDuration is the minimum duration to cache remote images.
+	// This will override cache-control instructions from the remote server.
+	MinimumCacheDuration time.Duration
 }
 
 // NewProxy constructs a new proxy.  The provided http RoundTripper will be
@@ -118,6 +123,7 @@ func NewProxy(transport http.RoundTripper, cache Cache) *Proxy {
 					proxy.logf(format, v...)
 				}
 			},
+			updateCacheHeaders: proxy.updateCacheHeaders,
 		},
 		Cache:               cache,
 		MarkCachedResponses: true,
@@ -126,6 +132,39 @@ func NewProxy(transport http.RoundTripper, cache Cache) *Proxy {
 	proxy.Client = client
 
 	return proxy
+}
+
+// updateCacheHeaders updates the cache-control headers in the provided headers.
+// It sets the cache-control max-age value to the maximum of the minimum cache
+// duration, the expires header, and the max-age header.  It also removes the
+// expires header.
+func (p *Proxy) updateCacheHeaders(hdr http.Header) {
+	if p.MinimumCacheDuration == 0 {
+		return
+	}
+	cc := tphc.ParseCacheControl(hdr)
+
+	var expiresDuration time.Duration
+	var maxAgeDuration time.Duration
+
+	if maxAge, ok := cc["max-age"]; ok {
+		maxAgeDuration, _ = time.ParseDuration(maxAge + "s")
+	}
+	if date, err := httpcache.Date(hdr); err == nil {
+		if expiresHeader := hdr.Get("Expires"); expiresHeader != "" {
+			if expires, err := time.Parse(time.RFC1123, expiresHeader); err == nil {
+				expiresDuration = expires.Sub(date)
+			}
+		}
+	}
+
+	maxAge := max(p.MinimumCacheDuration, expiresDuration, maxAgeDuration)
+	cc["max-age"] = fmt.Sprintf("%d", int(maxAge.Seconds()))
+	delete(cc, "no-cache")
+	delete(cc, "no-store")
+
+	hdr.Set("Cache-Control", cc.String())
+	hdr.Del("Expires")
 }
 
 // ServeHTTP handles incoming requests.
@@ -475,6 +514,8 @@ type TransformingTransport struct {
 	CachingClient *http.Client
 
 	log func(format string, v ...any)
+
+	updateCacheHeaders func(hdr http.Header)
 }
 
 // RoundTrip implements the http.RoundTripper interface.
@@ -484,7 +525,11 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 		if t.log != nil {
 			t.log("fetching remote URL: %v", req.URL)
 		}
-		return t.Transport.RoundTrip(req)
+		resp, err := t.Transport.RoundTrip(req)
+		if err == nil && t.updateCacheHeaders != nil {
+			t.updateCacheHeaders(resp.Header)
+		}
+		return resp, err
 	}
 
 	f := req.URL.Fragment
