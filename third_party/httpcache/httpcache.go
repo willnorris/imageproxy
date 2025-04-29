@@ -5,10 +5,10 @@ import (
 	"strings"
 )
 
-type cacheControl map[string]string
+type CacheControl map[string]string
 
-func parseCacheControl(headers http.Header) cacheControl {
-	cc := cacheControl{}
+func ParseCacheControl(headers http.Header) CacheControl {
+	cc := CacheControl{}
 	ccHeader := headers.Get("Cache-Control")
 	for _, part := range strings.Split(ccHeader, ",") {
 		part = strings.Trim(part, " ")
@@ -23,4 +23,16 @@ func parseCacheControl(headers http.Header) cacheControl {
 		}
 	}
 	return cc
+}
+
+func (cc CacheControl) String() string {
+	parts := make([]string, 0, len(cc))
+	for k, v := range cc {
+		if v == "" {
+			parts = append(parts, k)
+		} else {
+			parts = append(parts, k+"="+v)
+		}
+	}
+	return strings.Join(parts, ", ")
 }

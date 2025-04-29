@@ -12,6 +12,7 @@ import (
 	"image"
 	"image/png"
 	"log"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -21,6 +22,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestPeekContentType(t *testing.T) {
@@ -366,6 +368,108 @@ func (t testTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	buf := bufio.NewReader(bytes.NewBufferString(raw))
 	return http.ReadResponse(buf, req)
+}
+
+func TestProxy_UpdateCacheHeaders(t *testing.T) {
+	date := "Mon, 02 Jan 2006 15:04:05 MST"
+	exp := "Mon, 02 Jan 2006 16:04:05 MST"
+
+	tests := []struct {
+		name        string
+		minDuration time.Duration
+		headers     http.Header
+		want        http.Header
+	}{
+		{
+			name:    "zero",
+			headers: http.Header{},
+			want:    http.Header{},
+		},
+		{
+			name: "no min duration",
+			headers: http.Header{
+				"Date":          {date},
+				"Expires":       {exp},
+				"Cache-Control": {"max-age=600"},
+			},
+			want: http.Header{
+				"Date":          {date},
+				"Expires":       {exp},
+				"Cache-Control": {"max-age=600"},
+			},
+		},
+		{
+			name:        "cache control exceeds min duration",
+			minDuration: 30 * time.Second,
+			headers: http.Header{
+				"Cache-Control": {"max-age=600"},
+			},
+			want: http.Header{
+				"Cache-Control": {"max-age=600"},
+			},
+		},
+		{
+			name:        "cache control exceeds min duration, expires",
+			minDuration: 30 * time.Second,
+			headers: http.Header{
+				"Date":          {date},
+				"Expires":       {exp},
+				"Cache-Control": {"max-age=86400"},
+			},
+			want: http.Header{
+				"Date":          {date},
+				"Cache-Control": {"max-age=86400"},
+			},
+		},
+		{
+			name:        "min duration exceeds cache control",
+			minDuration: 1 * time.Hour,
+			headers: http.Header{
+				"Cache-Control": {"max-age=600"},
+			},
+			want: http.Header{
+				"Cache-Control": {"max-age=3600"},
+			},
+		},
+		{
+			name:        "min duration exceeds cache control, expires",
+			minDuration: 2 * time.Hour,
+			headers: http.Header{
+				"Date":          {date},
+				"Expires":       {exp},
+				"Cache-Control": {"max-age=600"},
+			},
+			want: http.Header{
+				"Date":          {date},
+				"Cache-Control": {"max-age=7200"},
+			},
+		},
+		{
+			name:        "expires exceeds min duration, cache control",
+			minDuration: 30 * time.Minute,
+			headers: http.Header{
+				"Date":          {date},
+				"Expires":       {exp},
+				"Cache-Control": {"max-age=600"},
+			},
+			want: http.Header{
+				"Date":          {date},
+				"Cache-Control": {"max-age=3600"},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := &Proxy{MinimumCacheDuration: tt.minDuration}
+			hdr := maps.Clone(tt.headers)
+			p.updateCacheHeaders(hdr)
+
+			if !reflect.DeepEqual(hdr, tt.want) {
+				t.Errorf("updateCacheHeaders(%v) returned %v, want %v", tt.headers, hdr, tt.want)
+			}
+		})
+	}
 }
 
 func TestProxy_ServeHTTP(t *testing.T) {

@@ -46,6 +46,7 @@ var verbose = flag.Bool("verbose", false, "print verbose logging messages")
 var _ = flag.Bool("version", false, "Deprecated: this flag does nothing")
 var contentTypes = flag.String("contentTypes", "image/*", "comma separated list of allowed content types")
 var userAgent = flag.String("userAgent", "willnorris/imageproxy", "specify the user-agent used by imageproxy when fetching images from origin website")
+var minCacheDuration = flag.Duration("minCacheDuration", 0, "minimum duration to cache remote images")
 
 func init() {
 	flag.Var(&cache, "cache", "location to cache images (see https://github.com/willnorris/imageproxy#cache)")
@@ -87,6 +88,7 @@ func main() {
 	p.ScaleUp = *scaleUp
 	p.Verbose = *verbose
 	p.UserAgent = *userAgent
+	p.MinimumCacheDuration = *minCacheDuration
 
 	server := &http.Server{
 		Addr:    *addr,
