@@ -156,6 +156,43 @@ func TestNewRequest(t *testing.T) {
 			"http://localhost/http://example.com/%2C",
 			"http://example.com/%2C", emptyOptions, false,
 		},
+		// URI Encoded cases
+		{
+			"http://localhost/1x2/http%3A%2F%2Fexample.com%2Ffoo",
+			"http://example.com/foo", Options{Width: 1, Height: 2}, false,
+		},
+		{
+			"http://localhost/1x2/http%3A%2F%2Fexample.com%2Fhttp%2Fstuff",
+			"http://example.com/http/stuff", Options{Width: 1, Height: 2}, false,
+		},
+		{
+			"http://localhost/http%3A%2F%2Fexample.com%2Ffoo",
+			"http://example.com/foo", emptyOptions, false,
+		},
+		{
+			"http://localhost/http%3A%2F%2Fexample.com%2Ffoo",
+			"http://example.com/foo", emptyOptions, false,
+		},
+		{
+			"http://localhost/http%3A%2Fexample.com%2Ffoo",
+			"http://example.com/foo", emptyOptions, false,
+		},
+		{
+			"http://localhost/http%3A%2F%2F%2Fexample.com%2Ffoo",
+			"http://example.com/foo", emptyOptions, false,
+		},
+		{
+			"http://localhost//http%3A%2F%2Fexample.com%2Ffoo",
+			"http://example.com/foo", emptyOptions, false,
+		},
+		{
+			"http://localhost/http%3A%2F%2Fexample.com%2Ffoo%3Ftest%3D1%26test%3D2",
+			"http://example.com/foo?test=1&test=2", emptyOptions, false,
+		},
+		{
+			"http://localhost/1x2/http%3A%2F%2Fexample.com%2Ffoo%3Ftest%3D1%26test%3D2",
+			"http://example.com/foo?test=1&test=2", Options{Width: 1, Height: 2}, false,
+		},
 	}
 
 	for _, tt := range tests {

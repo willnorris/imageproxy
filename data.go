@@ -337,9 +337,14 @@ func (r Request) String() string {
 //	http://localhost/http://example.com/image.jpg
 func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 	var err error
+	var additionalQuery string
 	req := &Request{Original: r}
 
-	path := r.URL.EscapedPath()[1:] // strip leading slash
+	path := r.URL.EscapedPath()[1:]                      // strip leading slash
+	decodedPath, err, additionalQuery := decodeURL(path) // Conditionally decode url path param if it is url encoded this enables us to process image urls with query params built in
+	if err == nil {
+		path = decodedPath
+	}
 	req.URL, err = parseURL(path)
 	if err != nil || !req.URL.IsAbs() {
 		// first segment should be options
@@ -370,7 +375,7 @@ func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 	}
 
 	// query string is always part of the remote URL
-	req.URL.RawQuery = r.URL.RawQuery
+	req.URL.RawQuery = combineQueries(r.URL.RawQuery, additionalQuery)
 	return req, nil
 }
 
@@ -381,4 +386,46 @@ var reCleanedURL = regexp.MustCompile(`^(https?):/+([^/])`)
 func parseURL(s string) (*url.URL, error) {
 	s = reCleanedURL.ReplaceAllString(s, "$1://$2")
 	return url.Parse(s)
+}
+
+var reIsEncodedUrl = regexp.MustCompile(`^https?%`)
+
+func decodeURL(s string) (string, error, string) {
+	var startsWithHttp = strings.HasPrefix(s, "http")
+	var prefix = ""
+	var u = s
+
+	if !startsWithHttp && strings.Contains(s, "http") {
+		var parts = strings.SplitN(s, "http", 2)
+		u = "http" + parts[1]
+		prefix = parts[0]
+	}
+
+	var isUrlEncoded = reIsEncodedUrl.MatchString(u)
+
+	if isUrlEncoded {
+		u, err := url.QueryUnescape(u)
+		if err != nil {
+			return u, err, ""
+		}
+
+		var parsed, err2 = url.Parse(u)
+		if err2 != nil {
+			return u, err2, ""
+		}
+
+		return prefix + u, err2, parsed.RawQuery
+	} else {
+		return s, nil, ""
+	}
+}
+
+func combineQueries(a string, b string) string {
+	if a == "" {
+		return b
+	} else if b == "" {
+		return a
+	} else {
+		return a + "&" + b
+	}
 }
