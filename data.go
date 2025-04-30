@@ -327,10 +327,23 @@ func (r Request) String() string {
 // NewRequest parses an http.Request into an imageproxy Request.  Options and
 // the remote image URL are specified in the request path, formatted as:
 // /{options}/{remote_url}.  Options may be omitted, so a request path may
-// simply contain /{remote_url}.  The remote URL must either be:
+// simply contain /{remote_url}.
 //
-//   - an absolute "http" or "https" URL, not be URL encoded, with optional query string, or
-//   - base64 encoded (URL safe, no padding).
+// The remote URL may be included in plain text without any encoding,
+// percent-encoded (aka URL encoded), or base64 encoded (URL safe, no padding).
+//
+// When no encoding is used, any URL query string is treated as part of the remote URL.
+// For example, given the proxy URL of `http://localhost/x/http://example.com/?id=1`,
+// the remote URL is `http://example.com/?id=1`.
+//
+// When percent-encoding is used, the full URL must be encoded.
+// Any query string on the proxy URL is NOT included as part of the remote URL.
+// Percent-encoded URLs must be absolute URLs;
+// they cannot be relative URLs used with a default base URL.
+//
+// When base64 encoding is used, the full URL must be encoded.
+// Any query string on the proxy URL is NOT included as part of the remote URL.
+// Base64 encoded URLs may be relative URLs used with a default base URL.
 //
 // Assuming an imageproxy server running on localhost, the following are all
 // valid imageproxy requests:
@@ -339,11 +352,12 @@ func (r Request) String() string {
 //	http://localhost/100x200,r90/http://example.com/image.jpg?foo=bar
 //	http://localhost//http://example.com/image.jpg
 //	http://localhost/http://example.com/image.jpg
+//	http://localhost/x/http%3A%2F%2Fexample.com%2Fimage.jpg
 //	http://localhost/100x200/aHR0cDovL2V4YW1wbGUuY29tL2ltYWdlLmpwZw
 func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 	var err error
 	req := &Request{Original: r}
-	var enc bool // whether the remote URL was base64 encoded
+	var enc bool // whether the remote URL was base64 or URL encoded
 
 	path := r.URL.EscapedPath()[1:] // strip leading slash
 	req.URL, enc, err = parseURL(path, baseURL)
@@ -376,7 +390,7 @@ func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 	}
 
 	if !enc {
-		// if the remote URL was not base64-encoded,
+		// if the remote URL was not base64 or URL encoded,
 		// then the query string is part of the remote URL
 		req.URL.RawQuery = r.URL.RawQuery
 	}
@@ -384,6 +398,7 @@ func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 }
 
 var reCleanedURL = regexp.MustCompile(`^(https?):/+([^/])`)
+var reIsEncodedURL = regexp.MustCompile(`^(?i)https?%3A%2F`)
 
 // parseURL parses s as a URL, handling URLs that have been munged by
 // path.Clean or a webserver that collapses multiple slashes.
@@ -403,6 +418,14 @@ func parseURL(s string, baseURL *url.URL) (_ *url.URL, enc bool, _ error) {
 		} else if baseURL != nil && !strings.ContainsRune(d, unicode.ReplacementChar) {
 			enc = true
 			s = d
+		}
+	}
+
+	// If the string looks like a URL encoded absolute HTTP(S) URL, decode it.
+	if reIsEncodedURL.MatchString(s) {
+		if u, err := url.PathUnescape(s); err == nil {
+			enc = true
+			s = u
 		}
 	}
 
