@@ -46,15 +46,23 @@ See the full list of available options at
 ### Remote URL
 
 The URL of the original image to load is specified as the remainder of the
-path, without any encoding. For example,
-`http://localhost/200/https://willnorris.com/logo.jpg`.
+path. It may be included in plain text without any encoding,
+percent-encoded (aka URL encoded), or base64 encoded (URL safe, no padding).
 
-If the URL contains a query string, it is treated as part of the remote URL.
+When no encoding is used, any URL query string is treated as part of the remote URL.
+For example, given the proxy URL of `http://localhost/x/http://example.com/?id=1`,
+the remote URL is `http://example.com/?id=1`.
 
-Alternatively, the remote URL may be base64 encoded (URL safe, no padding).
-This can be helpful if the URL contains characters or encoding that imageproxy
-is not handling properly. For example,
-`http://localhost/200/aHR0cHM6Ly93aWxsbm9ycmlzLmNvbS9sb2dvLmpwZw`.
+When percent-encoding is used, the full URL must be encoded.
+Any query string on the proxy URL is NOT included as part of the remote URL.
+Percent-encoded URLs must be absolute URLs;
+they cannot be relative URLs used with a default base URL.
+For example, `http://localhost/x/http%3A%2F%2Fexample.com%2F%3Fid%3D1`.
+
+When base64 encoding is used, the full URL must be encoded.
+Any query string on the proxy URL is NOT included as part of the remote URL.
+Base64 encoded URLs may be relative URLs used with a default base URL.
+For example, `http://localhost/x/aHR0cDovL2V4YW1wbGUuY29tLz9pZD0x`.
 
 ### Examples
 
