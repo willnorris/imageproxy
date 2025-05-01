@@ -384,6 +384,7 @@ func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 }
 
 var reCleanedURL = regexp.MustCompile(`^(https?):/+([^/])`)
+var reIsEncodedURL = regexp.MustCompile(`^(?i)https?%3A%2F`)
 
 // parseURL parses s as a URL, handling URLs that have been munged by
 // path.Clean or a webserver that collapses multiple slashes.
@@ -403,6 +404,14 @@ func parseURL(s string, baseURL *url.URL) (_ *url.URL, enc bool, _ error) {
 		} else if baseURL != nil && !strings.ContainsRune(d, unicode.ReplacementChar) {
 			enc = true
 			s = d
+		}
+	}
+
+	// If the string looks like a URL encoded absolute HTTP(S) URL, decode it.
+	if reIsEncodedURL.MatchString(s) {
+		if u, err := url.PathUnescape(s); err == nil {
+			enc = true
+			s = u
 		}
 	}
 
