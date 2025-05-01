@@ -41,7 +41,7 @@ list of parameters, which can be supplied in any order. Duplicate parameters
 overwrite previous values.
 
 See the full list of available options at
-<https://godoc.org/willnorris.com/go/imageproxy#ParseOptions>.
+<https://pkg.go.dev/willnorris.com/go/imageproxy#ParseOptions>.
 
 ### Remote URL
 
@@ -76,7 +76,7 @@ source image][small-things], which measures 1024 by 678 pixels.
 | 200x,png               | 200px wide, converted to PNG format                        | <a href="https://willnorris.com/api/imageproxy/200x,png/https://willnorris.com/images/imageproxy/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/200x,png/https://willnorris.com/images/imageproxy/small-things.jpg" alt="200x,png"></a>                                           |
 | cx175,cw400,ch300,100x | crop to 400x300px starting at (175,0), scale to 100px wide | <a href="https://willnorris.com/api/imageproxy/cx175,cw400,ch300,100x/https://willnorris.com/images/imageproxy/small-things.jpg"><img src="https://willnorris.com/api/imageproxy/cx175,cw400,ch300,100x/https://willnorris.com/images/imageproxy/small-things.jpg" alt="cx175,cw400,ch300,100x"></a> |
 
-The [smart crop feature](https://godoc.org/willnorris.com/go/imageproxy#hdr-Smart_Crop)
+The [smart crop feature](https://pkg.go.dev/willnorris.com/go/imageproxy#hdr-Smart_Crop-ParseOptions)
 can best be seen by comparing crops of [this source image][judah-sheets], with
 and without smart crop enabled.
 
@@ -182,7 +182,7 @@ first check an in-memory cache for an image, followed by a gcs bucket:
 
     imageproxy -cache memory -cache gcs://my-bucket/
 
-[tiered fashion]: https://godoc.org/github.com/die-net/lrucache/twotier
+[tiered fashion]: https://pkg.go.dev/github.com/die-net/lrucache/twotier
 
 #### Cache Duration
 
@@ -263,7 +263,7 @@ Reload the [codercat URL][], and you should see an error message. Now load a
 that it loads properly.
 
 [signed codercat URL]: http://localhost:8080/500,sXyMwWKIC5JPCtlYOQ2f4yMBTqpjtUsfI67Sp7huXIYY=/https://octodex.github.com/images/codercat.jpg
-[signature option]: https://godoc.org/willnorris.com/go/imageproxy#hdr-Signature
+[signature option]: https://pkg.go.dev/willnorris.com/go/imageproxy#hdr-Signature-ParseOptions
 
 Some simple code samples for generating signatures in various languages can be
 found in [docs/url-signing.md](/docs/url-signing.md). Multiple valid signature

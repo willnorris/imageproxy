@@ -1,7 +1,7 @@
 # How to generate signed requests
 
 Signing requests allows an imageproxy instance to proxy images from arbitrary
-remote hosts, but without opening the service up for potential abuse.  When
+remote hosts, but without opening the service up for potential abuse. When
 appropriately configured, the imageproxy instance will only serve requests that
 are for allowed hosts, or which have a valid signature.
 
@@ -9,7 +9,7 @@ Signatures can be calculated in two ways:
 
 1. they can be calculated solely on the remote image URL, in which case any
    transformations of the image can be requested without changes to the
-   signature value.  This used to be the only way to sign requests, but is no
+   signature value. This used to be the only way to sign requests, but is no
    longer recommended since it still leaves the imageproxy instance open to
    potential abuse.
 
@@ -17,30 +17,30 @@ Signatures can be calculated in two ways:
    the requested transformation options.
 
 In both cases, the signature is calculated using HMAC-SHA256 and a secret key
-which is provided to imageproxy on startup.  The message to be signed is the
+which is provided to imageproxy on startup. The message to be signed is the
 remote URL, with the transformation options optionally set as the URL fragment,
-[as documented below](#Signing-options).  The signature is url-safe base64
+[as documented below](#signing-options). The signature is url-safe base64
 encoded, and [provided as an option][s-option] in the imageproxy request.
 
 imageproxy will accept signatures for URLs with or without options
-transparently.  It's up to the publisher of the signed URLs to decide which
+transparently. It's up to the publisher of the signed URLs to decide which
 method they use to generate the URL.
 
-[s-option]: https://godoc.org/willnorris.com/go/imageproxy#hdr-Signature
+[s-option]: https://pkg.go.dev/willnorris.com/go/imageproxy#hdr-Signature-ParseOptions
 
 ## Signing options
 
 Transformation options for a proxied URL are [specified as a comma separated
 string][ParseOptions] of individual options, which can be supplied in any
-order.  When calculating a signature, options should be put in their canonical
+order. When calculating a signature, options should be put in their canonical
 form, sorted in lexigraphical order (omitting the signature option itself), and
 appended to the remote URL as the URL fragment.
 
 Currently, only [size option][] has a canonical form, which is
-`{width}x{height}` with the number `0` used when no value is specified.  For
+`{width}x{height}` with the number `0` used when no value is specified. For
 example, a request that does not request any size option would still have a
 canonical size value of `0x0`, indicating that no size transformation is being
-performed.  If only a height of 500px is requested, the canonical form would be
+performed. If only a height of 500px is requested, the canonical form would be
 `0x500`.
 
 For example, requesting the remote URL of `http://example.com/image.jpg`,
@@ -57,9 +57,8 @@ the signed value would be:
 The `100` size option was put in its canonical form of `100x100`, and the
 options are sorted, moving `q75` before `r90`.
 
-[ParseOptions]: https://godoc.org/willnorris.com/go/imageproxy#ParseOptions
-[size option]: https://godoc.org/willnorris.com/go/imageproxy#hdr-Size_and_Cropping
-
+[ParseOptions]: https://pkg.go.dev/willnorris.com/go/imageproxy#ParseOptions
+[size option]: https://pkg.go.dev/willnorris.com/go/imageproxy#hdr-Size_and_Cropping-ParseOptions
 
 ## Signed options example
 
@@ -76,12 +75,10 @@ and our resulting signed key is `0sR2kjyfiF1RQRj4Jm2fFa3_6SDFqdAaDEmy1oD2U-4=`
 The final url would be
 `http://localhost:8080/400x400,q40,s0sR2kjyfiF1RQRj4Jm2fFa3_6SDFqdAaDEmy1oD2U-4=/https://octodex.github.com/images/codercat.jpg`
 
-
-
 ## Language Examples
 
-Here are examples of calculating signatures in a variety of languages.  These
-demonstrate the HMAC-SHA256 bits, but not the option canonicalization.  In each
+Here are examples of calculating signatures in a variety of languages. These
+demonstrate the HMAC-SHA256 bits, but not the option canonicalization. In each
 example, the remote URL `https://octodex.github.com/images/codercat.jpg` is
 signed using a signature key of `secretkey`.
 
@@ -90,6 +87,7 @@ See also the [imageproxy-sign tool](/cmd/imageproxy-sign).
 ### Go
 
 main.go:
+
 ```go
 package main
 
@@ -180,38 +178,40 @@ url = sys.argv[2]
 print base64.urlsafe_b64encode(hmac.new(key, msg=url, digestmod=hashlib.sha256).digest())
 ```
 
-````shell
+```shell
 $ python sign.py "secretkey" "https://octodex.github.com/images/codercat.jpg"
 cw34eyalj8YvpLpETxSIxv2k8QkLel2UAR5Cku2FzGM=
-````
+```
 
 ### JavaScript
 
 ```javascript
-const crypto = require('crypto');
-const URLSafeBase64 = require('urlsafe-base64');
+const crypto = require("crypto");
+const URLSafeBase64 = require("urlsafe-base64");
 
 let key = process.argv[2];
 let url = process.argv[3];
-console.log(URLSafeBase64.encode(crypto.createHmac('sha256', key).update(url).digest()));
+console.log(
+  URLSafeBase64.encode(crypto.createHmac("sha256", key).update(url).digest()),
+);
 ```
 
-````shell
+```shell
 $ node sign.js "secretkey" "https://octodex.github.com/images/codercat.jpg"
 cw34eyalj8YvpLpETxSIxv2k8QkLel2UAR5Cku2FzGM=
-````
+```
 
 ### PHP
 
-````php
+```php
 <?php
 
 $key = $argv[1];
 $url = $argv[2];
 echo strtr(base64_encode(hash_hmac('sha256', $url, $key, 1)), '/+' , '_-');
-````
+```
 
-````shell
+```shell
 $ php sign.php "secretkey" "https://octodex.github.com/images/codercat.jpg"
 cw34eyalj8YvpLpETxSIxv2k8QkLel2UAR5Cku2FzGM=
-````
+```

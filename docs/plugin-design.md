@@ -27,7 +27,7 @@ eventually relent, and
 [#49](https://github.com/willnorris/imageproxy/issues/49) tracked adding
 support for the most common backends.
 
-Unfortunately my concerns proved true, and build times are *significantly*
+Unfortunately my concerns proved true, and build times are _significantly_
 slower (TODO: add concrete numbers) now because of all the additional cloud
 SDKs that get compiled in. I don't personally care too much about binary size,
 since I'm not running in a constrained environment, but these build times are
@@ -40,11 +40,12 @@ back out.
 ### Plugin support in Go
 
 TODO: talk about options like
- - RPC (https://github.com/hashicorp/go-plugin)
- - pkg/plugin (https://golang.org/pkg/plugin/)
- - embedded interpreter (https://github.com/robertkrimen/otto)
- - custom binaries (https://github.com/mholt/caddy,
-   https://caddy.community/t/59)
+
+- RPC (<https://github.com/hashicorp/go-plugin>)
+- pkg/plugin (<https://golang.org/pkg/plugin/>)
+- embedded interpreter (<https://github.com/robertkrimen/otto>)
+- custom binaries (<https://github.com/mholt/caddy>,
+  <https://caddy.community/t/59>)
 
 Spoiler: I'm planning on following the Caddy approach and using custom
 binaries.
@@ -53,21 +54,22 @@ binaries.
 
 I plan to model imageproxy after Caddy, moving all key functionality into
 separate plugins that register themselves with the server, and which all
-compile to a single statically-linked binary.  The core project will provide a
-great number of plugins to cover all of the existing functionality.  I also
+compile to a single statically-linked binary. The core project will provide a
+great number of plugins to cover all of the existing functionality. I also
 expect I'll be much more open to adding plugins for features I may not care as
 much about personally. Of course, users can also write their own plugins and
 link them in without needing to contribute them to core if they don't want to.
 
 I anticipate providing two or three build configurations in core:
- - **full** - include all the plugins that are part of core (except where they
-   may conflict)
- - **minimal** - some set of minimal features that only includes basic caching
-   options, limited transformation options, etc
- - **my personal config** - I'll also definitely have a build that I use
-   personally on my site. I may decide to just make that the "minimal" build
-   and perhaps call it something different, rather than have a third
-   configuration.
+
+- **full** - include all the plugins that are part of core (except where they
+  may conflict)
+- **minimal** - some set of minimal features that only includes basic caching
+  options, limited transformation options, etc
+- **my personal config** - I'll also definitely have a build that I use
+  personally on my site. I may decide to just make that the "minimal" build
+  and perhaps call it something different, rather than have a third
+  configuration.
 
 Custom configurations beyond what is provided by core can be done by creating a
 minimal main package that imports the plugins you care about and calling some
@@ -88,7 +90,7 @@ See also issues and PRs with [label:plugins][].
 
 This is one of the most common feature requests, and is also one of the worst
 offender for inflating build times and binary sizes because of the size of the
-dependencies that are typically required.  The minimal imageproxy build would
+dependencies that are typically required. The minimal imageproxy build would
 probably only include the in-memory and on-disk caches. Anything that talked to
 an external store (redis, cloud providers, etc) would be pulled out.
 
@@ -107,9 +109,9 @@ probably wouldn't be able to interact at all).
 #### Transformation options
 
 Today, imageproxy performs minimal transformations, mostly around resizing,
-cropping, and rotation.  It doesn't support any kind of filters, brightness or
+cropping, and rotation. It doesn't support any kind of filters, brightness or
 contrast adjustment, etc. There are go libraries for them, they're just outside
-the scope of what I originally intended imageproxy for.  But I'd be happy to
+the scope of what I originally intended imageproxy for. But I'd be happy to
 have plugins that do that kind of thing. These plugins would need to be able to
 hook into the option parsing engine so that they could register their URL
 options.
@@ -119,14 +121,14 @@ options.
 There have been a number of requests for imge format support that require cgo
 libraries:
 
- - **webp encoding** - needs cgo
-   [#114](https://github.com/willnorris/imageproxy/issues/114)
- - **progressive jpegs** - probably needs cgo?
-   [#77](https://github.com/willnorris/imageproxy/issues/77)
- - **gif to mp4** - maybe doable in pure go, but probably belongs in a plugin
-   [#136](https://github.com/willnorris/imageproxy/issues/136)
- - **HEIF** - formate used by newer iPhones
-   ([HEIF](https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format))
+- **webp encoding** - needs cgo
+  [#114](https://github.com/willnorris/imageproxy/issues/114)
+- **progressive jpegs** - probably needs cgo?
+  [#77](https://github.com/willnorris/imageproxy/issues/77)
+- **gif to mp4** - maybe doable in pure go, but probably belongs in a plugin
+  [#136](https://github.com/willnorris/imageproxy/issues/136)
+- **HEIF** - formate used by newer iPhones
+  ([HEIF](https://en.wikipedia.org/wiki/High_Efficiency_Image_File_Format))
 
 #### Option parsing
 
@@ -148,10 +150,10 @@ module](https://nginx.org/en/docs/http/ngx_http_secure_link_module.html).
 
 ### Registering Plugins
 
-Plugins are loaded simply by importing their package.  They should have an
+Plugins are loaded simply by importing their package. They should have an
 `init` func that calls `imageproxy.RegisterPlugin`:
 
-``` go
+```go
 type Plugin struct {
 }
 
@@ -159,12 +161,12 @@ func RegisterPlugin(name string, plugin Plugin)
 ```
 
 Plugins hook into various extension points of imageproxy by implementing
-appropriate interfaces.  A single plugin can hook into multiple parts of
+appropriate interfaces. A single plugin can hook into multiple parts of
 imageproxy by implementing multiple interfaces.
 
 For example, two possible interfaces for security related plugins:
 
-``` go
+```go
 // A RequestAuthorizer determines if a request is authorized to be processed.
 // Requests are processed before the remote resource is retrieved.
 type RequestAuthorizer interface {
@@ -186,7 +188,7 @@ type ResponseAuthorizer interface {
 
 A hypothetical interface for plugins that transform images:
 
-``` go
+```go
 // An ImageTransformer transforms an image.
 type ImageTransformer interface {
    // TransformImage based on the provided options and return the result.
