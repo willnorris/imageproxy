@@ -184,15 +184,19 @@ first check an in-memory cache for an image, followed by a gcs bucket:
 
 [tiered fashion]: https://pkg.go.dev/github.com/die-net/lrucache/twotier
 
-#### Cache Duration
+#### Override Cache Directives
 
-By default, images are cached for the duration specified in response headers.
-If an image has no cache directives, or an explicit `Cache-Control: no-cache` header,
-then the response is not cached.
+By default, imageproxy will respect the caching directives in response headers,
+including the cache duration and explicit instructions **not** to cache the response,
+such as `no-store` and `private` cache-control directives.
 
-To override the response cache directives, set a minimum time that response should be cached for.
-This will ignore `no-cache` and `no-store` directives, and will set `max-age`
-to the specified value if it is greater than the original `max-age` value.
+You can force imageproxy to cache responses, even if they explicitly say not to,
+by passing the `-forceCache` flag. Note that this is generally not recommended.
+
+A minimum cache duration can be set using the `-minCacheDuration` flag. This
+will extend the cache duration if the response header indicates a shorter value.
+If called without the `-forceCache` flag, this will have no effect on responses
+with the `no-store` or `private` directives.
 
     imageproxy -cache /tmp/imageproxy -minCacheDuration 5m
 

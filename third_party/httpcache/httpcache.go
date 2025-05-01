@@ -2,6 +2,7 @@ package httpcache
 
 import (
 	"net/http"
+	"sort"
 	"strings"
 )
 
@@ -17,9 +18,9 @@ func ParseCacheControl(headers http.Header) CacheControl {
 		}
 		if strings.ContainsRune(part, '=') {
 			keyval := strings.Split(part, "=")
-			cc[strings.Trim(keyval[0], " ")] = strings.Trim(keyval[1], ",")
+			cc[strings.ToLower(strings.Trim(keyval[0], " "))] = strings.Trim(keyval[1], ",")
 		} else {
-			cc[part] = ""
+			cc[strings.ToLower(part)] = ""
 		}
 	}
 	return cc
@@ -34,5 +35,6 @@ func (cc CacheControl) String() string {
 			parts = append(parts, k+"="+v)
 		}
 	}
+	sort.StringSlice(parts).Sort()
 	return strings.Join(parts, ", ")
 }

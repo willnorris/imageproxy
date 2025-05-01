@@ -94,8 +94,13 @@ type Proxy struct {
 	PassRequestHeaders []string
 
 	// MinimumCacheDuration is the minimum duration to cache remote images.
-	// This will override cache-control instructions from the remote server.
+	// This will override cache duration from the remote server.
 	MinimumCacheDuration time.Duration
+
+	// ForceCache, when true, forces caching of all images, even if the
+	// remote server specifies 'private' or 'no-store' in the cache-control
+	// header.
+	ForceCache bool
 }
 
 // NewProxy constructs a new proxy.  The provided http RoundTripper will be
@@ -135,14 +140,40 @@ func NewProxy(transport http.RoundTripper, cache Cache) *Proxy {
 }
 
 // updateCacheHeaders updates the cache-control headers in the provided headers.
-// It sets the cache-control max-age value to the maximum of the minimum cache
-// duration, the expires header, and the max-age header.  It also removes the
+//
+// If the cache-control header includes the 'private' directive,
+// then 'no-store' is added to the header to prevent caching.
+// If p.ForceCache is set, then 'private' and 'no-store' are both ignored and removed.
+//
+// This method also sets the cache-control max-age value to the maximum of the minimum cache
+// duration, the expires header, and the max-age header. It also removes the
 // expires header.
 func (p *Proxy) updateCacheHeaders(hdr http.Header) {
+	cc := tphc.ParseCacheControl(hdr)
+
+	// respect 'private' and 'no-store' directives unless ForceCache is set.
+	// The httpcache package ignores the 'private' directive,
+	// since it's not intended to be used as a shared cache.
+	// imageproxy IS a shared cache, so we enforce the 'private' directive ourself
+	// by setting 'no-store', which httpcache does respect.
+	if p.ForceCache {
+		delete(cc, "private")
+		delete(cc, "no-store")
+		hdr.Set("Cache-Control", cc.String())
+	} else {
+		if _, ok := cc["private"]; ok {
+			cc["no-store"] = ""
+			hdr.Set("Cache-Control", cc.String())
+			return
+		}
+		if _, ok := cc["no-store"]; ok {
+			return
+		}
+	}
+
 	if p.MinimumCacheDuration == 0 {
 		return
 	}
-	cc := tphc.ParseCacheControl(hdr)
 
 	var expiresDuration time.Duration
 	var maxAgeDuration time.Duration
@@ -160,8 +191,6 @@ func (p *Proxy) updateCacheHeaders(hdr http.Header) {
 
 	maxAge := max(p.MinimumCacheDuration, expiresDuration, maxAgeDuration)
 	cc["max-age"] = fmt.Sprintf("%d", int(maxAge.Seconds()))
-	delete(cc, "no-cache")
-	delete(cc, "no-store")
 
 	hdr.Set("Cache-Control", cc.String())
 	hdr.Del("Expires")
