@@ -377,6 +377,7 @@ func TestProxy_UpdateCacheHeaders(t *testing.T) {
 	tests := []struct {
 		name        string
 		minDuration time.Duration
+		forceCache  bool
 		headers     http.Header
 		want        http.Header
 	}{
@@ -396,6 +397,14 @@ func TestProxy_UpdateCacheHeaders(t *testing.T) {
 				"Date":          {date},
 				"Expires":       {exp},
 				"Cache-Control": {"max-age=600"},
+			},
+		},
+		{
+			name:        "min duration, no header",
+			minDuration: 30 * time.Second,
+			headers:     http.Header{},
+			want: http.Header{
+				"Cache-Control": {"max-age=30"},
 			},
 		},
 		{
@@ -457,11 +466,53 @@ func TestProxy_UpdateCacheHeaders(t *testing.T) {
 				"Cache-Control": {"max-age=3600"},
 			},
 		},
+		{
+			name: "respect no-store",
+			headers: http.Header{
+				"Cache-Control": {"max-age=600, no-store"},
+			},
+			want: http.Header{
+				"Cache-Control": {"max-age=600, no-store"},
+			},
+		},
+		{
+			name: "respect private",
+			headers: http.Header{
+				"Cache-Control": {"max-age=600, private"},
+			},
+			want: http.Header{
+				"Cache-Control": {"max-age=600, no-store, private"},
+			},
+		},
+		{
+			name:       "force cache, normalize directives",
+			forceCache: true,
+			headers: http.Header{
+				"Cache-Control": {"MAX-AGE=600, no-store, private"},
+			},
+			want: http.Header{
+				"Cache-Control": {"max-age=600"},
+			},
+		},
+		{
+			name:        "force cache with min duration",
+			minDuration: 1 * time.Hour,
+			forceCache:  true,
+			headers: http.Header{
+				"Cache-Control": {"max-age=600, private, no-store"},
+			},
+			want: http.Header{
+				"Cache-Control": {"max-age=3600"},
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			p := &Proxy{MinimumCacheDuration: tt.minDuration}
+			p := &Proxy{
+				MinimumCacheDuration: tt.minDuration,
+				ForceCache:           tt.forceCache,
+			}
 			hdr := maps.Clone(tt.headers)
 			p.updateCacheHeaders(hdr)
 
