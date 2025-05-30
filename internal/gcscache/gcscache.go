@@ -19,8 +19,46 @@ import (
 
 var ctx = context.Background()
 
+// objectHandle interface wraps the methods we use from storage.ObjectHandle
+type objectHandle interface {
+	NewReader(ctx context.Context) (io.ReadCloser, error)
+	NewWriter(ctx context.Context) io.WriteCloser
+	Delete(ctx context.Context) error
+}
+
+// bucketHandle interface wraps the methods we use from storage.BucketHandle
+type bucketHandle interface {
+	Object(name string) objectHandle
+}
+
+// gcsObjectHandle wraps storage.ObjectHandle to implement our interface
+type gcsObjectHandle struct {
+	*storage.ObjectHandle
+}
+
+func (o *gcsObjectHandle) NewReader(ctx context.Context) (io.ReadCloser, error) {
+	return o.ObjectHandle.NewReader(ctx)
+}
+
+func (o *gcsObjectHandle) NewWriter(ctx context.Context) io.WriteCloser {
+	return o.ObjectHandle.NewWriter(ctx)
+}
+
+func (o *gcsObjectHandle) Delete(ctx context.Context) error {
+	return o.ObjectHandle.Delete(ctx)
+}
+
+// gcsBucketHandle wraps storage.BucketHandle to implement our interface
+type gcsBucketHandle struct {
+	*storage.BucketHandle
+}
+
+func (b *gcsBucketHandle) Object(name string) objectHandle {
+	return &gcsObjectHandle{b.BucketHandle.Object(name)}
+}
+
 type cache struct {
-	bucket *storage.BucketHandle
+	bucket bucketHandle
 	prefix string
 }
 
@@ -37,6 +75,12 @@ func (c *cache) Get(key string) ([]byte, bool) {
 	value, err := io.ReadAll(r)
 	if err != nil {
 		log.Printf("error reading from gcs: %v", err)
+		return nil, false
+	}
+
+	// Treat empty objects as cache misses to prevent cache poisoning
+	// when objects are deleted by lifecycle rules
+	if len(value) == 0 {
 		return nil, false
 	}
 
@@ -59,7 +103,7 @@ func (c *cache) Delete(key string) {
 	}
 }
 
-func (c *cache) object(key string) *storage.ObjectHandle {
+func (c *cache) object(key string) objectHandle {
 	name := path.Join(c.prefix, keyToFilename(key))
 	return c.bucket.Object(name)
 }
@@ -68,6 +112,14 @@ func keyToFilename(key string) string {
 	h := md5.New()
 	_, _ = io.WriteString(h, key)
 	return hex.EncodeToString(h.Sum(nil))
+}
+
+// NewWithBucket constructs a cache using the provided bucket handle
+func NewWithBucket(bucket bucketHandle, prefix string) *cache {
+	return &cache{
+		bucket: bucket,
+		prefix: prefix,
+	}
 }
 
 // New constructs a Cache storing files in the specified GCS bucket.  If prefix
@@ -82,6 +134,6 @@ func New(bucket, prefix string) (*cache, error) {
 
 	return &cache{
 		prefix: prefix,
-		bucket: client.Bucket(bucket),
+		bucket: &gcsBucketHandle{client.Bucket(bucket)},
 	}, nil
 }

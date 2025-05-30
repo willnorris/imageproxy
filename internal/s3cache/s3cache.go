@@ -20,10 +20,11 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 )
 
 type cache struct {
-	*s3.S3
+	s3             s3iface.S3API
 	bucket, prefix string
 }
 
@@ -34,7 +35,7 @@ func (c *cache) Get(key string) ([]byte, bool) {
 		Key:    &key,
 	}
 
-	resp, err := c.GetObject(input)
+	resp, err := c.s3.GetObject(input)
 	if err != nil {
 		var aerr awserr.Error
 		if errors.As(err, &aerr) && aerr.Code() != "NoSuchKey" {
@@ -49,6 +50,12 @@ func (c *cache) Get(key string) ([]byte, bool) {
 		return nil, false
 	}
 
+	// Treat empty objects as cache misses to prevent cache poisoning
+	// when objects are deleted by lifecycle rules
+	if len(value) == 0 {
+		return nil, false
+	}
+
 	return value, true
 }
 func (c *cache) Set(key string, value []byte) {
@@ -59,7 +66,7 @@ func (c *cache) Set(key string, value []byte) {
 		Key:    &key,
 	}
 
-	_, err := c.PutObject(input)
+	_, err := c.s3.PutObject(input)
 	if err != nil {
 		log.Printf("error writing to s3: %v", err)
 	}
@@ -71,7 +78,7 @@ func (c *cache) Delete(key string) {
 		Key:    &key,
 	}
 
-	_, err := c.DeleteObject(input)
+	_, err := c.s3.DeleteObject(input)
 	if err != nil {
 		log.Printf("error deleting from s3: %v", err)
 	}
@@ -81,6 +88,15 @@ func keyToFilename(key string) string {
 	h := md5.New()
 	_, _ = io.WriteString(h, key)
 	return hex.EncodeToString(h.Sum(nil))
+}
+
+// NewWithClient constructs a cache using the provided S3 client
+func NewWithClient(s3Client s3iface.S3API, bucket, prefix string) *cache {
+	return &cache{
+		s3:     s3Client,
+		bucket: bucket,
+		prefix: prefix,
+	}
 }
 
 // New constructs a cache configured using the provided URL string.  URL should
@@ -121,7 +137,7 @@ func New(s string) (*cache, error) {
 	}
 
 	return &cache{
-		S3:     s3.New(sess),
+		s3:     s3.New(sess),
 		bucket: bucket,
 		prefix: prefix,
 	}, nil
