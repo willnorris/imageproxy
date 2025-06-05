@@ -408,6 +408,37 @@ Note that all configuration options can be set using [environment
 variables](#environment-variables), which is often the preferred approach for
 containers.
 
+### Caddy
+
+You can proxy requests to imageproxy in your Caddy config using the `reverse_proxy` directive:
+
+```Caddyfile
+@imageproxy path /api/imageproxy/*
+handle @imageproxy {
+  uri replace /api/imageproxy/ /
+  reverse_proxy http://localhost:4593
+}
+```
+
+You can also run an instance of imageproxy embedded in Caddy using the [caddy module](./caddy/).
+This requires a custom build of Caddy with the imageproxy module included
+([example](https://github.com/willnorris/willnorris.com/blob/main/cmd/caddy/caddy.go)),
+and configuring it with the `imageproxy` directive in your Caddyfile:
+
+```Caddyfile
+@imageproxy path /api/imageproxy/*
+handle @imageproxy {
+  uri replace /api/imageproxy/ /
+
+  imageproxy {
+    cache /data/imageproxy-cache
+    default_base_url {$IMAGEPROXY_BASEURL}
+    allow_hosts {$IMAGEPROXY_ALLOWHOSTS}
+    signature_key {$IMAGEPROXY_SIGNATUREKEY}
+  }
+}
+```
+
 ### nginx
 
 Use the `proxy_pass` directive to send requests to your imageproxy instance.
