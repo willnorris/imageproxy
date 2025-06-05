@@ -98,12 +98,16 @@ image][material-animation] resized to 200px square and rotated 270 degrees:
 
 Install the package using:
 
-    go install willnorris.com/go/imageproxy/cmd/imageproxy@latest
+```sh
+go install willnorris.com/go/imageproxy/cmd/imageproxy@latest
+```
 
 Once installed, ensure `$GOPATH/bin` is in your `$PATH`, then run the proxy
 using:
 
-    imageproxy
+```sh
+imageproxy
+```
 
 This will start the proxy on port 8080, without any caching and with no allowed
 host list (meaning any remote URL can be proxied). Test this by navigating to
@@ -141,12 +145,16 @@ enabled using the `-cache` flag. It supports the following values:
   For example, when working with [minio](https://minio.io), which doesn't use
   regions, provide a dummy region value and custom endpoint value:
 
-      s3://fake-region/bucket/folder?endpoint=minio:9000&disableSSL=1&s3ForcePathStyle=1
+  ```
+  s3://fake-region/bucket/folder?endpoint=minio:9000&disableSSL=1&s3ForcePathStyle=1
+  ```
 
   Similarly, for [Digital Ocean Spaces](https://www.digitalocean.com/products/spaces/),
   provide a dummy region value and the appropriate endpoint for your space:
 
-      s3://fake-region/bucket/folder?endpoint=sfo2.digitaloceanspaces.com
+  ```
+  s3://fake-region/bucket/folder?endpoint=sfo2.digitaloceanspaces.com
+  ```
 
   [aws-options]: https://docs.aws.amazon.com/sdk-for-go/api/aws/#Config
 
@@ -165,7 +173,9 @@ enabled using the `-cache` flag. It supports the following values:
 
 For example, to cache files on disk in the `/tmp/imageproxy` directory:
 
-    imageproxy -cache /tmp/imageproxy
+```sh
+imageproxy -cache /tmp/imageproxy
+```
 
 Reload the [codercat URL][], and then inspect the contents of
 `/tmp/imageproxy`. Within the subdirectories, there should be two files, one
@@ -180,7 +190,9 @@ fashion][]. Typically this is used to put a smaller and faster in-memory cache
 in front of a larger but slower on-disk cache. For example, the following will
 first check an in-memory cache for an image, followed by a gcs bucket:
 
-    imageproxy -cache memory -cache gcs://my-bucket/
+```sh
+imageproxy -cache memory -cache gcs://my-bucket/
+```
 
 [tiered fashion]: https://pkg.go.dev/github.com/die-net/lrucache/twotier
 
@@ -198,7 +210,9 @@ will extend the cache duration if the response header indicates a shorter value.
 If called without the `-forceCache` flag, this will have no effect on responses
 with the `no-store` or `private` directives.
 
-    imageproxy -cache /tmp/imageproxy -minCacheDuration 5m
+```sh
+imageproxy -cache /tmp/imageproxy -minCacheDuration 5m
+```
 
 ### Allowed Referrer List
 
@@ -206,7 +220,9 @@ You can limit images to only be accessible for certain hosts in the HTTP
 referrer header, which can help prevent others from hotlinking to images. It can
 be enabled by running:
 
-    imageproxy  -referrers example.com
+```sh
+imageproxy  -referrers example.com
+```
 
 Reload the [codercat URL][], and you should now get an error message. You can
 specify multiple hosts as a comma separated list, or prefix a host value with
@@ -221,12 +237,16 @@ if you want to support fetching from any host, leave off these flags.
 
 Try it out by running:
 
-    imageproxy -allowHosts example.com
+```sh
+imageproxy -allowHosts example.com
+```
 
 Reload the [codercat URL][], and you should now get an error message.
 Alternately, try running:
 
-    imageproxy -denyHosts octodex.github.com
+```sh
+imageproxy -denyHosts octodex.github.com
+```
 
 Reloading the [codercat URL][] will still return an error message.
 
@@ -252,7 +272,9 @@ is useful in preventing abuse when you don't have just a static list of hosts
 you want to allow. Signatures are generated using HMAC-SHA256 against the
 remote URL, and url-safe base64 encoding the result:
 
-    base64urlencode(hmac.New(sha256, <key>).digest(<remote_url>))
+```
+base64urlencode(hmac.New(sha256, <key>).digest(<remote_url>))
+```
 
 The HMAC key is specified using the `signatureKey` flag. If this flag
 begins with an "@", the remainder of the value is interpreted as a file on disk
@@ -260,7 +282,9 @@ which contains the HMAC key.
 
 Try it out by running:
 
-    imageproxy -signatureKey "secretkey"
+```sh
+imageproxy -signatureKey "secretkey"
+```
 
 Reload the [codercat URL][], and you should see an error message. Now load a
 [signed codercat URL][] (which contains the [signature option][]) and verify
@@ -287,7 +311,9 @@ However, if you commonly proxy images from a single source, you can provide a
 base URL and then specify remote images relative to that base. Try it out by
 running:
 
-    imageproxy -baseURL https://octodex.github.com/
+```sh
+imageproxy -baseURL https://octodex.github.com/
+```
 
 Then load the codercat image, specified as a URL relative to that base:
 <http://localhost:8080/500/images/codercat.jpg>. Note that this is not an
@@ -300,7 +326,9 @@ specified, you can always provide the absolute URL of the image to be proxied.
 By default, the imageproxy won't scale images beyond their original size.
 However, you can use the `scaleUp` command-line flag to allow this to happen:
 
-    imageproxy -scaleUp true
+```sh
+imageproxy -scaleUp true
+```
 
 ### WebP and TIFF support
 
@@ -326,7 +354,9 @@ needs... it's a very simple command.
 All configuration flags have equivalent environment variables of the form
 `IMAGEPROXY_$NAME`. For example, an on-disk cache could be configured by calling
 
-    IMAGEPROXY_CACHE="/tmp/imageproxy" imageproxy
+```sh
+IMAGEPROXY_CACHE="/tmp/imageproxy" imageproxy
+```
 
 ## Deploying
 
@@ -359,13 +389,13 @@ A docker image is available at [`ghcr.io/willnorris/imageproxy`](https://github.
 
 You can run it by
 
-```
+```sh
 docker run -p 8080:8080 ghcr.io/willnorris/imageproxy -addr 0.0.0.0:8080
 ```
 
 Or in your Dockerfile:
 
-```
+```Dockerfile
 ENTRYPOINT ["/app/imageproxy", "-addr 0.0.0.0:8080"]
 ```
 
@@ -383,19 +413,19 @@ containers.
 Use the `proxy_pass` directive to send requests to your imageproxy instance.
 For example, to run imageproxy at the path "/api/imageproxy/", set:
 
-```
-  location /api/imageproxy/ {
-    proxy_pass http://localhost:4593/;
-  }
+```nginx
+location /api/imageproxy/ {
+  proxy_pass http://localhost:4593/;
+}
 ```
 
 Depending on other directives you may have in your nginx config, you might need
 to alter the precedence order by setting:
 
-```
-  location ^~ /api/imageproxy/ {
-    proxy_pass http://localhost:4593/;
-  }
+```nginx
+location ^~ /api/imageproxy/ {
+  proxy_pass http://localhost:4593/;
+}
 ```
 
 ## Clients
