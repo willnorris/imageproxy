@@ -400,6 +400,9 @@ to alter the precedence order by setting:
 
 ## Clients
 
+- [Hugo partial](https://github.com/willnorris/willnorris.com/blob/main/layouts/partials/imageproxy-url.html)
+  (I use this with an [`{{<img>}}` shortcode](https://github.com/willnorris/willnorris.com/blob/main/layouts/shortcodes/img.html)
+  like [this example](https://github.com/willnorris/willnorris.com/blob/b7f3451/content/about/index.md?plain=1#L7))
 - [Ruby](https://github.com/azolf/imageproxy_ruby)
 
 ## License
