@@ -93,7 +93,7 @@ func TestCopyHeader(t *testing.T) {
 }
 
 func TestAllowed(t *testing.T) {
-	allowHosts := []string{"good"}
+	good := []string{"good"}
 	key := [][]byte{
 		[]byte("c0ffee"),
 	}
@@ -121,38 +121,38 @@ func TestAllowed(t *testing.T) {
 		allowed    bool
 	}{
 		// no allowHosts or signature key
-		{"http://test/image", emptyOptions, nil, nil, nil, nil, nil, true},
+		{url: "http://test/image", allowed: true},
 
 		// allowHosts
-		{"http://good/image", emptyOptions, allowHosts, nil, nil, nil, nil, true},
-		{"http://bad/image", emptyOptions, allowHosts, nil, nil, nil, nil, false},
+		{url: "http://good/image", allowHosts: good, allowed: true},
+		{url: "http://bad/image", allowHosts: good, allowed: false},
 
 		// referrer
-		{"http://test/image", emptyOptions, nil, nil, allowHosts, nil, genRequest(map[string]string{"Referer": "http://good/foo"}), true},
-		{"http://test/image", emptyOptions, nil, nil, allowHosts, nil, genRequest(map[string]string{"Referer": "http://bad/foo"}), false},
-		{"http://test/image", emptyOptions, nil, nil, allowHosts, nil, genRequest(map[string]string{"Referer": "MALFORMED!!"}), false},
-		{"http://test/image", emptyOptions, nil, nil, allowHosts, nil, genRequest(map[string]string{}), false},
+		{url: "http://test/image", referrers: good, request: genRequest(map[string]string{"Referer": "http://good/foo"}), allowed: true},
+		{url: "http://test/image", referrers: good, request: genRequest(map[string]string{"Referer": "http://bad/foo"}), allowed: false},
+		{url: "http://test/image", referrers: good, request: genRequest(map[string]string{"Referer": "MALFORMED!!"}), allowed: false},
+		{url: "http://test/image", referrers: good, request: genRequest(map[string]string{}), allowed: false},
 
 		// signature key
-		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ="}, nil, nil, nil, key, nil, true},
-		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ="}, nil, nil, nil, multipleKey, nil, true}, // signed with key "c0ffee"
-		{"http://test/image", Options{Signature: "FWIawYV4SEyI4zKJMeGugM-eJM1eI_jXPEQ20ZgRe4A="}, nil, nil, nil, multipleKey, nil, true}, // signed with key "beer"
-		{"http://test/image", Options{Signature: "deadbeef"}, nil, nil, nil, key, nil, false},
-		{"http://test/image", Options{Signature: "deadbeef"}, nil, nil, nil, multipleKey, nil, false},
-		{"http://test/image", emptyOptions, nil, nil, nil, key, nil, false},
+		{url: "http://test/image", options: Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ="}, keys: key, allowed: true},
+		{url: "http://test/image", options: Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ="}, keys: multipleKey, allowed: true}, // signed with key "c0ffee"
+		{url: "http://test/image", options: Options{Signature: "FWIawYV4SEyI4zKJMeGugM-eJM1eI_jXPEQ20ZgRe4A="}, keys: multipleKey, allowed: true}, // signed with key "beer"
+		{url: "http://test/image", options: Options{Signature: "deadbeef"}, keys: key, allowed: false},
+		{url: "http://test/image", options: Options{Signature: "deadbeef"}, keys: multipleKey, allowed: false},
+		{url: "http://test/image", keys: key, allowed: false},
 
 		// allowHosts and signature
-		{"http://good/image", emptyOptions, allowHosts, nil, nil, key, nil, true},
-		{"http://bad/image", Options{Signature: "gWivrPhXBbsYEwpmWAKjbJEiAEgZwbXbltg95O2tgNI="}, nil, nil, nil, key, nil, true},
-		{"http://bad/image", emptyOptions, allowHosts, nil, nil, key, nil, false},
+		{url: "http://good/image", allowHosts: good, keys: key, allowed: true},
+		{url: "http://bad/image", options: Options{Signature: "gWivrPhXBbsYEwpmWAKjbJEiAEgZwbXbltg95O2tgNI="}, keys: key, allowed: true},
+		{url: "http://bad/image", allowHosts: good, keys: key, allowed: false},
 
 		// deny requests that match denyHosts, even if signature is valid or also matches allowHosts
-		{"http://test/image", emptyOptions, nil, []string{"test"}, nil, nil, nil, false},
-		{"http://test:3000/image", emptyOptions, nil, []string{"test"}, nil, nil, nil, false},
-		{"http://test/image", emptyOptions, []string{"test"}, []string{"test"}, nil, nil, nil, false},
-		{"http://test/image", Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ="}, nil, []string{"test"}, nil, key, nil, false},
-		{"http://127.0.0.1/image", emptyOptions, nil, []string{"127.0.0.0/8"}, nil, nil, nil, false},
-		{"http://127.0.0.1:3000/image", emptyOptions, nil, []string{"127.0.0.0/8"}, nil, nil, nil, false},
+		{url: "http://test/image", denyHosts: []string{"test"}, allowed: false},
+		{url: "http://test:3000/image", denyHosts: []string{"test"}, allowed: false},
+		{url: "http://test/image", allowHosts: []string{"test"}, denyHosts: []string{"test"}, allowed: false},
+		{url: "http://test/image", options: Options{Signature: "NDx5zZHx7QfE8E-ijowRreq6CJJBZjwiRfOVk_mkfQQ="}, denyHosts: []string{"test"}, keys: key, allowed: false},
+		{url: "http://127.0.0.1/image", denyHosts: []string{"127.0.0.0/8"}, allowed: false},
+		{url: "http://127.0.0.1:3000/image", denyHosts: []string{"127.0.0.0/8"}, allowed: false},
 	}
 
 	for _, tt := range tests {
