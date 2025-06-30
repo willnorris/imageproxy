@@ -94,6 +94,10 @@ type Proxy struct {
 	// requests to the proxied server.
 	PassRequestHeaders []string
 
+	// PassResponseHeaders identifies HTTP headers to pass from server responses to the proxy client.
+	// If nil, a default set of headers is passed: Cache-Control, Last-Modified, Expires, Etag, Link.
+	PassResponseHeaders []string
+
 	// MinimumCacheDuration is the minimum duration to cache remote images.
 	// This will override cache duration from the remote server.
 	MinimumCacheDuration time.Duration
@@ -312,7 +316,12 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 		metricServedFromCache.Inc()
 	}
 
-	copyHeader(w.Header(), resp.Header, "Cache-Control", "Last-Modified", "Expires", "Etag", "Link")
+	if p.PassResponseHeaders == nil {
+		// pass default set of response headers
+		copyHeader(w.Header(), resp.Header, "Cache-Control", "Last-Modified", "Expires", "Etag", "Link")
+	} else {
+		copyHeader(w.Header(), resp.Header, p.PassResponseHeaders...)
+	}
 
 	if should304(r, resp) {
 		w.WriteHeader(http.StatusNotModified)

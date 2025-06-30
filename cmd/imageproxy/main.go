@@ -39,6 +39,7 @@ var includeReferer = flag.Bool("includeReferer", false, "include referer header 
 var followRedirects = flag.Bool("followRedirects", true, "follow redirects")
 var baseURL = flag.String("baseURL", "", "default base URL for relative remote URLs")
 var passRequestHeaders = flag.String("passRequestHeaders", "", "comma separatetd list of request headers to pass to remote server")
+var passResponseHeaders = flag.String("passResponseHeaders", "Cache-Control,Last-Modified,Expires,Etag,Link", "comma separated list of response headers to pass from remote server")
 var cache tieredCache
 var signatureKeys signatureKeyList
 var scaleUp = flag.Bool("scaleUp", false, "allow images to scale beyond their original dimensions")
@@ -74,6 +75,12 @@ func main() {
 	}
 	if *passRequestHeaders != "" {
 		p.PassRequestHeaders = strings.Split(*passRequestHeaders, ",")
+	}
+	if *passResponseHeaders != "" {
+		p.PassResponseHeaders = strings.Split(*passResponseHeaders, ",")
+	} else {
+		// set to a non-nil empty slice to pass no headers.
+		p.PassResponseHeaders = []string{}
 	}
 	p.SignatureKeys = signatureKeys
 	if *baseURL != "" {
