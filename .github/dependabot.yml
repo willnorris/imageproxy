@@ -1,19 +1,31 @@
+# Open a single PR each for go modules and GitHub actions
+# for security related updates only on a weekly basis.
 version: 2
 updates:
   - package-ecosystem: gomod
     directory: "/"
     schedule:
-      interval: monthly
-    open-pull-requests-limit: 10
+      interval: weekly
+    open-pull-requests-limit: 0
     commit-message:
       prefix: "go.mod:"
     assignees:
       - willnorris
+    groups:
+      all:
+        patterns:
+          - "*"
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: weekly
+    open-pull-requests-limit: 0
     commit-message:
       prefix: ".github:"
     assignees:
       - willnorris
+    groups:
+      all:
+        patterns:
+          - "*"
