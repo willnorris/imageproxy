@@ -256,11 +256,10 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	req.Options.ScaleUp = p.ScaleUp
 
 	actualReq, _ := http.NewRequest("GET", req.String(), nil)
+	actualReq.Header.Set("Accept", "*/*")
+	actualReq.Header.Set("Accept-Language", "*")
 	if p.UserAgent != "" {
 		actualReq.Header.Set("User-Agent", p.UserAgent)
-	}
-	if len(p.ContentTypes) != 0 {
-		actualReq.Header.Set("Accept", strings.Join(p.ContentTypes, ", "))
 	}
 	if p.IncludeReferer {
 		// pass along the referer header from the original request
@@ -335,7 +334,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 		resp.Body = io.NopCloser(b)
 		contentType = peekContentType(b)
 	}
-	if resp.ContentLength != 0 && !contentTypeMatches(p.ContentTypes, contentType) {
+	if (resp.ContentLength != 0 && !contentTypeMatches(p.ContentTypes, contentType)) || strings.Contains(contentType, "svg") {
 		p.logf("content-type not allowed: %q", contentType)
 		http.Error(w, msgNotAllowed, http.StatusForbidden)
 		return
