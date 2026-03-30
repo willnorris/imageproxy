@@ -94,4 +94,6 @@ jobs:
           go-version: stable
       - uses: geomys/sandboxed-step@7d75eb49d17fdeeb3656b3a57d35932d205bcfb9 # v1.2.1
         with:
-          run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+          run: |
+            go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+            pushd caddy; go run golang.org/x/vuln/cmd/govulncheck@latest ./...; popd
