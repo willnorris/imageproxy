@@ -16,13 +16,13 @@ import (
 	_ "willnorris.com/go/imageproxy/cache/s3"
 
 	// imageproxy image encoding plugins
+	_ "willnorris.com/go/imageproxy/image/avif"
 	_ "willnorris.com/go/imageproxy/image/bmp"
 	_ "willnorris.com/go/imageproxy/image/gif"
 	_ "willnorris.com/go/imageproxy/image/jpeg"
 	_ "willnorris.com/go/imageproxy/image/png"
 	_ "willnorris.com/go/imageproxy/image/tiff"
-
-	_ "golang.org/x/image/webp" // decoder only
+	_ "willnorris.com/go/imageproxy/image/webp"
 )
 
 func main() {
