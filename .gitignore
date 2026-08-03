@@ -1,2 +1,5 @@
 .cache
-./imageproxy
+/imageproxy
+/imageproxy.exe
+*.exe
+*.log

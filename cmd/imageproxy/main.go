@@ -8,7 +8,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -100,18 +99,6 @@ func main() {
 	p.MinimumCacheDuration = *minCacheDuration
 	p.ForceCache = *forceCache
 
-	var ln net.Listener
-	var err error
-
-	if path, ok := strings.CutPrefix(*addr, "unix:"); ok {
-		ln, err = net.Listen("unix", path)
-	} else {
-		ln, err = net.Listen("tcp", *addr)
-	}
-	if err != nil {
-		log.Fatalf("listen failed: %v", err)
-	}
-
 	server := &http.Server{
 		Addr:    *addr,
 		Handler: p,
@@ -121,8 +108,9 @@ func main() {
 		IdleTimeout:  120 * time.Second,
 	}
 
-	fmt.Printf("imageproxy listening on %s\n", *addr)
-	log.Fatal(server.Serve(ln))
+	// Run as a native OS service (Windows SCM / systemd) when managed by the service
+	// manager, or in the foreground when run interactively. See service.go.
+	runWithService(server)
 }
 
 type signatureKeyList [][]byte

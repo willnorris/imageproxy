@@ -649,6 +649,12 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 	}); err != nil {
 		t.log("error copying headers: %v", err)
 	}
+	// When the output format is known explicitly, set an accurate Content-Type so
+	// we don't fall back to Go's http.DetectContentType — which has no AVIF
+	// signature and would mislabel encoded AVIF as application/octet-stream.
+	if ct := contentTypeForFormat(opt.Format); ct != "" {
+		fmt.Fprintf(buf, "Content-Type: %s\n", ct)
+	}
 	fmt.Fprintf(buf, "Content-Length: %d\n\n", len(img))
 	buf.Write(img)
 

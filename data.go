@@ -23,6 +23,8 @@ const (
 	optFormatJPEG      = "jpeg"
 	optFormatPNG       = "png"
 	optFormatTIFF      = "tiff"
+	optFormatWEBP      = "webp"
+	optFormatAVIF      = "avif"
 	optRotatePrefix    = "r"
 	optQualityPrefix   = "q"
 	optSignaturePrefix = "s"
@@ -74,7 +76,8 @@ type Options struct {
 	// will always be overwritten by the value of Proxy.ScaleUp.
 	ScaleUp bool
 
-	// Desired image format. Valid values are "jpeg", "png", "tiff".
+	// Desired image format. Valid values are "jpeg", "png", "tiff", "webp",
+	// "avif". webp and avif are encoded via pure-Go WASM encoders (no cgo).
 	Format string
 
 	// Crop rectangle params
@@ -262,6 +265,8 @@ func (o Options) transform() bool {
 //	100,fv,fh   - 100 pixels square, flipped horizontal and vertical
 //	200x,q60    - 200 pixels wide, proportional height, 60% quality
 //	200x,png    - 200 pixels wide, converted to PNG format
+//	800,fit,webp - scale to fit 800px, encoded as WebP
+//	800,fit,avif,q55 - scale to fit 800px, encoded as AVIF at quality 55
 //	cw100,ch100 - crop image to 100px square, starting at (0,0)
 //	cx10,cy20,cw100,ch200 - crop image starting at (10,20) is 100px wide and 200px tall
 func ParseOptions(str string) Options {
@@ -278,7 +283,7 @@ func ParseOptions(str string) Options {
 			options.FlipHorizontal = true
 		case opt == optScaleUp: // this option is intentionally not documented above
 			options.ScaleUp = true
-		case opt == optFormatJPEG, opt == optFormatPNG, opt == optFormatTIFF:
+		case opt == optFormatJPEG, opt == optFormatPNG, opt == optFormatTIFF, opt == optFormatWEBP, opt == optFormatAVIF:
 			options.Format = opt
 		case opt == optSmartCrop:
 			options.SmartCrop = true

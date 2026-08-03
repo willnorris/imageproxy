@@ -16,18 +16,31 @@ import (
 	"math"
 
 	"github.com/disintegration/imaging"
+	"github.com/gen2brain/avif" // pure-Go AVIF encode (libaom via WASM, no cgo)
+	"github.com/gen2brain/webp" // pure-Go WebP encode (libwebp via WASM, no cgo)
 	"github.com/muesli/smartcrop"
 	"github.com/muesli/smartcrop/nfnt"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rwcarlsen/goexif/exif"
 	"golang.org/x/image/bmp"    // register bmp format
 	"golang.org/x/image/tiff"   // register tiff format
-	_ "golang.org/x/image/webp" // register webp format
+	_ "golang.org/x/image/webp" // register webp decode (lightweight; gen2brain handles encode)
 	"willnorris.com/go/gifresize"
 )
 
 // default compression quality of resized jpegs
 const defaultQuality = 95
+
+// default quality for the modern formats when the request omits q. WebP is on
+// the same 0–100 scale as JPEG; AVIF's scale is more aggressive, so a lower
+// number yields comparable perceived quality at a much smaller size.
+const (
+	defaultWebPQuality = 80
+	defaultAVIFQuality = 55
+	// AVIF encode speed 0(slow)–10(fast). 8 keeps CPU sane on modest servers;
+	// every variant is encoded once and then served from cache.
+	avifEncodeSpeed = 8
+)
 
 // maximum distance into image to look for EXIF tags
 const maxExifSize = 1 << 20
@@ -121,11 +134,52 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
+	case "webp":
+		quality := opt.Quality
+		if quality == 0 {
+			quality = defaultWebPQuality
+		}
+		m = transformImage(m, opt)
+		err = webp.Encode(buf, m, webp.Options{Quality: quality, Method: 4})
+		if err != nil {
+			return nil, err
+		}
+	case "avif":
+		quality := opt.Quality
+		if quality == 0 {
+			quality = defaultAVIFQuality
+		}
+		m = transformImage(m, opt)
+		err = avif.Encode(buf, m, avif.Options{Quality: quality, Speed: avifEncodeSpeed})
+		if err != nil {
+			return nil, err
+		}
 	default:
 		return nil, fmt.Errorf("unsupported format: %v", format)
 	}
 
 	return buf.Bytes(), nil
+}
+
+// contentTypeForFormat returns the MIME type for a known output format option,
+// or "" when the format is empty/unknown (in which case the source
+// Content-Type, or Go's content sniffer, is used). This is required for AVIF:
+// Go's http.DetectContentType has no AVIF signature and would otherwise
+// mislabel encoded AVIF as application/octet-stream.
+func contentTypeForFormat(format string) string {
+	switch format {
+	case optFormatJPEG:
+		return "image/jpeg"
+	case optFormatPNG:
+		return "image/png"
+	case optFormatTIFF:
+		return "image/tiff"
+	case optFormatWEBP:
+		return "image/webp"
+	case optFormatAVIF:
+		return "image/avif"
+	}
+	return ""
 }
 
 // evaluateFloat interprets the option value f. If f is between 0 and 1, it is
