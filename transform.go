@@ -14,6 +14,7 @@ import (
 	"io"
 	"log"
 	"math"
+	"strings"
 
 	"github.com/disintegration/imaging"
 	"github.com/muesli/smartcrop"
@@ -39,6 +40,11 @@ var resampleFilter = imaging.Lanczos
 // encoded image in one of the supported formats (gif, jpeg, or png).  The
 // bytes of a similarly encoded image is returned.
 func Transform(img []byte, opt Options) ([]byte, error) {
+	return transform(img, opt, nil)
+}
+
+// transform is like Transform but applies watermark when non-nil.
+func transform(img []byte, opt Options, watermark image.Image) ([]byte, error) {
 	if !opt.transform() {
 		// bail if no transformation was requested
 		return img, nil
@@ -68,7 +74,7 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 	if format == "jpeg" || format == "tiff" {
 		r := io.LimitReader(bytes.NewReader(img), maxExifSize)
 		if exifOpt := exifOrientation(r); exifOpt.transform() {
-			m = transformImage(m, exifOpt)
+			m = transformImage(m, exifOpt, nil)
 		}
 	}
 
@@ -85,14 +91,14 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	switch format {
 	case "bmp":
-		m = transformImage(m, opt)
+		m = transformImage(m, opt, watermark)
 		err = bmp.Encode(buf, m)
 		if err != nil {
 			return nil, err
 		}
 	case "gif":
 		fn := func(img image.Image) image.Image {
-			return transformImage(img, opt)
+			return transformImage(img, opt, watermark)
 		}
 		err = gifresize.Process(buf, bytes.NewReader(img), fn)
 		if err != nil {
@@ -104,19 +110,19 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 			quality = defaultQuality
 		}
 
-		m = transformImage(m, opt)
+		m = transformImage(m, opt, watermark)
 		err = jpeg.Encode(buf, m, &jpeg.Options{Quality: quality})
 		if err != nil {
 			return nil, err
 		}
 	case "png":
-		m = transformImage(m, opt)
+		m = transformImage(m, opt, watermark)
 		err = png.Encode(buf, m)
 		if err != nil {
 			return nil, err
 		}
 	case "tiff":
-		m = transformImage(m, opt)
+		m = transformImage(m, opt, watermark)
 		err = tiff.Encode(buf, m, &tiff.Options{Compression: tiff.Deflate, Predictor: true})
 		if err != nil {
 			return nil, err
@@ -270,8 +276,8 @@ func exifOrientation(r io.Reader) (opt Options) {
 }
 
 // transformImage modifies the image m based on the transformations specified
-// in opt.
-func transformImage(m image.Image, opt Options) image.Image {
+// in opt. When watermark is non-nil, it is overlaid after other transforms.
+func transformImage(m image.Image, opt Options, watermark image.Image) image.Image {
 	timer := prometheus.NewTimer(metricTransformationDuration)
 	defer timer.ObserveDuration()
 
@@ -322,7 +328,65 @@ func transformImage(m image.Image, opt Options) image.Image {
 		m = imaging.FlipH(m)
 	}
 
+	if watermark != nil {
+		m = applyWatermark(m, watermark, opt)
+	}
+
 	return m
+}
+
+func applyWatermark(m image.Image, watermark image.Image, opt Options) image.Image {
+	opacity := opt.WatermarkOpacity
+	if opacity <= 0 || opacity > 1 {
+		opacity = 1
+	}
+	scale := opt.WatermarkScale
+	if scale <= 0 || scale > 1 {
+		scale = 0.2
+	}
+
+	bounds := m.Bounds()
+	targetW := int(float64(bounds.Dx()) * scale)
+	if targetW < 1 {
+		targetW = 1
+	}
+	wm := imaging.Resize(watermark, targetW, 0, resampleFilter)
+	wmBounds := wm.Bounds()
+	pt := watermarkPoint(bounds.Dx(), bounds.Dy(), wmBounds.Dx(), wmBounds.Dy(), opt.WatermarkPos, opt.WatermarkPadX, opt.WatermarkPadY)
+	// imaging.Overlay positions relative to the image's Min point
+	pt = pt.Add(bounds.Min)
+	return imaging.Overlay(m, wm, pt, opacity)
+}
+
+func watermarkPoint(imgW, imgH, wmW, wmH int, pos string, padX, padY int) image.Point {
+	if padX < 0 {
+		padX = 0
+	}
+	if padY < 0 {
+		padY = 0
+	}
+	switch strings.ToLower(pos) {
+	case "nw":
+		return image.Pt(padX, padY)
+	case "n":
+		return image.Pt((imgW-wmW)/2, padY)
+	case "ne":
+		return image.Pt(imgW-wmW-padX, padY)
+	case "w":
+		return image.Pt(padX, (imgH-wmH)/2)
+	case "c", "center":
+		return image.Pt((imgW-wmW)/2, (imgH-wmH)/2)
+	case "e":
+		return image.Pt(imgW-wmW-padX, (imgH-wmH)/2)
+	case "sw":
+		return image.Pt(padX, imgH-wmH-padY)
+	case "s":
+		return image.Pt((imgW-wmW)/2, imgH-wmH-padY)
+	case "se", "":
+		return image.Pt(imgW-wmW-padX, imgH-wmH-padY)
+	default:
+		return image.Pt(imgW-wmW-padX, imgH-wmH-padY)
+	}
 }
 
 // trimEdges returns a new image with solid color borders of the image removed.

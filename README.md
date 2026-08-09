@@ -7,7 +7,7 @@
 
 imageproxy is a caching image proxy server written in go. It features:
 
-- basic image adjustments like resizing, cropping, and rotation
+- basic image adjustments like resizing, cropping, rotation, and watermarks
 - access control using allowed hosts list or request signing (HMAC-SHA256)
 - support for jpeg, png, webp (decode only), tiff, and gif image formats
   (including animated gifs)
@@ -35,13 +35,33 @@ imageproxy URLs are of the form `http://localhost/{options}/{remote_url}`.
 
 ### Options
 
-Options are available for cropping, resizing, rotation, flipping, and digital
-signatures among a few others. Options for are specified as a comma delimited
-list of parameters, which can be supplied in any order. Duplicate parameters
-overwrite previous values.
+Options are available for cropping, resizing, rotation, flipping, watermarks,
+and digital signatures among a few others. Options for are specified as a comma
+delimited list of parameters, which can be supplied in any order. Duplicate
+parameters overwrite previous values.
 
 See the full list of available options at
 <https://pkg.go.dev/willnorris.com/go/imageproxy#ParseOptions>.
+
+Watermark options overlay a remote image after other transforms. The watermark
+image URL must be URL-safe base64 encoded (no padding) in the `wmurl` option,
+because unencoded URLs contain `/` and would break the
+`/{options}/{remote_url}` path:
+
+| Option | Meaning | Default |
+| ------ | ------- | ------- |
+| `wmurl{base64url}` | Watermark image URL (URL-safe base64, no padding) | required |
+| `wmp{pos}` | Position: `nw` `n` `ne` `w` `c` `e` `sw` `s` `se` | `se` |
+| `wmo{0..1}` | Opacity | `1` |
+| `wms{0..1}` | Scale as a fraction of output width | `0.2` |
+| `wmx{n}` / `wmy{n}` | Edge padding in pixels | `0` |
+
+Example (watermark URL `https://example.com/logo.png` encoded as
+`aHR0cHM6Ly9leGFtcGxlLmNvbS9sb2dvLnBuZw`):
+
+```
+/800x,wmurlaHR0cHM6Ly9leGFtcGxlLmNvbS9sb2dvLnBuZw,wmpse,wmo0.5,wms0.15/https://example.com/photo.jpg
+```
 
 ### Remote URL
 

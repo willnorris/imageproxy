@@ -17,24 +17,30 @@ import (
 )
 
 const (
-	optFit             = "fit"
-	optFlipVertical    = "fv"
-	optFlipHorizontal  = "fh"
-	optFormatJPEG      = "jpeg"
-	optFormatPNG       = "png"
-	optFormatTIFF      = "tiff"
-	optRotatePrefix    = "r"
-	optQualityPrefix   = "q"
-	optSignaturePrefix = "s"
-	optSizeDelimiter   = "x"
-	optScaleUp         = "scaleUp"
-	optCropX           = "cx"
-	optCropY           = "cy"
-	optCropWidth       = "cw"
-	optCropHeight      = "ch"
-	optSmartCrop       = "sc"
-	optTrim            = "trim"
-	optValidUntil      = "vu"
+	optFit              = "fit"
+	optFlipVertical     = "fv"
+	optFlipHorizontal   = "fh"
+	optFormatJPEG       = "jpeg"
+	optFormatPNG        = "png"
+	optFormatTIFF       = "tiff"
+	optRotatePrefix     = "r"
+	optQualityPrefix    = "q"
+	optSignaturePrefix  = "s"
+	optSizeDelimiter    = "x"
+	optScaleUp          = "scaleUp"
+	optCropX            = "cx"
+	optCropY            = "cy"
+	optCropWidth        = "cw"
+	optCropHeight       = "ch"
+	optSmartCrop        = "sc"
+	optTrim             = "trim"
+	optValidUntil       = "vu"
+	optWatermarkURL     = "wmurl"
+	optWatermarkPos     = "wmp"
+	optWatermarkOpacity = "wmo"
+	optWatermarkScale   = "wms"
+	optWatermarkPadX    = "wmx"
+	optWatermarkPadY    = "wmy"
 )
 
 // URLError reports a malformed URL error.
@@ -91,6 +97,24 @@ type Options struct {
 
 	// If non-zero, the URL is valid until this time.
 	ValidUntil time.Time
+
+	// WatermarkURL is the remote URL of an image to overlay (set via wmurl option;
+	// value is URL-safe base64 with no padding).
+	WatermarkURL string
+
+	// WatermarkPos is the overlay anchor: nw, n, ne, w, c, e, sw, s, se.
+	WatermarkPos string
+
+	// WatermarkOpacity is overlay opacity in [0,1]. Zero means unset (default 1).
+	WatermarkOpacity float64
+
+	// WatermarkScale is watermark width as a fraction of the output image width.
+	// Zero means unset (default 0.2).
+	WatermarkScale float64
+
+	// WatermarkPadX and WatermarkPadY are edge padding in pixels.
+	WatermarkPadX int
+	WatermarkPadY int
 }
 
 func (o Options) String() string {
@@ -140,6 +164,24 @@ func (o Options) String() string {
 	if !o.ValidUntil.IsZero() {
 		opts = append(opts, fmt.Sprintf("%s%d", optValidUntil, o.ValidUntil.Unix()))
 	}
+	if o.WatermarkURL != "" {
+		opts = append(opts, optWatermarkURL+base64.RawURLEncoding.EncodeToString([]byte(o.WatermarkURL)))
+	}
+	if o.WatermarkPos != "" {
+		opts = append(opts, optWatermarkPos+o.WatermarkPos)
+	}
+	if o.WatermarkOpacity != 0 {
+		opts = append(opts, fmt.Sprintf("%s%v", optWatermarkOpacity, o.WatermarkOpacity))
+	}
+	if o.WatermarkScale != 0 {
+		opts = append(opts, fmt.Sprintf("%s%v", optWatermarkScale, o.WatermarkScale))
+	}
+	if o.WatermarkPadX != 0 {
+		opts = append(opts, fmt.Sprintf("%s%d", optWatermarkPadX, o.WatermarkPadX))
+	}
+	if o.WatermarkPadY != 0 {
+		opts = append(opts, fmt.Sprintf("%s%d", optWatermarkPadY, o.WatermarkPadY))
+	}
 
 	sort.Strings(opts)
 
@@ -151,7 +193,7 @@ func (o Options) String() string {
 // the presence of other fields (like Fit).  A non-empty Format value is
 // assumed to involve a transformation.
 func (o Options) transform() bool {
-	return o.Width != 0 || o.Height != 0 || o.Rotate != 0 || o.FlipHorizontal || o.FlipVertical || o.Quality != 0 || o.Format != "" || o.CropX != 0 || o.CropY != 0 || o.CropWidth != 0 || o.CropHeight != 0 || o.Trim
+	return o.Width != 0 || o.Height != 0 || o.Rotate != 0 || o.FlipHorizontal || o.FlipVertical || o.Quality != 0 || o.Format != "" || o.CropX != 0 || o.CropY != 0 || o.CropWidth != 0 || o.CropHeight != 0 || o.Trim || o.WatermarkURL != ""
 }
 
 // ParseOptions parses str as a list of comma separated transformation options.
@@ -250,6 +292,17 @@ func (o Options) transform() bool {
 // The "vu{unixtime}" option specifies a Unix timestamp at which the request URL is no longer valid.
 // For example, "vu1800000000" would mean the URL is valid until 2027-01-15T08:00:00Z.
 //
+// # Watermark
+//
+// The following options overlay a remote watermark image onto the output:
+//
+//	wmurl{base64url} - watermark image URL (URL-safe base64, no padding)
+//	wmp{pos}         - position: nw, n, ne, w, c, e, sw, s, se (default: se)
+//	wmo{opacity}     - opacity from 0 to 1 (default: 1)
+//	wms{scale}       - watermark width as a fraction of output width (default: 0.2)
+//	wmx{n}           - horizontal padding in pixels (default: 0)
+//	wmy{n}           - vertical padding in pixels (default: 0)
+//
 // Examples
 //
 //	0x0         - no resizing
@@ -264,6 +317,7 @@ func (o Options) transform() bool {
 //	200x,png    - 200 pixels wide, converted to PNG format
 //	cw100,ch100 - crop image to 100px square, starting at (0,0)
 //	cx10,cy20,cw100,ch200 - crop image starting at (10,20) is 100px wide and 200px tall
+//	wmurl{aHR0cHM6Ly9leGFtcGxlLmNvbS9sb2dvLnBuZw},wmp{se},wmo{0.5} - watermark bottom-right at 50% opacity
 func ParseOptions(str string) Options {
 	var options Options
 
@@ -284,6 +338,27 @@ func ParseOptions(str string) Options {
 			options.SmartCrop = true
 		case opt == optTrim:
 			options.Trim = true
+		case strings.HasPrefix(opt, optWatermarkURL):
+			value := strings.TrimPrefix(opt, optWatermarkURL)
+			if b, err := base64.RawURLEncoding.DecodeString(value); err == nil {
+				options.WatermarkURL = string(b)
+			} else if b, err := base64.URLEncoding.DecodeString(value); err == nil {
+				options.WatermarkURL = string(b)
+			}
+		case strings.HasPrefix(opt, optWatermarkPos):
+			options.WatermarkPos = strings.TrimPrefix(opt, optWatermarkPos)
+		case strings.HasPrefix(opt, optWatermarkOpacity):
+			value := strings.TrimPrefix(opt, optWatermarkOpacity)
+			options.WatermarkOpacity, _ = strconv.ParseFloat(value, 64)
+		case strings.HasPrefix(opt, optWatermarkScale):
+			value := strings.TrimPrefix(opt, optWatermarkScale)
+			options.WatermarkScale, _ = strconv.ParseFloat(value, 64)
+		case strings.HasPrefix(opt, optWatermarkPadX):
+			value := strings.TrimPrefix(opt, optWatermarkPadX)
+			options.WatermarkPadX, _ = strconv.Atoi(value)
+		case strings.HasPrefix(opt, optWatermarkPadY):
+			value := strings.TrimPrefix(opt, optWatermarkPadY)
+			options.WatermarkPadY, _ = strconv.Atoi(value)
 		case strings.HasPrefix(opt, optRotatePrefix):
 			value := strings.TrimPrefix(opt, optRotatePrefix)
 			options.Rotate, _ = strconv.Atoi(value)

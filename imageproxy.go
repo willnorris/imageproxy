@@ -13,6 +13,10 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 	"io"
 	"log"
 	"mime"
@@ -633,7 +637,19 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 
 	opt := ParseOptions(req.URL.Fragment)
 
-	img, err := Transform(b, opt)
+	var watermark image.Image
+	if opt.WatermarkURL != "" {
+		watermark, err = t.fetchWatermark(opt.WatermarkURL)
+		if err != nil {
+			if t.log != nil {
+				t.log("error fetching watermark %s: %v", opt.WatermarkURL, err)
+			} else {
+				log.Printf("error fetching watermark %s: %v", opt.WatermarkURL, err)
+			}
+		}
+	}
+
+	img, err := transform(b, opt, watermark)
 	if err != nil {
 		log.Printf("error transforming image %s: %v", req.URL.String(), err)
 		img = b
@@ -653,4 +669,36 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 	buf.Write(img)
 
 	return http.ReadResponse(bufio.NewReader(buf), req)
+}
+
+// fetchWatermark downloads and decodes a watermark image from watermarkURL.
+func (t *TransformingTransport) fetchWatermark(watermarkURL string) (image.Image, error) {
+	u, err := url.Parse(watermarkURL)
+	if err != nil {
+		return nil, err
+	}
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return nil, fmt.Errorf("watermark URL must have http or https scheme")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := t.CachingClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("watermark fetch returned status %d", resp.StatusCode)
+	}
+
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	m, _, err := image.Decode(bytes.NewReader(b))
+	return m, err
 }

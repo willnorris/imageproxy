@@ -384,7 +384,7 @@ func TestTransformImage(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		if got := transformImage(tt.src, tt.opt); !reflect.DeepEqual(got, tt.want) {
+		if got := transformImage(tt.src, tt.opt, nil); !reflect.DeepEqual(got, tt.want) {
 			t.Errorf("transformImage(%v, %v) returned image %#v, want %#v", tt.src, tt.opt, got, tt.want)
 		}
 	}
@@ -461,5 +461,44 @@ func TestTrimEdges(t *testing.T) {
 				t.Errorf("trimEdges() returned image %#v, want %#v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestWatermarkPoint(t *testing.T) {
+	tests := []struct {
+		pos        string
+		padX, padY int
+		want       image.Point
+	}{
+		{"se", 0, 0, image.Pt(80, 80)},
+		{"", 0, 0, image.Pt(80, 80)},
+		{"nw", 5, 5, image.Pt(5, 5)},
+		{"c", 0, 0, image.Pt(40, 40)},
+		{"n", 0, 10, image.Pt(40, 10)},
+	}
+	for _, tt := range tests {
+		got := watermarkPoint(100, 100, 20, 20, tt.pos, tt.padX, tt.padY)
+		if got != tt.want {
+			t.Errorf("watermarkPoint(pos=%q) = %v, want %v", tt.pos, got, tt.want)
+		}
+	}
+}
+
+func TestApplyWatermark(t *testing.T) {
+	base := newImage(100, 100, red)
+	wm := newImage(10, 10, blue)
+
+	got := transformImage(base, Options{WatermarkPos: "se", WatermarkOpacity: 1, WatermarkScale: 0.1}, wm)
+	if got.Bounds().Dx() != 100 || got.Bounds().Dy() != 100 {
+		t.Fatalf("expected output size 100x100, got %vx%v", got.Bounds().Dx(), got.Bounds().Dy())
+	}
+	// bottom-right area should no longer be pure red after opaque blue overlay
+	if reflect.DeepEqual(got, base) {
+		t.Fatal("expected watermarked image to differ from base")
+	}
+
+	center := transformImage(base, Options{WatermarkPos: "c", WatermarkOpacity: 1, WatermarkScale: 0.1}, wm)
+	if reflect.DeepEqual(center, got) {
+		t.Fatal("expected center and se watermark positions to produce different images")
 	}
 }

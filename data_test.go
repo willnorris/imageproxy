@@ -37,6 +37,10 @@ func TestOptions_String(t *testing.T) {
 			Options{ScaleUp: true, CropX: 100, CropY: 200, CropWidth: 300, CropHeight: 400, SmartCrop: true},
 			"0x0,ch400,cw300,cx100,cy200,sc,scaleUp",
 		},
+		{
+			Options{WatermarkURL: "https://example.com/logo.png", WatermarkPos: "se", WatermarkOpacity: 0.5, WatermarkScale: 0.15, WatermarkPadX: 16, WatermarkPadY: 8},
+			"0x0,wmo0.5,wmpse,wms0.15,wmurlaHR0cHM6Ly9leGFtcGxlLmNvbS9sb2dvLnBuZw,wmx16,wmy8",
+		},
 	}
 
 	for i, tt := range tests {
@@ -88,12 +92,26 @@ func TestParseOptions(t *testing.T) {
 		{"q70,1x2,fit,r90,fv,fh,sc0ffee,png", Options{Width: 1, Height: 2, Fit: true, Rotate: 90, FlipVertical: true, FlipHorizontal: true, Quality: 70, Signature: "c0ffee", Format: "png"}},
 		{"r90,fh,sc0ffee,png,q90,1x2,fv,fit", Options{Width: 1, Height: 2, Fit: true, Rotate: 90, FlipVertical: true, FlipHorizontal: true, Quality: 90, Signature: "c0ffee", Format: "png"}},
 		{"cx100,cw300,1x2,cy200,ch400,sc,scaleUp,vu1234567890", Options{Width: 1, Height: 2, ScaleUp: true, CropX: 100, CropY: 200, CropWidth: 300, CropHeight: 400, SmartCrop: true, ValidUntil: time.Unix(1234567890, 0)}},
+
+		// watermark options (wmurl value is URL-safe base64 for https://example.com/logo.png)
+		{"wmurlaHR0cHM6Ly9leGFtcGxlLmNvbS9sb2dvLnBuZw", Options{WatermarkURL: "https://example.com/logo.png"}},
+		{"wmurlaHR0cHM6Ly9leGFtcGxlLmNvbS9sb2dvLnBuZw,wmpse,wmo0.5,wms0.15,wmx16,wmy8", Options{
+			WatermarkURL: "https://example.com/logo.png", WatermarkPos: "se", WatermarkOpacity: 0.5, WatermarkScale: 0.15, WatermarkPadX: 16, WatermarkPadY: 8,
+		}},
+		{"wmpse,wmo0.4,wms0.2,wmx10,wmy10", Options{WatermarkPos: "se", WatermarkOpacity: 0.4, WatermarkScale: 0.2, WatermarkPadX: 10, WatermarkPadY: 10}},
 	}
 
 	for _, tt := range tests {
 		if got, want := ParseOptions(tt.Input), tt.Options; got != want {
 			t.Errorf("ParseOptions(%q) returned %#v, want %#v", tt.Input, got, want)
 		}
+	}
+}
+
+func TestOptions_transform_watermark(t *testing.T) {
+	opt := Options{WatermarkURL: "https://example.com/logo.png"}
+	if !opt.transform() {
+		t.Fatal("expected watermark-only options to require transform")
 	}
 }
 
