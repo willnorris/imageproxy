@@ -1,7 +1,7 @@
 // Copyright 2013 The imageproxy authors.
 // SPDX-License-Identifier: Apache-2.0
 
-package imageproxy
+package image
 
 import (
 	"bytes"
@@ -26,6 +26,8 @@ var (
 	blue   = color.NRGBA{0, 0, 255, 255}
 	yellow = color.NRGBA{255, 255, 0, 255}
 )
+
+var emptyOptions = Options{}
 
 // newImage creates a new NRGBA image with the specified dimensions and pixel
 // color data.  If the length of pixels is 1, the entire image is filled with

@@ -1,7 +1,7 @@
 // Copyright 2013 The imageproxy authors.
 // SPDX-License-Identifier: Apache-2.0
 
-package imageproxy
+package image
 
 import (
 	"bytes"
@@ -24,7 +24,11 @@ import (
 	"golang.org/x/image/tiff"   // register tiff format
 	_ "golang.org/x/image/webp" // register webp format
 	"willnorris.com/go/gifresize"
+	"willnorris.com/go/imageproxy/options"
 )
+
+// Options is a temporary type alias for convenience
+type Options = options.Options
 
 // default compression quality of resized jpegs
 const defaultQuality = 95
@@ -34,6 +38,16 @@ const maxExifSize = 1 << 20
 
 // resample filter used when resizing images
 var resampleFilter = imaging.Lanczos
+
+var metricTransformationDuration = prometheus.NewSummary(prometheus.SummaryOpts{
+	Namespace: "imageproxy",
+	Name:      "transformation_duration_seconds",
+	Help:      "Time taken for image transformations in seconds.",
+})
+
+func init() {
+	prometheus.MustRegister(metricTransformationDuration)
+}
 
 // Transform the provided image.  img should contain the raw bytes of an
 // encoded image in one of the supported formats (gif, jpeg, or png).  The

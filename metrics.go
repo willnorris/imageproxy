@@ -14,11 +14,6 @@ var (
 			Name:      "requests_served_from_cache_total",
 			Help:      "Number of requests served from cache.",
 		})
-	metricTransformationDuration = prometheus.NewSummary(prometheus.SummaryOpts{
-		Namespace: "imageproxy",
-		Name:      "transformation_duration_seconds",
-		Help:      "Time taken for image transformations in seconds.",
-	})
 	metricRemoteErrors = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "imageproxy",
 		Name:      "remote_fetch_errors_total",
@@ -37,7 +32,6 @@ var (
 )
 
 func init() {
-	prometheus.MustRegister(metricTransformationDuration)
 	prometheus.MustRegister(metricServedFromCache)
 	prometheus.MustRegister(metricRemoteErrors)
 	prometheus.MustRegister(metricRequestDuration)
