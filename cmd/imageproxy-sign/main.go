@@ -18,6 +18,7 @@ import (
 	"strings"
 
 	"willnorris.com/go/imageproxy"
+	"willnorris.com/go/imageproxy/options"
 )
 
 var signingKey = flag.String("key", "@/etc/imageproxy.key", "signing key, or file containing key prefixed with '@'")
@@ -88,7 +89,7 @@ func parseURL(s string) *url.URL {
 
 	// second, we assume that this is the remote URL itself. If a fragment
 	// is present, treat it as an option string.
-	opt := imageproxy.ParseOptions(u.Fragment)
+	opt := options.ParseOptions(u.Fragment)
 	opt.Signature = ""
 	u.Fragment = opt.String()
 	return u

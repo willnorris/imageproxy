@@ -29,6 +29,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"willnorris.com/go/imageproxy/cache"
+	"willnorris.com/go/imageproxy/options"
 	tphttp "willnorris.com/go/imageproxy/third_party/http"
 	tphc "willnorris.com/go/imageproxy/third_party/httpcache"
 )
@@ -632,7 +633,7 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 		return nil, err
 	}
 
-	opt := ParseOptions(req.URL.Fragment)
+	opt := options.ParseOptions(req.URL.Fragment)
 
 	img, err := Transform(b, opt)
 	if err != nil {

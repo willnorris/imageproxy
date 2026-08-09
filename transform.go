@@ -39,7 +39,7 @@ var resampleFilter = imaging.Lanczos
 // encoded image in one of the supported formats (gif, jpeg, or png).  The
 // bytes of a similarly encoded image is returned.
 func Transform(img []byte, opt Options) ([]byte, error) {
-	if !opt.transform() {
+	if !opt.Transform() {
 		// bail if no transformation was requested
 		return img, nil
 	}
@@ -67,7 +67,7 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 	// up to maxExifSize looking for EXIF tags.
 	if format == "jpeg" || format == "tiff" {
 		r := io.LimitReader(bytes.NewReader(img), maxExifSize)
-		if exifOpt := exifOrientation(r); exifOpt.transform() {
+		if exifOpt := exifOrientation(r); exifOpt.Transform() {
 			m = transformImage(m, exifOpt)
 		}
 	}
