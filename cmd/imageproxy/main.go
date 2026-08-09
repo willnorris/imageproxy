@@ -4,7 +4,17 @@
 // imageproxy starts an HTTP server that proxies requests for remote images.
 package main
 
-import "willnorris.com/go/imageproxy/cmd"
+import (
+	"willnorris.com/go/imageproxy/cmd"
+
+	// imageproxy cache plugins
+	_ "willnorris.com/go/imageproxy/cache/azure"
+	_ "willnorris.com/go/imageproxy/cache/disk"
+	_ "willnorris.com/go/imageproxy/cache/gcs"
+	_ "willnorris.com/go/imageproxy/cache/memory"
+	_ "willnorris.com/go/imageproxy/cache/redis"
+	_ "willnorris.com/go/imageproxy/cache/s3"
+)
 
 func main() {
 	cmd.Main()

@@ -15,6 +15,7 @@ import (
 	"github.com/peterbourgon/diskv"
 	"go.uber.org/zap"
 	"willnorris.com/go/imageproxy"
+	"willnorris.com/go/imageproxy/cache"
 )
 
 func init() {
@@ -131,7 +132,7 @@ func parseCaddyfile(h httpcaddyfile.Helper) (caddyhttp.MiddlewareHandler, error)
 }
 
 // parseCache parses c returns the specified Cache implementation.
-func parseCache(c string) (imageproxy.Cache, error) {
+func parseCache(c string) (cache.Cache, error) {
 	const defaultMemorySize = 100
 
 	if c == "" {

@@ -28,6 +28,7 @@ import (
 	"github.com/gregjones/httpcache"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"willnorris.com/go/imageproxy/cache"
 	tphttp "willnorris.com/go/imageproxy/third_party/http"
 	tphc "willnorris.com/go/imageproxy/third_party/httpcache"
 )
@@ -38,7 +39,7 @@ const maxRedirects = 10
 // Proxy serves image requests.
 type Proxy struct {
 	Client *http.Client // client used to fetch remote URLs
-	Cache  Cache        // cache used to cache responses
+	Cache  cache.Cache  // cache used to cache responses
 
 	// AllowHosts specifies a list of remote hosts that images can be
 	// proxied from.  An empty list means all hosts are allowed.
@@ -113,16 +114,16 @@ type Proxy struct {
 // NewProxy constructs a new proxy.  The provided http RoundTripper will be
 // used to fetch remote URLs.  If nil is provided, http.DefaultTransport will
 // be used.
-func NewProxy(transport http.RoundTripper, cache Cache) *Proxy {
+func NewProxy(transport http.RoundTripper, c cache.Cache) *Proxy {
 	if transport == nil {
 		transport, _ = aia.NewTransport()
 	}
-	if cache == nil {
-		cache = NopCache
+	if c == nil {
+		c = cache.NopCache
 	}
 
 	proxy := &Proxy{
-		Cache: cache,
+		Cache: c,
 	}
 
 	client := new(http.Client)
@@ -138,7 +139,7 @@ func NewProxy(transport http.RoundTripper, cache Cache) *Proxy {
 			},
 			updateCacheHeaders: proxy.updateCacheHeaders,
 		},
-		Cache:               cache,
+		Cache:               c,
 		MarkCachedResponses: true,
 	}
 
