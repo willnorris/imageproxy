@@ -8,6 +8,8 @@ import (
 	"os"
 	"reflect"
 	"testing"
+
+	_ "willnorris.com/go/imageproxy/image/jpeg"
 )
 
 var key = "secret"

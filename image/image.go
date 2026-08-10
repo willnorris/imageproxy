@@ -8,30 +8,55 @@ import (
 	"errors"
 	"fmt"
 	"image"
-	_ "image/gif" // register gif format
-	"image/jpeg"
-	"image/png"
 	"io"
 	"log"
 	"math"
+	"strings"
+	"sync"
 
 	"github.com/disintegration/imaging"
 	"github.com/muesli/smartcrop"
 	"github.com/muesli/smartcrop/nfnt"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rwcarlsen/goexif/exif"
-	"golang.org/x/image/bmp"    // register bmp format
-	"golang.org/x/image/tiff"   // register tiff format
-	_ "golang.org/x/image/webp" // register webp format
-	"willnorris.com/go/gifresize"
+
 	"willnorris.com/go/imageproxy/options"
 )
 
 // Options is a temporary type alias for convenience
 type Options = options.Options
 
-// default compression quality of resized jpegs
-const defaultQuality = 95
+// TransformFunc is func which transforms an image based on the specified options.
+type TransformFunc func(image.Image, options.Options) image.Image
+
+// RawEncoder is a func that decodes raw image bytes, transforms the image,
+// and encodes back to raw bytes in a particular format.
+type RawEncoder interface {
+	RawEncode(io.Reader, options.Options, TransformFunc) ([]byte, error)
+}
+
+// Encoder is a func that encodes an image in a particular format.
+type Encoder interface {
+	Encode(image.Image, options.Options) ([]byte, error)
+}
+
+// RegisterEncoder register an [Encoder] for a specific format.
+// format is a name like "jpeg" or "png" that would be provided to [image.RegisterFormat].
+func RegisterEncoder(format string, enc Encoder) {
+	format = strings.ToLower(format)
+	mu.Lock()
+	defer mu.Unlock()
+	if _, ok := encoders[format]; ok {
+		panic("image format " + format + " is already registered")
+	}
+	encoders[format] = enc
+	options.RegisterImageFormat(format)
+}
+
+var (
+	mu       sync.Mutex // protects encoders and transEncoders
+	encoders = map[string]Encoder{}
+)
 
 // maximum distance into image to look for EXIF tags
 const maxExifSize = 1 << 20
@@ -59,7 +84,7 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 	}
 
 	// decode image metadata
-	cfg, _, err := image.DecodeConfig(bytes.NewReader(img))
+	cfg, format, err := image.DecodeConfig(bytes.NewReader(img))
 	if err != nil {
 		return nil, err
 	}
@@ -69,6 +94,20 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 	const maxPixels = 100_000_000
 	if cfg.Width*cfg.Height > maxPixels {
 		return nil, errors.New("image too large")
+	}
+
+	// if rawEncoder registered for this format, use it and return
+	{
+		mu.Lock()
+		enc, ok := encoders[format]
+		mu.Unlock()
+		if ok {
+			if re, ok := enc.(RawEncoder); ok {
+				log.Printf("got raw encoder for format %q", format)
+				r := bytes.NewReader(img)
+				return re.RawEncode(r, opt, transformImage)
+			}
+		}
 	}
 
 	// decode image
@@ -95,51 +134,16 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 		format = opt.Format
 	}
 
-	// transform and encode image
-	buf := new(bytes.Buffer)
-	switch format {
-	case "bmp":
+	// if encoder registered, transform and encode image
+	mu.Lock()
+	enc, ok := encoders[format]
+	mu.Unlock()
+	if ok {
 		m = transformImage(m, opt)
-		err = bmp.Encode(buf, m)
-		if err != nil {
-			return nil, err
-		}
-	case "gif":
-		fn := func(img image.Image) image.Image {
-			return transformImage(img, opt)
-		}
-		err = gifresize.Process(buf, bytes.NewReader(img), fn)
-		if err != nil {
-			return nil, err
-		}
-	case "jpeg":
-		quality := opt.Quality
-		if quality == 0 {
-			quality = defaultQuality
-		}
-
-		m = transformImage(m, opt)
-		err = jpeg.Encode(buf, m, &jpeg.Options{Quality: quality})
-		if err != nil {
-			return nil, err
-		}
-	case "png":
-		m = transformImage(m, opt)
-		err = png.Encode(buf, m)
-		if err != nil {
-			return nil, err
-		}
-	case "tiff":
-		m = transformImage(m, opt)
-		err = tiff.Encode(buf, m, &tiff.Options{Compression: tiff.Deflate, Predictor: true})
-		if err != nil {
-			return nil, err
-		}
-	default:
-		return nil, fmt.Errorf("unsupported format: %v", format)
+		return enc.Encode(m, opt)
 	}
 
-	return buf.Bytes(), nil
+	return nil, fmt.Errorf("unsupported format: %v", format)
 }
 
 // evaluateFloat interprets the option value f. If f is between 0 and 1, it is

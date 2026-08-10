@@ -1,12 +1,18 @@
 // Copyright 2013 The imageproxy authors.
 // SPDX-License-Identifier: Apache-2.0
 
-package options
+package options_test
 
 import (
 	"testing"
 	"time"
+
+	_ "willnorris.com/go/imageproxy/image/jpeg"
+	_ "willnorris.com/go/imageproxy/image/png"
+	"willnorris.com/go/imageproxy/options"
 )
+
+type Options = options.Options
 
 var emptyOptions = Options{}
 
@@ -89,7 +95,7 @@ func TestParseOptions(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		if got, want := ParseOptions(tt.Input), tt.Options; got != want {
+		if got, want := options.ParseOptions(tt.Input), tt.Options; got != want {
 			t.Errorf("ParseOptions(%q) returned %#v, want %#v", tt.Input, got, want)
 		}
 	}

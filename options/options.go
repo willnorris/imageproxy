@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -16,9 +17,6 @@ const (
 	optFit             = "fit"
 	optFlipVertical    = "fv"
 	optFlipHorizontal  = "fh"
-	optFormatJPEG      = "jpeg"
-	optFormatPNG       = "png"
-	optFormatTIFF      = "tiff"
 	optRotatePrefix    = "r"
 	optQualityPrefix   = "q"
 	optSignaturePrefix = "s"
@@ -150,6 +148,19 @@ func (o Options) Transform() bool {
 	return o.Width != 0 || o.Height != 0 || o.Rotate != 0 || o.FlipHorizontal || o.FlipVertical || o.Quality != 0 || o.Format != "" || o.CropX != 0 || o.CropY != 0 || o.CropWidth != 0 || o.CropHeight != 0 || o.Trim
 }
 
+// RegisterImageFormat registers the provided format as a supported image format.
+// When provided in an options string, [Options.Format] will be set to this value.
+func RegisterImageFormat(format string) {
+	mu.Lock()
+	imageFormats[strings.ToLower(format)] = struct{}{}
+	mu.Unlock()
+}
+
+var (
+	mu           sync.Mutex
+	imageFormats = map[string]struct{}{}
+)
+
 // ParseOptions parses str as a list of comma separated transformation options.
 // The options can be specified in in order, with duplicate options overwriting
 // previous values.
@@ -264,6 +275,9 @@ func ParseOptions(str string) Options {
 	var options Options
 
 	for _, opt := range strings.Split(str, ",") {
+		mu.Lock()
+		_, formatExists := imageFormats[opt]
+		mu.Unlock()
 		switch {
 		case len(opt) == 0: // do nothing
 		case opt == optFit:
@@ -274,7 +288,7 @@ func ParseOptions(str string) Options {
 			options.FlipHorizontal = true
 		case opt == optScaleUp: // this option is intentionally not documented above
 			options.ScaleUp = true
-		case opt == optFormatJPEG, opt == optFormatPNG, opt == optFormatTIFF:
+		case formatExists:
 			options.Format = opt
 		case opt == optSmartCrop:
 			options.SmartCrop = true
