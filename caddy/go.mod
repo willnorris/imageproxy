@@ -7,7 +7,7 @@ require (
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 	github.com/peterbourgon/diskv v2.0.1+incompatible
 	go.uber.org/zap v1.28.0
-	willnorris.com/go/imageproxy v0.12.0
+	willnorris.com/go/imageproxy v0.13.1-0.20260810013817-7920ae4f07c4
 )
 
 replace willnorris.com/go/imageproxy => ../
@@ -161,5 +161,4 @@ require (
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.5.1 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	howett.net/plist v1.0.0 // indirect
-	willnorris.com/go/gifresize v1.0.0 // indirect
 )
