@@ -146,6 +146,22 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 	return nil, fmt.Errorf("unsupported format: %v", format)
 }
 
+// ContentType returns the content-type specified by the registered encoder for format,
+// or an empty string if the encoder to not provide a content-type.
+//
+// This is primarily needed by encoders for formats that are not supported by Go's Content-Type detection,
+// such as tiff and avif.
+func ContentType(format string) string {
+	mu.Lock()
+	defer mu.Unlock()
+	if enc, ok := encoders[format]; ok {
+		if ct, ok := enc.(interface{ ContentType() string }); ok {
+			return ct.ContentType()
+		}
+	}
+	return ""
+}
+
 // evaluateFloat interprets the option value f. If f is between 0 and 1, it is
 // interpreted as a percentage of max, otherwise it is treated as an absolute
 // value.  If f is less than 0, 0 is returned.

@@ -652,6 +652,11 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 	}); err != nil {
 		t.log("error copying headers: %v", err)
 	}
+	if ct := image.ContentType(opt.Format); ct != "" {
+		// Set ContentType for format if available.
+		// Otherwise, we'll use Go's detection algorithm.
+		fmt.Fprintf(buf, "Content-Type: %s\n", ct)
+	}
 	fmt.Fprintf(buf, "Content-Length: %d\n\n", len(img))
 	buf.Write(img)
 

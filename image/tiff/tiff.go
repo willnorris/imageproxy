@@ -26,3 +26,7 @@ func (encoder) Encode(m image.Image, opt options.Options) ([]byte, error) {
 	}
 	return buf.Bytes(), nil
 }
+
+func (encoder) ContentType() string {
+	return "image/tiff"
+}
