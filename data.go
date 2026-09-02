@@ -28,6 +28,7 @@ const (
 	optSignaturePrefix = "s"
 	optSizeDelimiter   = "x"
 	optScaleUp         = "scaleUp"
+	optPassthroughICC  = "passthroughICC"
 	optCropX           = "cx"
 	optCropY           = "cy"
 	optCropWidth       = "cw"
@@ -74,6 +75,11 @@ type Options struct {
 	// will always be overwritten by the value of Proxy.ScaleUp.
 	ScaleUp bool
 
+	// Carry the source image's embedded ICC color profile over to the
+	// transformed image.  This value will always be overwritten by the value
+	// of Proxy.PassthroughICC.
+	PassthroughICC bool
+
 	// Desired image format. Valid values are "jpeg", "png", "tiff".
 	Format string
 
@@ -115,6 +121,9 @@ func (o Options) String() string {
 	}
 	if o.ScaleUp {
 		opts = append(opts, optScaleUp)
+	}
+	if o.PassthroughICC {
+		opts = append(opts, optPassthroughICC)
 	}
 	if o.Format != "" {
 		opts = append(opts, o.Format)
@@ -278,6 +287,8 @@ func ParseOptions(str string) Options {
 			options.FlipHorizontal = true
 		case opt == optScaleUp: // this option is intentionally not documented above
 			options.ScaleUp = true
+		case opt == optPassthroughICC: // this option is intentionally not documented above
+			options.PassthroughICC = true
 		case opt == optFormatJPEG, opt == optFormatPNG, opt == optFormatTIFF:
 			options.Format = opt
 		case opt == optSmartCrop:
