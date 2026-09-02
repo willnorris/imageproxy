@@ -62,6 +62,7 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	srcFormat, srcImage := format, m
 
 	// apply EXIF orientation for jpeg and tiff source images. Read at most
 	// up to maxExifSize looking for EXIF tags.
@@ -108,6 +109,16 @@ func Transform(img []byte, opt Options) ([]byte, error) {
 		err = jpeg.Encode(buf, m, &jpeg.Options{Quality: quality})
 		if err != nil {
 			return nil, err
+		}
+
+		// image/jpeg neither reads nor writes APP2 segments, so the source's
+		// ICC profile is lost across the decode/encode round trip and the
+		// output is rendered as sRGB. When asked to, carry the profile over —
+		// but only where the pixels are still in the space it describes.
+		if opt.PassthroughICC && srcFormat == "jpeg" {
+			if profile := extractICCProfile(img); preservesSourceColorSpace(srcImage, profile) {
+				return embedICCProfile(buf.Bytes(), profile), nil
+			}
 		}
 	case "png":
 		m = transformImage(m, opt)

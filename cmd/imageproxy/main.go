@@ -43,6 +43,7 @@ var passResponseHeaders = flag.String("passResponseHeaders", "Cache-Control,Last
 var cache tieredCache
 var signatureKeys signatureKeyList
 var scaleUp = flag.Bool("scaleUp", false, "allow images to scale beyond their original dimensions")
+var passthroughICC = flag.Bool("passthroughICC", false, "carry the source JPEG's embedded ICC color profile over to the transformed image")
 var timeout = flag.Duration("timeout", 0, "time limit for requests served by this proxy")
 var verbose = flag.Bool("verbose", false, "print verbose logging messages")
 var _ = flag.Bool("version", false, "Deprecated: this flag does nothing")
@@ -95,6 +96,7 @@ func main() {
 	p.FollowRedirects = *followRedirects
 	p.Timeout = *timeout
 	p.ScaleUp = *scaleUp
+	p.PassthroughICC = *passthroughICC
 	p.Verbose = *verbose
 	p.UserAgent = *userAgent
 	p.MinimumCacheDuration = *minCacheDuration

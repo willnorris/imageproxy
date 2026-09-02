@@ -75,6 +75,12 @@ type Proxy struct {
 	// Allow images to scale beyond their original dimensions.
 	ScaleUp bool
 
+	// PassthroughICC controls whether a JPEG's embedded ICC color profile
+	// is carried over to the transformed image.  Off by default: it adds the
+	// profile's bytes to every response that has one, which is a meaningful
+	// cost on small thumbnails.
+	PassthroughICC bool
+
 	// Timeout specifies a time limit for requests served by this Proxy.
 	// If a call runs for longer than its time limit, a 504 Gateway Timeout
 	// response is returned.  A Timeout of zero means no timeout.
@@ -254,6 +260,7 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 
 	// assign static settings from proxy to req.Options
 	req.Options.ScaleUp = p.ScaleUp
+	req.Options.PassthroughICC = p.PassthroughICC
 
 	actualReq, _ := http.NewRequest("GET", req.String(), nil)
 	if p.UserAgent != "" {

@@ -346,6 +346,30 @@ However, you can use the `scaleUp` command-line flag to allow this to happen:
 imageproxy -scaleUp true
 ```
 
+### ICC color profiles
+
+Go's `image/jpeg` package does not read or write APP2 marker segments, so a
+JPEG's embedded ICC color profile is lost when imageproxy decodes and
+re-encodes it. The result is then rendered as sRGB, which visibly desaturates
+images authored in a wider gamut such as Display P3 or Adobe RGB.
+
+The `passthroughICC` flag carries the source profile over to the transformed
+image:
+
+```sh
+imageproxy -passthroughICC true
+```
+
+It is off by default because the profile's bytes are added to every response
+that carries one — commonly 0.5-4KB, which is a large relative cost on a small
+thumbnail.
+
+The profile is only carried over when the decoded pixels are still in the space
+it describes: both the source and the output must be JPEG, the profile's data
+color space must be RGB, and the decoded image must not be CMYK or grayscale
+(the decoder converts those, so the source profile no longer describes the
+result). Profiles larger than 64KB are dropped rather than attached.
+
 ### WebP and TIFF support
 
 Imageproxy can proxy remote webp images, but they will be served in either jpeg
