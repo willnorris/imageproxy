@@ -1,4 +1,4 @@
-FROM golang:1.14 as build
+FROM golang:1.22 as build
 MAINTAINER Will Norris <will@willnorris.com>
 
 RUN useradd -u 1001 go
