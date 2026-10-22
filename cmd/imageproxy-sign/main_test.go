@@ -4,6 +4,7 @@
 package main
 
 import (
+	"io"
 	"net/url"
 	"os"
 	"reflect"
@@ -26,7 +27,7 @@ func TestMainFunc(t *testing.T) {
 	w.Close()
 	os.Stdout = oldStdout
 
-	output, err := ioutil.ReadAll(r)
+	output, err := io.ReadAll(r)
 	got := string(output)
 	if err != nil {
 		t.Errorf("error reading from pipe: %v", err)
