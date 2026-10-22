@@ -17,10 +17,12 @@ func TestMainFunc(t *testing.T) {
 		t.Errorf("error creating pipe: %v", err)
 	}
 	defer r.Close()
+	oldStdout := os.Stdout
 	os.Stdout = w
 
 	main()
 	w.Close()
+	os.Stdout = oldStdout
 
 	output, err := ioutil.ReadAll(r)
 	got := string(output)
