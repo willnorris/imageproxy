@@ -5,6 +5,7 @@ env:
 
 jobs:
   test:
+    timeout-minutes: 15
     strategy:
       matrix:
         go-version: [1.x, 1.22.x]
@@ -16,6 +17,7 @@ jobs:
     - uses: actions/setup-go@v7
       with:
         go-version: ${{ matrix.go-version }}
+        cache: false
 
     - name: Run go fmt
       if: runner.os != 'Windows'
