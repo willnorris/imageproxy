@@ -1,16 +1,5 @@
-// Copyright 2013 Google LLC. All rights reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Copyright 2013 The imageproxy authors.
+// SPDX-License-Identifier: Apache-2.0
 
 package imageproxy
 
@@ -41,6 +30,7 @@ const (
 	optCropWidth       = "cw"
 	optCropHeight      = "ch"
 	optSmartCrop       = "sc"
+	optTrim            = "trim"
 )
 
 // URLError reports a malformed URL error.
@@ -91,6 +81,9 @@ type Options struct {
 
 	// Automatically find good crop points based on image content.
 	SmartCrop bool
+
+	// If true, automatically trim pixels of the same color around the edges
+	Trim bool
 }
 
 func (o Options) String() string {
@@ -134,6 +127,9 @@ func (o Options) String() string {
 	if o.SmartCrop {
 		opts = append(opts, optSmartCrop)
 	}
+	if o.Trim {
+		opts = append(opts, optTrim)
+	}
 	sort.Strings(opts)
 	return strings.Join(opts, ",")
 }
@@ -143,7 +139,7 @@ func (o Options) String() string {
 // the presence of other fields (like Fit).  A non-empty Format value is
 // assumed to involve a transformation.
 func (o Options) transform() bool {
-	return o.Width != 0 || o.Height != 0 || o.Rotate != 0 || o.FlipHorizontal || o.FlipVertical || o.Quality != 0 || o.Format != "" || o.CropX != 0 || o.CropY != 0 || o.CropWidth != 0 || o.CropHeight != 0
+	return o.Width != 0 || o.Height != 0 || o.Rotate != 0 || o.FlipHorizontal || o.FlipVertical || o.Quality != 0 || o.Format != "" || o.CropX != 0 || o.CropY != 0 || o.CropWidth != 0 || o.CropHeight != 0 || o.Trim
 }
 
 // ParseOptions parses str as a list of comma separated transformation options.
@@ -218,7 +214,7 @@ func (o Options) transform() bool {
 //
 // # Format
 //
-// The "jpeg", "png", and "tiff"  options can be used to specify the desired
+// The "jpeg", "png", and "tiff" options can be used to specify the desired
 // image format of the proxied image.
 //
 // # Signature
@@ -229,6 +225,13 @@ func (o Options) transform() bool {
 //
 // See https://github.com/willnorris/imageproxy/blob/master/docs/url-signing.md
 // for examples of generating signatures.
+//
+// # Trim
+//
+// The "trim" option will automatically trim pixels of the same color around
+// the edges of the image.  This is useful for removing borders from images
+// that have been resized or cropped.  The trim option is applied before other
+// options such as cropping or resizing.
 //
 // Examples
 //
@@ -249,8 +252,7 @@ func ParseOptions(str string) Options {
 
 	for _, opt := range strings.Split(str, ",") {
 		switch {
-		case len(opt) == 0:
-			break
+		case len(opt) == 0: // do nothing
 		case opt == optFit:
 			options.Fit = true
 		case opt == optFlipVertical:
@@ -263,6 +265,8 @@ func ParseOptions(str string) Options {
 			options.Format = opt
 		case opt == optSmartCrop:
 			options.SmartCrop = true
+		case opt == optTrim:
+			options.Trim = true
 		case strings.HasPrefix(opt, optRotatePrefix):
 			value := strings.TrimPrefix(opt, optRotatePrefix)
 			options.Rotate, _ = strconv.Atoi(value)
@@ -333,9 +337,14 @@ func (r Request) String() string {
 //	http://localhost/http://example.com/image.jpg
 func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 	var err error
+	var additionalQuery string
 	req := &Request{Original: r}
 
-	path := r.URL.EscapedPath()[1:] // strip leading slash
+	path := r.URL.EscapedPath()[1:]                      // strip leading slash
+	decodedPath, err, additionalQuery := decodeURL(path) // Conditionally decode url path param if it is url encoded this enables us to process image urls with query params built in
+	if err == nil {
+		path = decodedPath
+	}
 	req.URL, err = parseURL(path)
 	if err != nil || !req.URL.IsAbs() {
 		// first segment should be options
@@ -366,7 +375,7 @@ func NewRequest(r *http.Request, baseURL *url.URL) (*Request, error) {
 	}
 
 	// query string is always part of the remote URL
-	req.URL.RawQuery = r.URL.RawQuery
+	req.URL.RawQuery = combineQueries(r.URL.RawQuery, additionalQuery)
 	return req, nil
 }
 
@@ -377,4 +386,46 @@ var reCleanedURL = regexp.MustCompile(`^(https?):/+([^/])`)
 func parseURL(s string) (*url.URL, error) {
 	s = reCleanedURL.ReplaceAllString(s, "$1://$2")
 	return url.Parse(s)
+}
+
+var reIsEncodedUrl = regexp.MustCompile(`^https?%`)
+
+func decodeURL(s string) (string, error, string) {
+	var startsWithHttp = strings.HasPrefix(s, "http")
+	var prefix = ""
+	var u = s
+
+	if !startsWithHttp && strings.Contains(s, "http") {
+		var parts = strings.SplitN(s, "http", 2)
+		u = "http" + parts[1]
+		prefix = parts[0]
+	}
+
+	var isUrlEncoded = reIsEncodedUrl.MatchString(u)
+
+	if isUrlEncoded {
+		u, err := url.QueryUnescape(u)
+		if err != nil {
+			return u, err, ""
+		}
+
+		var parsed, err2 = url.Parse(u)
+		if err2 != nil {
+			return u, err2, ""
+		}
+
+		return prefix + u, err2, parsed.RawQuery
+	} else {
+		return s, nil, ""
+	}
+}
+
+func combineQueries(a string, b string) string {
+	if a == "" {
+		return b
+	} else if b == "" {
+		return a
+	} else {
+		return a + "&" + b
+	}
 }

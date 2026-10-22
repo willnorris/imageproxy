@@ -1,7 +1,9 @@
+// Copyright 2013 The imageproxy authors.
+// SPDX-License-Identifier: Apache-2.0
+
 package main
 
 import (
-	"io/ioutil"
 	"net/url"
 	"os"
 	"reflect"
@@ -93,7 +95,7 @@ func TestParseKey(t *testing.T) {
 }
 
 func TestParseKey_FilePath(t *testing.T) {
-	f, err := ioutil.TempFile("", "key")
+	f, err := os.CreateTemp("", "key")
 	if err != nil {
 		t.Errorf("error creating temp file: %v", err)
 	}

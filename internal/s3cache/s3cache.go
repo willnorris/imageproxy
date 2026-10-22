@@ -1,3 +1,6 @@
+// Copyright 2013 The imageproxy authors.
+// SPDX-License-Identifier: Apache-2.0
+
 // Package s3cache provides an httpcache.Cache implementation that stores
 // cached values on Amazon S3.
 package s3cache
@@ -6,8 +9,8 @@ import (
 	"bytes"
 	"crypto/md5"
 	"encoding/hex"
+	"errors"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/url"
 	"path"
@@ -33,13 +36,14 @@ func (c *cache) Get(key string) ([]byte, bool) {
 
 	resp, err := c.GetObject(input)
 	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok && aerr.Code() != "NoSuchKey" {
+		var aerr awserr.Error
+		if errors.As(err, &aerr) && aerr.Code() != "NoSuchKey" {
 			log.Printf("error fetching from s3: %v", aerr)
 		}
 		return nil, false
 	}
 
-	value, err := ioutil.ReadAll(resp.Body)
+	value, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Printf("error reading s3 response body: %v", err)
 		return nil, false
@@ -75,7 +79,7 @@ func (c *cache) Delete(key string) {
 
 func keyToFilename(key string) string {
 	h := md5.New()
-	io.WriteString(h, key)
+	_, _ = io.WriteString(h, key)
 	return hex.EncodeToString(h.Sum(nil))
 }
 

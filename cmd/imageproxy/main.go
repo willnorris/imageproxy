@@ -1,16 +1,5 @@
-// Copyright 2013 Google LLC. All rights reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Copyright 2013 The imageproxy authors.
+// SPDX-License-Identifier: Apache-2.0
 
 // imageproxy starts an HTTP server that proxies requests for remote images.
 package main
@@ -18,7 +7,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -30,15 +18,14 @@ import (
 	"github.com/PaulARoy/azurestoragecache"
 	"github.com/die-net/lrucache"
 	"github.com/die-net/lrucache/twotier"
-	"github.com/garyburd/redigo/redis"
-	"github.com/gorilla/mux"
+	"github.com/gomodule/redigo/redis"
 	"github.com/gregjones/httpcache/diskcache"
 	rediscache "github.com/gregjones/httpcache/redis"
-	"github.com/jamiealquiza/envy"
 	"github.com/peterbourgon/diskv"
 	"willnorris.com/go/imageproxy"
 	"willnorris.com/go/imageproxy/internal/gcscache"
 	"willnorris.com/go/imageproxy/internal/s3cache"
+	"willnorris.com/go/imageproxy/third_party/envy"
 )
 
 const defaultMemorySize = 100
@@ -48,13 +35,15 @@ var allowHosts = flag.String("allowHosts", "", "comma separated list of allowed 
 var denyHosts = flag.String("denyHosts", "", "comma separated list of denied remote hosts")
 var referrers = flag.String("referrers", "", "comma separated list of allowed referring hosts")
 var includeReferer = flag.Bool("includeReferer", false, "include referer header in remote requests")
+var followRedirects = flag.Bool("followRedirects", true, "follow redirects")
 var baseURL = flag.String("baseURL", "", "default base URL for relative remote URLs")
+var passRequestHeaders = flag.String("passRequestHeaders", "", "comma separatetd list of request headers to pass to remote server")
 var cache tieredCache
 var signatureKeys signatureKeyList
 var scaleUp = flag.Bool("scaleUp", false, "allow images to scale beyond their original dimensions")
 var timeout = flag.Duration("timeout", 0, "time limit for requests served by this proxy")
 var verbose = flag.Bool("verbose", false, "print verbose logging messages")
-var version = flag.Bool("version", false, "Deprecated: this flag does nothing")
+var _ = flag.Bool("version", false, "Deprecated: this flag does nothing")
 var contentTypes = flag.String("contentTypes", "image/*", "comma separated list of allowed content types")
 var userAgent = flag.String("userAgent", "willnorris/imageproxy", "specify the user-agent used by imageproxy when fetching images from origin website")
 
@@ -80,6 +69,9 @@ func main() {
 	if *contentTypes != "" {
 		p.ContentTypes = strings.Split(*contentTypes, ",")
 	}
+	if *passRequestHeaders != "" {
+		p.PassRequestHeaders = strings.Split(*passRequestHeaders, ",")
+	}
 	p.SignatureKeys = signatureKeys
 	if *baseURL != "" {
 		var err error
@@ -90,6 +82,7 @@ func main() {
 	}
 
 	p.IncludeReferer = *includeReferer
+	p.FollowRedirects = *followRedirects
 	p.Timeout = *timeout
 	p.ScaleUp = *scaleUp
 	p.Verbose = *verbose
@@ -98,12 +91,14 @@ func main() {
 	server := &http.Server{
 		Addr:    *addr,
 		Handler: p,
+
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		IdleTimeout:  120 * time.Second,
 	}
 
-	r := mux.NewRouter().SkipClean(true).UseEncodedPath()
-	r.PathPrefix("/").Handler(p)
 	fmt.Printf("imageproxy listening on %s\n", server.Addr)
-	log.Fatal(http.ListenAndServe(*addr, r))
+	log.Fatal(server.ListenAndServe())
 }
 
 type signatureKeyList [][]byte
@@ -118,7 +113,7 @@ func (skl *signatureKeyList) Set(value string) error {
 		if strings.HasPrefix(v, "@") {
 			file := strings.TrimPrefix(v, "@")
 			var err error
-			key, err = ioutil.ReadFile(file)
+			key, err = os.ReadFile(file)
 			if err != nil {
 				log.Fatalf("error reading signature file: %v", err)
 			}
@@ -166,7 +161,7 @@ func parseCache(c string) (imageproxy.Cache, error) {
 
 	u, err := url.Parse(c)
 	if err != nil {
-		return nil, fmt.Errorf("error parsing cache flag: %v", err)
+		return nil, fmt.Errorf("error parsing cache flag: %w", err)
 	}
 
 	switch u.Scheme {

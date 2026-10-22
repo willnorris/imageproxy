@@ -1,0 +1,31 @@
+version: "2"
+linters:
+  enable:
+    - dogsled
+    - dupl
+    - errorlint
+    - gosec
+    - misspell
+    - nakedret
+    - unconvert
+    - unparam
+    - whitespace
+
+  # TODO: fix issues and reenable these checks
+  disable:
+    - errcheck
+    - gosec
+    - staticcheck
+
+  exclusions:
+    rules:
+      # Some cache implementations use md5 hashes for cached filenames. There is
+      # a slight risk of cache poisoning if an attacker could construct a URL
+      # with the same hash, but the URL would also need to be allowed by the
+      # proxy's security settings (host allowlist, URL signature, etc). Changing
+      # these to a more secure hash algorithm would result in 100% cache misses
+      # when users upgrade. For now, just leave these alone.
+      - path: internal/.*cache
+        linters:
+          - gosec
+        text: G(401|501)

@@ -1,16 +1,5 @@
-// Copyright 2013 Google LLC. All rights reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// Copyright 2013 The imageproxy authors.
+// SPDX-License-Identifier: Apache-2.0
 
 package imageproxy
 
@@ -28,6 +17,8 @@ import (
 	"net/url"
 	"os"
 	"reflect"
+	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -74,28 +65,10 @@ func TestCopyHeader(t *testing.T) {
 
 		// copy headers
 		{
-			dst:  http.Header{},
-			src:  http.Header{"A": []string{"a"}},
-			keys: nil,
-			want: http.Header{"A": []string{"a"}},
-		},
-		{
-			dst:  http.Header{"A": []string{"a"}},
-			src:  http.Header{"B": []string{"b"}},
-			keys: nil,
-			want: http.Header{"A": []string{"a"}, "B": []string{"b"}},
-		},
-		{
 			dst:  http.Header{"A": []string{"a"}},
 			src:  http.Header{"B": []string{"b"}, "C": []string{"c"}},
 			keys: []string{"B"},
 			want: http.Header{"A": []string{"a"}, "B": []string{"b"}},
-		},
-		{
-			dst:  http.Header{"A": []string{"a1"}},
-			src:  http.Header{"A": []string{"a2"}},
-			keys: nil,
-			want: http.Header{"A": []string{"a1", "a2"}},
 		},
 	}
 
@@ -110,7 +83,6 @@ func TestCopyHeader(t *testing.T) {
 		if !reflect.DeepEqual(got, tt.want) {
 			t.Errorf("copyHeader(%v, %v, %v) returned %v, want %v", tt.dst, tt.src, tt.keys, got, tt.want)
 		}
-
 	}
 }
 
@@ -375,11 +347,21 @@ func (t testTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	case "/png":
 		m := image.NewNRGBA(image.Rect(0, 0, 1, 1))
 		img := new(bytes.Buffer)
-		png.Encode(img, m)
+		_ = png.Encode(img, m)
 
 		raw = fmt.Sprintf("HTTP/1.1 200 OK\nContent-Length: %d\nContent-Type: image/png\n\n%s", len(img.Bytes()), img.Bytes())
 	default:
-		raw = "HTTP/1.1 404 Not Found\n\n"
+		redirectRegexp := regexp.MustCompile(`/redirects-(\d+)`)
+		if redirectRegexp.MatchString(req.URL.Path) {
+			redirectsLeft, _ := strconv.ParseUint(redirectRegexp.FindStringSubmatch(req.URL.Path)[1], 10, 8)
+			if redirectsLeft == 0 {
+				raw = "HTTP/1.1 200 OK\n\n"
+			} else {
+				raw = fmt.Sprintf("HTTP/1.1 302\nLocation: /http://redirect.test/redirects-%d\n\n", redirectsLeft-1)
+			}
+		} else {
+			raw = "HTTP/1.1 404 Not Found\n\n"
+		}
 	}
 
 	buf := bufio.NewReader(bytes.NewBufferString(raw))
@@ -441,6 +423,34 @@ func TestProxy_ServeHTTP_is304(t *testing.T) {
 	}
 	if got, want := resp.Header().Get("Etag"), `"tag"`; got != want {
 		t.Errorf("ServeHTTP(%v) returned etag header %v, want %v", req, got, want)
+	}
+}
+
+func TestProxy_ServeHTTP_maxRedirects(t *testing.T) {
+	p := &Proxy{
+		Client: &http.Client{
+			Transport: testTransport{},
+		},
+		FollowRedirects: true,
+	}
+
+	tests := []struct {
+		url  string
+		code int
+	}{
+		{"/http://redirect.test/redirects-0", http.StatusOK},
+		{"/http://redirect.test/redirects-2", http.StatusOK},
+		{"/http://redirect.test/redirects-11", http.StatusInternalServerError}, // too many redirects
+	}
+
+	for _, tt := range tests {
+		req, _ := http.NewRequest("GET", "http://localhost"+tt.url, nil)
+		resp := httptest.NewRecorder()
+		p.ServeHTTP(resp, req)
+
+		if got, want := resp.Code, tt.code; got != want {
+			t.Errorf("ServeHTTP(%v) returned status %d, want %d", req, got, want)
+		}
 	}
 }
 
