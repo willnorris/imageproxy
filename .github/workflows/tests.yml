@@ -12,13 +12,13 @@ jobs:
     runs-on: ${{ matrix.platform }}
 
     steps:
-    - uses: actions/setup-go@v5
+    - uses: actions/setup-go@v7
       with:
         go-version: ${{ matrix.go-version }}
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
     - name: Cache go modules
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: ~/go/pkg/mod
         key: ${{ runner.os }}-go-${{ hashFiles('go.sum') }}
@@ -35,7 +35,7 @@ jobs:
       run: go test -v -race -coverprofile coverage.txt -covermode atomic ./...
 
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v7
       timeout-minutes: 2
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
