@@ -6,11 +6,14 @@ package imageproxy
 import (
 	"bufio"
 	"bytes"
+	"crypto/hmac"
+	"crypto/sha256"
 	"encoding/base64"
 	"errors"
 	"fmt"
 	"image"
 	"image/png"
+	"io"
 	"log"
 	"maps"
 	"net/http"
@@ -814,5 +817,175 @@ func TestContentTypeMatches(t *testing.T) {
 		if want := tt.valid; got != want {
 			t.Errorf("contentTypeMatches(%q, %q) returned %v, want %v", tt.patterns, tt.contentType, got, want)
 		}
+	}
+}
+
+func signOptions(key []byte, rawURL string, opt Options) Options {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		panic(err)
+	}
+	signed := opt
+	signed.Signature = ""
+	u.Fragment = signed.String()
+	mac := hmac.New(sha256.New, key)
+	_, _ = mac.Write([]byte(u.String()))
+	opt.Signature = base64.URLEncoding.EncodeToString(mac.Sum(nil))
+	return opt
+}
+
+func TestAllowedWatermark(t *testing.T) {
+	key := []byte("c0ffee")
+	imageURL := "http://good.test/image"
+	evil := "http://evil.test/logo.png"
+	logo := "https://good.test/logo.png"
+
+	urlOnly := Options{WatermarkURL: evil}
+	mac := hmac.New(sha256.New, key)
+	_, _ = mac.Write([]byte(imageURL))
+	urlOnly.Signature = base64.URLEncoding.EncodeToString(mac.Sum(nil))
+
+	tests := []struct {
+		name   string
+		allow  []string
+		deny   []string
+		keys   [][]byte
+		opt    Options
+		rawURL string
+		want   error
+	}{
+		{name: "no watermark", allow: []string{"good.test"}, rawURL: imageURL},
+		{name: "open proxy", opt: Options{WatermarkURL: evil}, rawURL: imageURL},
+		{name: "allow list match", allow: []string{"good.test"}, opt: Options{WatermarkURL: logo}, rawURL: imageURL},
+		{name: "allow list miss", allow: []string{"good.test"}, opt: Options{WatermarkURL: evil}, rawURL: imageURL, want: errNotAllowed},
+		{name: "deny list", deny: []string{"evil.test"}, opt: Options{WatermarkURL: evil}, rawURL: imageURL, want: errDeniedHost},
+		{name: "deny beats allow", allow: []string{"evil.test"}, deny: []string{"evil.test"}, opt: Options{WatermarkURL: evil}, rawURL: imageURL, want: errDeniedHost},
+		{name: "file scheme", opt: Options{WatermarkURL: "file:///etc/passwd"}, rawURL: imageURL, want: errNotAllowed},
+		{name: "url-only signature cannot retarget", keys: [][]byte{key}, opt: urlOnly, rawURL: imageURL, want: errNotAllowed},
+		{name: "options signature on signature-only proxy", keys: [][]byte{key}, opt: signOptions(key, imageURL, Options{WatermarkURL: evil}), rawURL: imageURL},
+		{name: "options signature does not bypass allow list", allow: []string{"good.test"}, keys: [][]byte{key}, opt: signOptions(key, imageURL, Options{WatermarkURL: evil}), rawURL: imageURL, want: errNotAllowed},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := NewProxy(nil, nil)
+			p.AllowHosts = tt.allow
+			p.DenyHosts = tt.deny
+			p.SignatureKeys = tt.keys
+			u, err := url.Parse(tt.rawURL)
+			if err != nil {
+				t.Fatal(err)
+			}
+			got := p.allowedWatermark(&Request{URL: u, Options: tt.opt})
+			if !errors.Is(got, tt.want) {
+				t.Fatalf("allowedWatermark() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestFetchWatermarkRejectsDisallowedHost(t *testing.T) {
+	tr := &TransformingTransport{
+		CachingClient: &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+			t.Errorf("watermark request was sent to %s", r.URL)
+			return nil, errors.New("unexpected request")
+		})},
+		allowWatermark: func(u *url.URL) error {
+			if u.Hostname() == "evil.test" {
+				return errNotAllowed
+			}
+			return nil
+		},
+	}
+	_, err := tr.fetchWatermark("http://evil.test/logo.png")
+	if !errors.Is(err, errNotAllowed) {
+		t.Fatalf("fetchWatermark() error = %v, want %v", err, errNotAllowed)
+	}
+
+	_, err = tr.fetchWatermark("file:///etc/passwd")
+	if !errors.Is(err, errNotAllowed) {
+		t.Fatalf("fetchWatermark(file) error = %v, want %v", err, errNotAllowed)
+	}
+}
+
+func TestFetchWatermarkRejectsRedirect(t *testing.T) {
+	internal := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Errorf("request reached denied host: %s", r.URL)
+	}))
+	defer internal.Close()
+
+	allowed := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, internal.URL+"/secret.png", http.StatusFound)
+	}))
+	defer allowed.Close()
+
+	allowedURL, err := url.Parse(allowed.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tr := &TransformingTransport{
+		CachingClient: &http.Client{Transport: http.DefaultTransport},
+		allowWatermark: func(u *url.URL) error {
+			if u.Hostname() != allowedURL.Hostname() || u.Port() != allowedURL.Port() {
+				return errNotAllowed
+			}
+			return nil
+		},
+	}
+	_, err = tr.fetchWatermark(allowed.URL + "/logo.png")
+	if !errors.Is(err, errNotAllowed) {
+		t.Fatalf("fetchWatermark(redirect) error = %v, want %v", err, errNotAllowed)
+	}
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) {
+	return f(r)
+}
+
+func TestRoundTripForbiddenWatermark(t *testing.T) {
+	logo := image.NewNRGBA(image.Rect(0, 0, 1, 1))
+	var img bytes.Buffer
+	if err := png.Encode(&img, logo); err != nil {
+		t.Fatal(err)
+	}
+	pngBytes := img.Bytes()
+
+	tr := &TransformingTransport{
+		allowWatermark: func(u *url.URL) error {
+			return errNotAllowed
+		},
+	}
+	client := &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
+		if r.URL.Hostname() == "evil.test" {
+			t.Errorf("watermark host was requested")
+			return nil, errors.New("unexpected watermark request")
+		}
+		return &http.Response{
+			StatusCode:    http.StatusOK,
+			Status:        "200 OK",
+			Proto:         "HTTP/1.1",
+			ProtoMajor:    1,
+			ProtoMinor:    1,
+			Header:        make(http.Header),
+			Body:          io.NopCloser(bytes.NewReader(pngBytes)),
+			ContentLength: int64(len(pngBytes)),
+			Request:       r,
+		}, nil
+	})}
+	tr.CachingClient = client
+
+	req, err := http.NewRequest("GET", "http://good.test/photo.png#wmurlaHR0cDovL2V2aWwudGVzdC9sb2dvLnBuZw", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp, err := tr.RoundTrip(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusForbidden {
+		t.Fatalf("status = %d, want 403", resp.StatusCode)
 	}
 }

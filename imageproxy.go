@@ -13,6 +13,10 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 	"io"
 	"log"
 	"mime"
@@ -137,6 +141,7 @@ func NewProxy(transport http.RoundTripper, cache Cache) *Proxy {
 				}
 			},
 			updateCacheHeaders: proxy.updateCacheHeaders,
+			allowWatermark:     proxy.watermarkHostAllowed,
 		},
 		Cache:               cache,
 		MarkCachedResponses: true,
@@ -248,6 +253,11 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 
 	if err := p.allowed(req); err != nil {
 		p.logf("%s: %v", err, req)
+		http.Error(w, msgNotAllowed, http.StatusForbidden)
+		return
+	}
+	if err := p.allowedWatermark(req); err != nil {
+		p.logf("watermark %s: %v", req.Options.WatermarkURL, err)
 		http.Error(w, msgNotAllowed, http.StatusForbidden)
 		return
 	}
@@ -436,6 +446,47 @@ func (p *Proxy) allowed(r *Request) error {
 	return errNotAllowed
 }
 
+// allowedWatermark applies the proxy host rules to the watermark URL.
+// DenyHosts always rejects. When AllowHosts is set, the watermark host must
+// match it; a signature does not add hosts. When the proxy is signature-only,
+// the signature must cover the options so a URL-only signature cannot be
+// rewritten with a different wmurl.
+func (p *Proxy) allowedWatermark(r *Request) error {
+	if r.Options.WatermarkURL == "" {
+		return nil
+	}
+	u, err := url.Parse(r.Options.WatermarkURL)
+	if err != nil {
+		return errNotAllowed
+	}
+	if err := p.watermarkHostAllowed(u); err != nil {
+		return err
+	}
+	if len(p.AllowHosts) > 0 || len(p.SignatureKeys) == 0 {
+		return nil
+	}
+	for _, key := range p.SignatureKeys {
+		if len(key) > 0 && signatureCoversOptions(key, r) {
+			return nil
+		}
+	}
+	return errNotAllowed
+}
+
+// watermarkHostAllowed reports whether u may be fetched as a watermark.
+func (p *Proxy) watermarkHostAllowed(u *url.URL) error {
+	if u == nil || (u.Scheme != "http" && u.Scheme != "https") || u.Hostname() == "" {
+		return errNotAllowed
+	}
+	if hostMatches(p.DenyHosts, u) {
+		return errDeniedHost
+	}
+	if len(p.AllowHosts) > 0 && !hostMatches(p.AllowHosts, u) {
+		return errNotAllowed
+	}
+	return nil
+}
+
 // contentTypeMatches returns whether contentType matches one of the allowed patterns.
 func contentTypeMatches(patterns []string, contentType string) bool {
 	if len(patterns) == 0 {
@@ -487,34 +538,50 @@ func referrerMatches(hosts []string, r *http.Request) bool {
 
 // validSignature returns whether the request signature is valid.
 func validSignature(key []byte, r *Request) bool {
-	sig := r.Options.Signature
-	if m := len(sig) % 4; m != 0 { // add padding if missing
-		sig += strings.Repeat("=", 4-m)
-	}
-
-	got, err := base64.URLEncoding.DecodeString(sig)
-	if err != nil {
-		log.Printf("error base64 decoding signature %q", r.Options.Signature)
+	got, ok := decodeSignature(r.Options.Signature)
+	if !ok {
 		return false
 	}
-
-	// check signature with URL only
-	mac := hmac.New(sha256.New, key)
-	_, _ = mac.Write([]byte(r.URL.String()))
-	want := mac.Sum(nil)
-	if hmac.Equal(got, want) {
+	if signatureMatches(key, got, []byte(r.URL.String())) {
 		return true
 	}
+	return optionsSignatureMatches(key, got, r)
+}
 
-	// check signature with URL and options
+// signatureCoversOptions reports whether key signs the URL together with the
+// options, rather than the remote URL alone.
+func signatureCoversOptions(key []byte, r *Request) bool {
+	got, ok := decodeSignature(r.Options.Signature)
+	if !ok {
+		return false
+	}
+	return optionsSignatureMatches(key, got, r)
+}
+
+func decodeSignature(sig string) ([]byte, bool) {
+	padded := sig
+	if m := len(padded) % 4; m != 0 { // add padding if missing
+		padded += strings.Repeat("=", 4-m)
+	}
+	got, err := base64.URLEncoding.DecodeString(padded)
+	if err != nil {
+		log.Printf("error base64 decoding signature %q", sig)
+		return nil, false
+	}
+	return got, true
+}
+
+func signatureMatches(key, got, message []byte) bool {
+	mac := hmac.New(sha256.New, key)
+	_, _ = mac.Write(message)
+	return hmac.Equal(got, mac.Sum(nil))
+}
+
+func optionsSignatureMatches(key, got []byte, r *Request) bool {
 	u, opt := *r.URL, r.Options // make copies
 	opt.Signature = ""
 	u.Fragment = opt.String()
-
-	mac = hmac.New(sha256.New, key)
-	_, _ = mac.Write([]byte(u.String()))
-	want = mac.Sum(nil)
-	return hmac.Equal(got, want)
+	return signatureMatches(key, got, []byte(u.String()))
 }
 
 // should304 returns whether we should send a 304 Not Modified in response to
@@ -579,6 +646,10 @@ type TransformingTransport struct {
 	log func(format string, v ...any)
 
 	updateCacheHeaders func(hdr http.Header)
+
+	// allowWatermark, when set, reports whether a watermark URL may be fetched.
+	// It is called for the initial URL and for redirects.
+	allowWatermark func(*url.URL) error
 }
 
 // RoundTrip implements the http.RoundTripper interface.
@@ -633,7 +704,22 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 
 	opt := ParseOptions(req.URL.Fragment)
 
-	img, err := Transform(b, opt)
+	var watermark image.Image
+	if opt.WatermarkURL != "" {
+		watermark, err = t.fetchWatermark(opt.WatermarkURL)
+		if err != nil {
+			if errors.Is(err, errNotAllowed) || errors.Is(err, errDeniedHost) {
+				return forbiddenResponse(req), nil
+			}
+			if t.log != nil {
+				t.log("error fetching watermark %s: %v", opt.WatermarkURL, err)
+			} else {
+				log.Printf("error fetching watermark %s: %v", opt.WatermarkURL, err)
+			}
+		}
+	}
+
+	img, err := transform(b, opt, watermark)
 	if err != nil {
 		log.Printf("error transforming image %s: %v", req.URL.String(), err)
 		img = b
@@ -653,4 +739,71 @@ func (t *TransformingTransport) RoundTrip(req *http.Request) (*http.Response, er
 	buf.Write(img)
 
 	return http.ReadResponse(bufio.NewReader(buf), req)
+}
+
+func forbiddenResponse(req *http.Request) *http.Response {
+	body := msgNotAllowed + "\n"
+	return &http.Response{
+		Proto:         "HTTP/1.1",
+		ProtoMajor:    1,
+		ProtoMinor:    1,
+		Status:        fmt.Sprintf("%d %s", http.StatusForbidden, http.StatusText(http.StatusForbidden)),
+		StatusCode:    http.StatusForbidden,
+		Header:        make(http.Header),
+		Body:          io.NopCloser(strings.NewReader(body)),
+		ContentLength: int64(len(body)),
+		Request:       req,
+	}
+}
+
+// fetchWatermark downloads and decodes a watermark image from watermarkURL.
+func (t *TransformingTransport) fetchWatermark(watermarkURL string) (image.Image, error) {
+	u, err := url.Parse(watermarkURL)
+	if err != nil {
+		return nil, err
+	}
+	if err := t.watermarkURLAllowed(u); err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	client := *t.CachingClient
+	client.CheckRedirect = func(redirect *http.Request, via []*http.Request) error {
+		if len(via) > maxRedirects {
+			return errTooManyRedirects
+		}
+		if err := t.watermarkURLAllowed(redirect.URL); err != nil {
+			return err
+		}
+		return nil
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("watermark fetch returned status %d", resp.StatusCode)
+	}
+
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	m, _, err := image.Decode(bytes.NewReader(b))
+	return m, err
+}
+
+func (t *TransformingTransport) watermarkURLAllowed(u *url.URL) error {
+	if u == nil || (u.Scheme != "http" && u.Scheme != "https") || u.Hostname() == "" {
+		return errNotAllowed
+	}
+	if t.allowWatermark != nil {
+		return t.allowWatermark(u)
+	}
+	return nil
 }
