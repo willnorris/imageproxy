@@ -292,9 +292,9 @@ func (p *Proxy) serveImage(w http.ResponseWriter, r *http.Request) {
 	}
 	resp, err := p.Client.Do(actualReq)
 	if err != nil {
-		msg := fmt.Sprintf("error fetching remote image: %v", err)
-		p.log(msg)
-		http.Error(w, msg, http.StatusInternalServerError)
+		p.log(fmt.Sprintf("error fetching remote image: %v", err))
+		// the error can name internal addresses and ports, so keep it out of the response
+		http.Error(w, "error fetching remote image", http.StatusInternalServerError)
 		metricRemoteErrors.Inc()
 		return
 	}

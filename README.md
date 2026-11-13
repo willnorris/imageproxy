@@ -265,6 +265,26 @@ blocking reserved ranges like `127.0.0.0/8`, `192.168.0.0/16`, etc.
 
 If a host matches both an allowed and denied host, the request will be denied.
 
+CIDR entries in `denyHosts` only match IP addresses written in the URL, not
+hostnames that resolve to them. To only fetch from public IP addresses, use
+the `denyPrivateNetworks` flag:
+
+```sh
+imageproxy -denyPrivateNetworks
+```
+
+Every connection, including redirects, is checked after DNS resolution and
+refused unless the address is publicly routable. This blocks private,
+loopback, link-local and cloud metadata addresses whatever hostname resolves
+to them. The flag has side effects:
+
+- `HTTP_PROXY` and `HTTPS_PROXY` are ignored, since the proxy would be the
+  address checked instead of the origin.
+- Missing intermediate certificates are no longer fetched, so origins serving
+  an incomplete certificate chain will fail.
+- Cached images are served without a connection, so flush any cache that may
+  already hold images from internal addresses when enabling it.
+
 ### Allowed Content-Type List
 
 You can limit what content types can be proxied by using the `contentTypes`
